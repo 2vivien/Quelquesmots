@@ -3,11 +3,11 @@
 @theme {
   --color-ivoire: #F5EDDC;
   --color-carte: #FDF9EE;
-  --color-bord: #E7DBC8;
+  --color-bord: #282524;
   --color-pilule: #EFE3CC;
   --color-encre: #282524;
   --color-encre-fort: #1E1B1D;
-  --color-muted: #8A7F6E;
+  --color-muted: #6E6759;
   --color-jaune: #F5B921;
   --color-jaune-fonce: #E8A90F;
   --color-accent: #F5B921;
@@ -42,36 +42,36 @@ body {
 
 /* --------------------------- Design system « Otheloo × Oliver » --------------------------- */
 @layer components {
-  /* Carte douce : fond blanc, bordure fine, ombre chaude légère */
+  /* Carte néo-brutalisme : bordure fine encre, ombre dure légère */
   .carte {
-    @apply rounded-[var(--radius-carte)] border border-bord bg-carte shadow-[0_1px_2px_rgba(74,58,30,0.05),0_10px_30px_rgba(74,58,30,0.07)];
+    @apply rounded-[var(--radius-carte)] border-[1.5px] border-bord bg-carte shadow-[3px_3px_0_0_var(--color-encre)];
   }
   .carte-ronde {
-    @apply rounded-full border border-bord bg-carte shadow-[0_1px_2px_rgba(74,58,30,0.06),0_4px_14px_rgba(74,58,30,0.06)];
+    @apply rounded-full border-[1.5px] border-bord bg-carte shadow-[2px_2px_0_0_var(--color-encre)];
   }
 
   /* Boutons */
   .btn-noir {
-    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-encre px-6 py-2.5 font-semibold text-ivoire transition-colors hover:bg-encre-fort;
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-encre px-6 py-2.5 font-bold text-ivoire shadow-[3px_3px_0_0_var(--color-jaune)] transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_var(--color-jaune)];
   }
   .btn-jaune {
-    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-jaune px-6 py-2.5 font-bold text-encre transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_6px_18px_rgba(245,185,33,0.45)] active:translate-y-0;
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border-[1.5px] border-bord bg-jaune px-6 py-2.5 font-extrabold text-encre shadow-[3px_3px_0_0_var(--color-encre)] transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_var(--color-encre)] active:translate-y-0;
   }
   .btn-fantome {
     @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-bord bg-carte px-6 py-2.5 font-semibold text-encre transition-colors hover:bg-pilule;
   }
 
-  /* Pastille / chip */
+  /* Pastille / chip — néo-brutalisme */
   .puce {
-    @apply inline-flex min-h-[36px] items-center whitespace-nowrap rounded-full border border-bord bg-carte px-4 py-1.5 text-[13px] font-semibold text-muted transition-colors hover:border-encre hover:text-encre;
+    @apply inline-flex min-h-[36px] items-center whitespace-nowrap rounded-full border-[1.5px] border-bord bg-carte px-4 py-1.5 text-[13px] font-bold text-encre transition-colors hover:bg-pilule;
   }
   .puce-active {
-    @apply inline-flex min-h-[36px] items-center whitespace-nowrap rounded-full bg-jaune px-4 py-1.5 text-[13px] font-bold text-encre;
+    @apply inline-flex min-h-[36px] items-center whitespace-nowrap rounded-full border-[1.5px] border-bord bg-jaune px-4 py-1.5 text-[13px] font-extrabold text-encre shadow-[2px_2px_0_0_var(--color-encre)];
   }
 
   /* Champ de saisie */
   .champ {
-    @apply w-full rounded-full border border-bord bg-ivoire px-4 py-2.5 text-sm text-encre placeholder:text-muted focus:border-encre focus:outline-none;
+    @apply w-full rounded-full border-[1.5px] border-bord bg-carte px-4 py-2.5 text-sm text-encre placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-jaune;
   }
 
   /* Badge compteur */

@@ -1,5 +1,4 @@
 export { FeedChips } from "./components/FeedChips";
-export { FeedSearch } from "./components/FeedSearch";
 export { FeedView } from "./components/FeedView";
 export { PostCard } from "./components/PostCard";
 export { PostList } from "./components/PostList";

@@ -49,4 +49,8 @@ export const authMock: AuthService = {
     writeStoredUser(updated);
     return updated;
   },
+  async deleteAccount(): Promise<void> {
+    // Mode maquette : efface simplement la session locale ; les données demo restent en mémoire.
+    writeStoredUser(null);
+  },
 };

@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { Archivo_Black } from "next/font/google";
 import { AppProviders } from "@/components/layout/AppProviders";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
-import { RightIconRail } from "@/components/layout/RightIconRail";
+import { Sidebar } from "@/components/layout/Sidebar";
 import "./globals.css";
 
 const newsreader = localFont({
@@ -39,14 +40,21 @@ export const metadata: Metadata = {
   },
 };
 
+const archivoBlack = Archivo_Black({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-archivo",
+  display: "swap",
+});
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" className={`${newsreader.variable} ${inter.variable}`} suppressHydrationWarning>
-      <body className="min-h-screen bg-ivoire text-encre antialiased md:pr-14" suppressHydrationWarning>
+    <html lang="fr" className={`${newsreader.variable} ${inter.variable} ${archivoBlack.variable}`} suppressHydrationWarning>
+      <body className="min-h-screen bg-ivoire text-encre antialiased lg:pl-64" suppressHydrationWarning>
         <AppProviders>
+          <Sidebar />
           <Header />
-          <RightIconRail />
-          <main className="mx-auto min-h-[68vh] max-w-[1200px] px-4 py-8 sm:px-6">
+          <main className="mx-auto min-h-[68vh] max-w-[920px] px-4 py-6 sm:px-6">
             {children}
           </main>
           <Footer />

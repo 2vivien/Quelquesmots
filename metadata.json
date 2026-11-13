@@ -1,0 +1,6 @@
+{
+  "name": "Quelques mots",
+  "description": "Un espace où les mots restent. Plateforme littéraire de textes courts en français.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

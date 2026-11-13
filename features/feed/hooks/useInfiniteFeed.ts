@@ -1,0 +1,48 @@
+"use client";
+
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { useAuth } from "@/features/auth";
+import { useInteractionState } from "@/features/interactions";
+import { postsService, type FeedPage } from "@/features/posts";
+
+interface UseInfiniteFeedParams {
+  themeSlug?: string;
+  tagSlug?: string;
+  authorUsername?: string;
+  sort?: "recent" | "top";
+  initialPage?: FeedPage;
+}
+
+/**
+ * Hook de chargement paginé par curseur du flux de textes.
+ * @param params Filtres actifs et première page rendue côté serveur.
+ * @returns Liste aplatie des textes et contrôles de pagination.
+ */
+export function useInfiniteFeed(params: UseInfiniteFeedParams) {
+  const { user } = useAuth();
+  const { data: interaction } = useInteractionState();
+  const blocked = interaction?.blockedUserIds ?? [];
+
+  const query = useInfiniteQuery({
+    queryKey: ["feed", params.themeSlug ?? "", params.tagSlug ?? "", params.authorUsername ?? "", params.sort ?? "recent", user?.id ?? "guest"],
+    initialPageParam: null as string | null,
+    queryFn: ({ pageParam }) =>
+      postsService.listFeed({
+        themeSlug: params.themeSlug,
+        tagSlug: params.tagSlug,
+        authorUsername: params.authorUsername,
+        sort: params.sort,
+        cursor: pageParam,
+        limit: 10,
+        viewerId: user?.id ?? null,
+        blockedAuthorIds: blocked,
+      }),
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    initialData: params.initialPage
+      ? { pages: [params.initialPage], pageParams: [null] }
+      : undefined,
+  });
+
+  const posts = query.data?.pages.flatMap((p) => p.items) ?? [];
+  return { ...query, posts };
+}

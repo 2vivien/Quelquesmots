@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ivoire: #FAF2EA;
+  --color-carte: #FAF5ED;
+  --color-bord: #EBE5DD;
+  --color-pilule: #F0E8DE;
+  --color-encre: #282524;
+  --color-encre-fort: #1E1B1D;
+  --color-muted: #706C69;
+  --color-accent: #B2876D;
+
+  --font-serif: var(--font-newsreader), Georgia, serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+
+  --radius-carte: 16px;
+  --radius-pilule: 9999px;
+}
+
+body {
+  background-color: var(--color-ivoire);
+  color: var(--color-encre);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-encre);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.tiptap p.is-editor-empty:first-child::before {
+  color: var(--color-muted);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}

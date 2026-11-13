@@ -3,15 +3,15 @@ import { DEFAULT_MOCK_USER } from "../stores/auth.store";
 
 const STORAGE_KEY = "qm_mock_session_v1";
 
+/** Session mock : invité tant qu'aucune connexion n'a eu lieu. */
 function readStoredUser(): AuthUser | null {
-  if (typeof window === "undefined") return DEFAULT_MOCK_USER;
+  if (typeof window === "undefined") return null;
   const raw = window.localStorage.getItem(STORAGE_KEY);
-  if (raw === "null") return null;
-  if (!raw) return DEFAULT_MOCK_USER;
+  if (!raw || raw === "null") return null;
   try {
     return JSON.parse(raw) as AuthUser;
   } catch {
-    return DEFAULT_MOCK_USER;
+    return null;
   }
 }
 

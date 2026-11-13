@@ -25,9 +25,9 @@ interface AuthState {
   setHydrated: () => void;
 }
 
-/** Store Zustand de l'état de session client. */
+/** Store Zustand de l'état de session client. La session démarre en invité (connexion obligatoire). */
 export const useAuthStore = create<AuthState>((set) => ({
-  user: DEFAULT_MOCK_USER,
+  user: null,
   hydrated: false,
   setUser: (user) => set({ user }),
   setHydrated: () => set({ hydrated: true }),

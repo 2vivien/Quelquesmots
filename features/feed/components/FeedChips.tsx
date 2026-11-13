@@ -16,11 +16,11 @@ export function FeedChips({ activeTheme, themes, onSelectTheme }: { activeTheme:
   return (
     <div className="space-y-2.5">
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" onClick={() => onSelectTheme("")} className={`min-h-[34px] whitespace-nowrap rounded-full px-4 py-1 text-sm transition-colors ${activeTheme === "" ? "bg-encre-fort text-ivoire" : "bg-pilule text-encre hover:bg-bord"}`}>
+        <button type="button" onClick={() => onSelectTheme("")} className={activeTheme === "" ? "puce-active" : "puce"}>
           Tout
         </button>
         {visible.map((t) => (
-          <button key={t.slug} type="button" onClick={() => onSelectTheme(t.slug)} className={`min-h-[34px] whitespace-nowrap rounded-full px-3.5 py-1 text-sm transition-colors ${activeTheme === t.slug ? "bg-encre-fort text-ivoire" : "bg-pilule text-encre hover:bg-bord"}`}>
+          <button key={t.slug} type="button" onClick={() => onSelectTheme(t.slug)} className={activeTheme === t.slug ? "puce-active" : "puce"}>
             {t.name}
           </button>
         ))}

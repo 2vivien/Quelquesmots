@@ -21,9 +21,11 @@ export function PostMetrics(props: PostMetricsProps) {
     <div className="flex items-center justify-between pt-1">
       <div className="flex items-center gap-4 text-[13px] tabular-nums text-muted">
         <LikeButton postId={props.postId} initialCount={props.likeCount} initialDislikeCount={props.dislikeCount} />
-        <span className="inline-flex items-center gap-1.5" aria-label={`${props.commentCount} commentaires`}>
-          <MessageCircle size={16} strokeWidth={1.5} aria-hidden="true" />
-          <span>{formatCount(props.commentCount)}</span>
+        <span className="inline-flex items-center gap-2" aria-label={`${props.commentCount} commentaires`}>
+          <span className="flex h-9 w-9 items-center justify-center rounded-full border border-bord bg-carte text-encre">
+            <MessageCircle size={16} strokeWidth={1.75} aria-hidden="true" />
+          </span>
+          <span className="font-medium text-encre">{formatCount(props.commentCount)}</span>
         </span>
         <span className="inline-flex items-center gap-1.5" aria-label={`${props.viewCount} vues`}>
           <Eye size={16} strokeWidth={1.5} aria-hidden="true" />

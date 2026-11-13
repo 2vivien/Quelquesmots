@@ -23,7 +23,7 @@ export function BookmarkButton({ postId }: BookmarkButtonProps) {
       }}
       aria-pressed={bookmarked}
       aria-label={bookmarked ? "Retirer des favoris" : "Enregistrer dans la bibliothèque"}
-      className="inline-flex min-h-[36px] min-w-[36px] items-center justify-center rounded-full text-muted transition-colors hover:text-encre"
+      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-bord bg-carte text-muted transition-colors hover:border-encre hover:bg-pilule hover:text-encre"
     >
       <Bookmark
         size={16}

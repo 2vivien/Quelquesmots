@@ -20,7 +20,7 @@ export function PostCard({ post }: { post: PostRecord }) {
   });
 
   return (
-    <motion.article initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.16 }} className="carte group space-y-2 p-4 transition-shadow duration-200 hover:shadow-[0_2px_4px_rgba(40,37,36,0.06),0_14px_36px_rgba(40,37,36,0.11)] sm:p-5">
+    <motion.article initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.16 }} className="carte group space-y-2 p-4 transition-shadow duration-200 hover:shadow-[0_2px_4px_rgba(74,58,30,0.06),0_14px_36px_rgba(74,58,30,0.11)] sm:p-5">
       <div className="flex items-center justify-between gap-3 text-[13px] text-muted">
         <div className="flex min-w-0 items-center gap-2">
           <AuthorAvatar src={post.authorAvatarUrl} alt={author.label} size={32} ring />

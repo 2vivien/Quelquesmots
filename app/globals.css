@@ -1,13 +1,13 @@
 @import "tailwindcss";
 
 @theme {
-  --color-ivoire: #FAF2EA;
-  --color-carte: #FFFFFF;
-  --color-bord: #EDE5D8;
-  --color-pilule: #F4EDDE;
+  --color-ivoire: #F5EDDC;
+  --color-carte: #FDF9EE;
+  --color-bord: #E7DBC8;
+  --color-pilule: #EFE3CC;
   --color-encre: #282524;
   --color-encre-fort: #1E1B1D;
-  --color-muted: #847C70;
+  --color-muted: #8A7F6E;
   --color-jaune: #F5B921;
   --color-jaune-fonce: #E8A90F;
   --color-accent: #F5B921;
@@ -44,10 +44,10 @@ body {
 @layer components {
   /* Carte douce : fond blanc, bordure fine, ombre chaude légère */
   .carte {
-    @apply rounded-[var(--radius-carte)] border border-bord bg-carte shadow-[0_1px_2px_rgba(40,37,36,0.05),0_10px_30px_rgba(40,37,36,0.07)];
+    @apply rounded-[var(--radius-carte)] border border-bord bg-carte shadow-[0_1px_2px_rgba(74,58,30,0.05),0_10px_30px_rgba(74,58,30,0.07)];
   }
   .carte-ronde {
-    @apply rounded-full border border-bord bg-carte shadow-[0_1px_2px_rgba(40,37,36,0.06),0_4px_14px_rgba(40,37,36,0.06)];
+    @apply rounded-full border border-bord bg-carte shadow-[0_1px_2px_rgba(74,58,30,0.06),0_4px_14px_rgba(74,58,30,0.06)];
   }
 
   /* Boutons */

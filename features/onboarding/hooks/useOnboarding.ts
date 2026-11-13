@@ -40,7 +40,12 @@ export function useOnboarding() {
       setError("Ce pseudonyme est déjà utilisé.");
       return false;
     }
-    await updateUser({ username: parsed.data.username, bio: parsed.data.bio ?? "", onboarded: true });
+    try {
+      await updateUser({ username: parsed.data.username, bio: parsed.data.bio ?? "", onboarded: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Impossible d'enregistrer le profil.");
+      return false;
+    }
     setError(null);
     return true;
   };

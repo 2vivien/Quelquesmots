@@ -38,7 +38,8 @@ export function FeedSearch({
         onChange={(e) => setQuery(e.target.value)}
         placeholder={placeholder}
         aria-label={placeholder}
-        className="min-h-[44px] w-full rounded-full border border-transparent bg-pilule pl-11 pr-4 text-[15px] text-encre placeholder:text-muted focus:border-encre focus:outline-none"
+        className="champ h-12 text-[15px] shadow-[0_1px_3px_rgba(40,37,36,0.08)] focus:border-encre"
+        style={{ paddingLeft: "2.75rem" }}
       />
     </form>
   );

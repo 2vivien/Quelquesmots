@@ -1,7 +1,7 @@
-import type { AuthorProfile } from "../types/authors.types";
+import type { AuthorProfile } from "@/features/authors/types/authors.types";
 
 /** Jeu de données initial des plumes issu des maquettes. */
-export const MOCK_AUTHORS: AuthorProfile[] = [
+export const SEED_AUTHORS: AuthorProfile[] = [
   {
     userId: "user-plume",
     username: "plume.libre",

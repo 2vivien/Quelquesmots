@@ -1,23 +1,23 @@
 /**
  * Store serveur en mémoire pour le mode réel sans base de données.
  * Épinglé sur `globalThis` pour survivre aux rechargements de modules (HMR).
- * Les données sont seedées depuis les jeux de données éditoriaux `*.mock-data.ts`.
+ * Les données sont seedées depuis `lib/server/seed/`.
  */
 import { createHash, randomUUID } from "node:crypto";
 import type { AuthUser } from "@/features/auth";
 import type { AuditEntry, SiteSettings } from "@/features/admin/types/admin.types";
 import type { AuthorProfile } from "@/features/authors/types/authors.types";
-import { MOCK_AUTHORS } from "@/features/authors/services/authors.mock-data";
+import { SEED_AUTHORS } from "@/lib/server/seed/authors";
 import type { CommentItemData } from "@/features/comments/types/comments.types";
 import type { InteractionState } from "@/features/interactions/types/interactions.types";
 import type { ReportItem, ReportReason, ReportTargetType } from "@/features/moderation/types/moderation.types";
 import type { NotificationKind, NotificationItem } from "@/features/notifications/types/notifications.types";
 import type { FeedPage, FeedQuery, PostRecord } from "@/features/posts/types/posts.types";
-import { MOCK_POSTS } from "@/features/posts/services/posts.mock-data";
+import { SEED_POSTS } from "@/lib/server/seed/posts";
 import { canViewPost } from "@/features/posts/utils/visibility";
 import type { TagItem } from "@/features/tags/types/tags.types";
 import type { ThemeItem } from "@/features/themes/types/themes.types";
-import { MOCK_THEMES } from "@/features/themes/services/themes.mock-data";
+import { SEED_THEMES } from "@/lib/server/seed/themes";
 import { formatCount, normalizeSearchText } from "@/lib/format";
 import { isFuzzyMatch } from "@/features/search/utils/fuzzy";
 import type { SearchResponse, SearchResultItem, SearchTab } from "@/features/search/types/search.types";
@@ -122,7 +122,7 @@ interface Db {
 }
 
 function seedUsers(): AuthUser[] {
-  const writers = MOCK_AUTHORS.filter((a) => a.userId !== EMMA_SEED.id).map(
+  const writers = SEED_AUTHORS.filter((a) => a.userId !== EMMA_SEED.id).map(
     (a): AuthUser => ({
       id: a.userId,
       username: a.username,
@@ -146,8 +146,8 @@ function seedDb(): Db {
   const follows = new Map<string, Set<string>>();
   follows.set("user-emma", new Set(["user-plume"]));
   return {
-    posts: MOCK_POSTS.map((p) => ({ ...p })),
-    themes: MOCK_THEMES.map((t) => ({ ...t })),
+    posts: SEED_POSTS.map((p) => ({ ...p })),
+    themes: SEED_THEMES.map((t) => ({ ...t })),
     tags: MOCK_TAGS.map((t) => ({ ...t })),
     comments: SEED_COMMENTS.map((c) => ({ ...c })),
     notifications: SEED_NOTIFICATIONS.map((n) => ({ ...n })),
@@ -155,7 +155,7 @@ function seedDb(): Db {
     audit: [],
     settings: { maxChars: 1500, minChars: 20, maxTags: 5, dailyPublishLimit: 10 },
     users: seedUsers(),
-    authors: MOCK_AUTHORS.map((a) => ({ ...a })),
+    authors: SEED_AUTHORS.map((a) => ({ ...a })),
     likes: new Map(),
     dislikes: new Map(),
     bookmarks,

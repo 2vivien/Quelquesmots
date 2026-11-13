@@ -1,4 +1,4 @@
-import type { ThemeCategory, ThemeItem } from "../types/themes.types";
+import type { ThemeCategory, ThemeItem } from "@/features/themes/types/themes.types";
 
 type SeedTuple = [string, string, ThemeCategory, number, string];
 
@@ -61,7 +61,7 @@ const SEEDS: SeedTuple[] = [
 ];
 
 /** Plus de 50 thèmes littéraires et humains (55 thèmes) sans image. */
-export const MOCK_THEMES: ThemeItem[] = SEEDS.map(([slug, name, category, postCount, tagline], idx) => ({
+export const SEED_THEMES: ThemeItem[] = SEEDS.map(([slug, name, category, postCount, tagline], idx) => ({
   id: `theme-${slug}`,
   slug,
   name,

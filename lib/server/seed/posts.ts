@@ -1,5 +1,5 @@
 import type { TiptapDoc } from "@/types";
-import type { PostRecord } from "../types/posts.types";
+import type { PostRecord } from "@/features/posts/types/posts.types";
 
 const doc = (paragraphs: string[]): TiptapDoc => ({
   type: "doc",
@@ -13,7 +13,7 @@ const ago = (minutes: number): string =>
   new Date(Date.now() - minutes * 60_000).toISOString();
 
 /** Textes initiaux alignés sur les maquettes (Mur, Lecture, Brouillons). */
-export const MOCK_POSTS: PostRecord[] = [
+export const SEED_POSTS: PostRecord[] = [
   {
     id: "post-1",
     slug: "on-ne-guerit-pas-de-tout",

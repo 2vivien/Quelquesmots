@@ -9,7 +9,7 @@ import type { SiteSettings } from "../types/admin.types";
 
 /**
  * Hook d'administration regroupant signalements, audit et paramètres du site.
- * @returns Données et mutations modérateur/administrateur.
+ * @returns Données et mutations administrateur.
  */
 export function useAdmin() {
   const { user } = useAuth();
@@ -29,6 +29,9 @@ export function useAdmin() {
       void qc.invalidateQueries({ queryKey: ["admin"] });
       toast.success("Décision enregistrée dans l'audit.");
     },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Impossible d'appliquer la décision.");
+    },
   });
 
   const saveSettings = useMutation({
@@ -36,6 +39,9 @@ export function useAdmin() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["admin", "settings"] });
       toast.success("Paramètres enregistrés.");
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Impossible d'enregistrer les paramètres.");
     },
   });
 

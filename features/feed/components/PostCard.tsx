@@ -20,21 +20,21 @@ export function PostCard({ post }: { post: PostRecord }) {
   });
 
   return (
-    <motion.article initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.16 }} className="space-y-3 border-b border-bord py-6 first:pt-2">
+    <motion.article initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18 }} className="carte group space-y-3 p-5 transition-shadow duration-200 hover:shadow-[0_2px_4px_rgba(40,37,36,0.06),0_16px_40px_rgba(40,37,36,0.12)]">
       <div className="flex items-center justify-between gap-3 text-[13px] text-muted">
         <div className="flex min-w-0 items-center gap-2">
-          <AuthorAvatar src={post.authorAvatarUrl} alt={author.label} size={28} />
-          {author.href ? <Link href={author.href} className="truncate font-medium text-encre hover:underline">{author.label}</Link> : <span className="truncate font-medium text-encre">{author.label}</span>}
-          <span aria-hidden="true">·</span>
+          <AuthorAvatar src={post.authorAvatarUrl} alt={author.label} size={32} ring />
+          {author.href ? <Link href={author.href} className="truncate font-bold text-encre hover:underline">{author.label}</Link> : <span className="truncate font-bold text-encre">{author.label}</span>}
+          <span aria-hidden="true" className="font-bold">·</span>
           {post.publishAs !== "ANONYMOUS" ? <FollowButton targetUserId={post.authorId} authorLabel={author.label} variant="inline" /> : null}
           {post.publishedAt ? <RelativeTime isoDate={post.publishedAt} /> : <span className="shrink-0">brouillon</span>}
         </div>
-        <Link href={`/mots/${post.slug}`} title="Agrandir ce texte" aria-label={`Agrandir ${post.title}`} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-pilule hover:text-encre">
-          <Maximize2 size={15} strokeWidth={1.5} aria-hidden="true" />
+        <Link href={`/mots/${post.slug}`} title="Agrandir ce texte" aria-label={`Agrandir ${post.title}`} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-pilule hover:text-encre">
+          <Maximize2 size={16} strokeWidth={1.75} aria-hidden="true" />
         </Link>
       </div>
       <Link href={`/mots/${post.slug}`} className="group block space-y-2">
-        <h2 className="font-serif text-[22px] font-normal leading-snug text-encre group-hover:underline">{post.title}</h2>
+        <h2 className="text-[19px] font-extrabold leading-[1.2] tracking-tight text-encre group-hover:underline decoration-2 underline-offset-2 sm:text-[20px]">{post.title}</h2>
         <p className="line-clamp-2 text-[15px] leading-relaxed text-encre/85">{post.excerpt}</p>
       </Link>
       <TagList tags={post.tagSlugs} />

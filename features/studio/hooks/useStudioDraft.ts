@@ -35,10 +35,15 @@ export function useStudioDraft(initialDraftId?: string) {
   const saveNow = async (): Promise<string | null> => {
     if (!user) return null;
     state.setField("saveStatus", "saving");
-    const saved = await postsService.upsertDraft(buildDraftPayload(user, state));
-    state.setField("draftId", saved.id);
-    state.setField("saveStatus", "saved");
-    return saved.id;
+    try {
+      const saved = await postsService.upsertDraft(buildDraftPayload(user, state));
+      state.setField("draftId", saved.id);
+      state.setField("saveStatus", "saved");
+      return saved.id;
+    } catch {
+      state.setField("saveStatus", "error");
+      return null;
+    }
   };
 
   useEffect(() => {

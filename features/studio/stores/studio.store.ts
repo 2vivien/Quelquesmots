@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import type { TiptapDoc, Visibility } from "@/types";
 
-export type SaveStatus = "idle" | "saving" | "saved";
+export type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 interface StudioState {
   draftId: string | null;

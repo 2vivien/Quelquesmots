@@ -19,7 +19,13 @@ interface StudioHeaderProps {
  */
 export function StudioHeader(props: StudioHeaderProps) {
   const statusLabel =
-    props.saveStatus === "saving" ? "Enregistrement…" : props.saveStatus === "saved" ? "Enregistré" : "Enregistrer";
+    props.saveStatus === "saving"
+      ? "Enregistrement…"
+      : props.saveStatus === "saved"
+        ? "Enregistré"
+        : props.saveStatus === "error"
+          ? "Échec — Réessayer"
+          : "Enregistrer";
   return (
     <header className="flex flex-wrap items-center justify-between gap-3 border-b border-bord pb-4">
       <Link href="/" className="inline-flex min-h-[40px] items-center gap-2 text-sm text-encre hover:underline">

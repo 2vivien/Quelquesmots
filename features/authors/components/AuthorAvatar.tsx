@@ -17,7 +17,7 @@ export function AuthorAvatar({
   size = 40,
   ring = false,
 }: AuthorAvatarProps) {
-  const ringCls = ring ? "ring-1 ring-accent ring-offset-2 ring-offset-ivoire" : "";
+  const ringCls = ring ? "ring-2 ring-encre" : "";
   return (
     <span
       className={`relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-pilule text-xs font-medium text-encre ${ringCls}`}

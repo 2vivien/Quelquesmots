@@ -20,10 +20,8 @@ export function FeedView({ initialTheme = "", initialPage }: { initialTheme?: st
   });
 
   return (
-    <div className="mx-auto max-w-[720px] space-y-5">
-      <div className="md:hidden">
-        <FeedSearch />
-      </div>
+    <div className="mx-auto max-w-[860px] space-y-4">
+      <FeedSearch />
       <FeedChips activeTheme={theme} themes={themes} onSelectTheme={setTheme} />
       <div className="flex items-center gap-5 border-b border-bord text-sm">
         <button type="button" onClick={() => setSort("recent")} className={`border-b-2 pb-2 ${sort === "recent" ? "border-encre font-medium text-encre" : "border-transparent text-muted"}`}>Récents</button>

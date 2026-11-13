@@ -31,8 +31,8 @@ function checkFile(file: string): void {
   if (/console\.log\(/.test(content)) {
     errors.push(`${rel}: console.log interdit`);
   }
-  if (/\.mock(?:-data)?["']/.test(content) && !rel.endsWith(".service.ts") && !rel.endsWith(".mock.ts") && !rel.includes("index.ts")) {
-    errors.push(`${rel}: import direct d'un fichier mock hors sélecteur`);
+  if (/\.mock(?:-data)?["']/.test(content)) {
+    errors.push(`${rel}: import d'un fichier mock (le mode démo n'existe plus)`);
   }
   if ((rel.startsWith("components/") || rel.includes("/components/")) && /@\/features\/[^/]+\/services\//.test(content)) {
     errors.push(`${rel}: composant important un service directement`);

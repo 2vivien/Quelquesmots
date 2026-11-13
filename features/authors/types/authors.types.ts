@@ -25,7 +25,7 @@ export interface DisplayAuthorInput {
   lastName?: string;
 }
 
-/** Contrat du service des auteurs (mock et réel). */
+/** Contrat du service des auteurs. */
 export interface AuthorsService {
   listDirectory(query?: string): Promise<AuthorProfile[]>;
   getByUsername(username: string): Promise<AuthorProfile | null>;

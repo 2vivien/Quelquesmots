@@ -20,7 +20,7 @@ export interface ThemeItem {
   active: boolean;
 }
 
-/** Contrat du service des thèmes (mock et réel). */
+/** Contrat du service des thèmes. */
 export interface ThemesService {
   listActive(query?: string): Promise<ThemeItem[]>;
   getBySlug(slug: string): Promise<ThemeItem | null>;

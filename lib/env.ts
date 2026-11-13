@@ -1,24 +1,17 @@
 import { z } from "zod";
 
 const envSchema = z.object({
-  NEXT_PUBLIC_USE_MOCK: z.enum(["true", "false"]).optional(),
-  NEXT_PUBLIC_API_BACKEND_READY: z.enum(["true", "false"]).optional(),
   NEXT_PUBLIC_APP_URL: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse({
-  NEXT_PUBLIC_USE_MOCK: process.env.NEXT_PUBLIC_USE_MOCK,
-  NEXT_PUBLIC_API_BACKEND_READY: process.env.NEXT_PUBLIC_API_BACKEND_READY,
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
 });
 
 const values = parsed.success ? parsed.data : {};
 
-/** Configuration d'environnement validée au démarrage.
- * Le mode démonstration (mock) est la valeur par défaut ;
- * définissez `NEXT_PUBLIC_USE_MOCK=false` pour activer les routes API réelles. */
+/** Configuration d'environnement validée au démarrage. */
 export const env = {
-  USE_MOCK: values.NEXT_PUBLIC_USE_MOCK !== "false",
   APP_URL: values.NEXT_PUBLIC_APP_URL ?? "http://127.0.0.1:3000",
 } as const;
 

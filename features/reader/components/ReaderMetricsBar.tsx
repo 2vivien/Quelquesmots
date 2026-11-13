@@ -1,4 +1,5 @@
-import { Eye, MessageCircle } from "lucide-react";
+import { Eye } from "lucide-react";
+import { IconMessageChatbot } from "@tabler/icons-react";
 import { BookmarkButton, LikeButton, ShareButton } from "@/features/interactions";
 import type { PostRecord } from "@/features/posts";
 import { formatCount } from "@/lib/format";
@@ -10,11 +11,11 @@ export function ReaderMetricsBar({ post, extraAction }: { post: PostRecord; extr
       <div className="flex items-center gap-5">
         <LikeButton postId={post.id} initialCount={post.likeCount} initialDislikeCount={post.dislikeCount} />
         <span className="inline-flex items-center gap-1.5">
-          <MessageCircle size={16} strokeWidth={1.5} aria-hidden="true" />
+          <IconMessageChatbot size={16} strokeWidth={1.75} aria-hidden="true" />
           <span>{formatCount(post.commentCount)}</span>
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <Eye size={16} strokeWidth={1.5} aria-hidden="true" />
+          <Eye size={16} strokeWidth={1.75} aria-hidden="true" />
           <span>{formatCount(post.viewCount)}</span>
         </span>
       </div>

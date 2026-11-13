@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { searchService } from "@/features/search";
+import { getSessionUser } from "@/lib/server/auth";
+import { search } from "@/lib/server/store";
+import { badRequest, clientIp, rateLimit } from "@/lib/server/http";
 
-/** Retourne jusqu'à 5 suggestions mixtes (minimum 2 caractères). */
+/** Jusqu'à 5 suggestions mixtes dès 2 caractères. */
 export async function GET(req: NextRequest) {
-  const q = req.nextUrl.searchParams.get("q") ?? "";
-  if (q.trim().length < 2) {
-    return NextResponse.json({ items: [] });
-  }
-  const items = await searchService.suggest(q, null);
-  return NextResponse.json({ items });
+  const limited = rateLimit(`suggest:${clientIp(req)}`, 120, 60_000);
+  if (limited) return limited;
+  const q = (req.nextUrl.searchParams.get("q") ?? "").trim();
+  if (q.length < 2) return NextResponse.json({ items: [] });
+  if (q.length > 120) return badRequest("Recherche trop longue.");
+  const viewer = getSessionUser(req);
+  return NextResponse.json({ items: search(q, "all", viewer?.id ?? null).items.slice(0, 5) });
 }

@@ -4,12 +4,12 @@ import Link from "next/link";
 import { AuditPanel, ReportTable, SettingsPanel, useAdmin } from "@/features/admin";
 import { useAuth } from "@/features/auth";
 
-/** Panneau de modération et d'administration réservé aux rôles autorisés. */
+/** Panneau de modération et d'administration, réservé au rôle administrateur. */
 export default function AdminPage() {
   const { user } = useAuth();
   const { reports, audit, settings, moderate, saveSettings } = useAdmin();
 
-  if (!user || (user.role !== "admin" && user.role !== "moderator")) {
+  if (!user || user.role !== "admin") {
     return (
       <div className="mx-auto max-w-md py-16 text-center space-y-4">
         <h1 className="font-serif text-3xl text-encre">Accès réservé</h1>

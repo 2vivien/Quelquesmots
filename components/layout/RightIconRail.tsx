@@ -18,7 +18,7 @@ export function RightIconRail() {
   const pathname = usePathname();
   const { user } = useAuth();
   const { unreadCount } = useNotifications();
-  const cls = (active: boolean) => `relative flex h-9 w-9 items-center justify-center rounded-full transition-colors ${active ? "bg-encre-fort text-ivoire" : "text-muted hover:bg-pilule hover:text-encre"}`;
+  const cls = (active: boolean) => `relative flex h-9 w-9 items-center justify-center rounded-full transition-colors ${active ? "bg-bord text-encre" : "text-muted hover:bg-pilule hover:text-encre"}`;
 
   return (
     <aside aria-label="Navigation principale" className="fixed bottom-0 right-0 top-0 z-40 hidden w-14 flex-col items-center justify-center gap-2.5 border-l border-bord bg-carte/95 py-4 md:flex">
@@ -37,7 +37,7 @@ export function RightIconRail() {
           </Link>
           <Link href="/bibliotheque" title="Bibliothèque & brouillons" aria-label="Bibliothèque" className={cls(pathname.startsWith("/bibliotheque") || pathname.startsWith("/studio/brouillons"))}><BookMarked size={18} strokeWidth={1.5} /></Link>
           <Link href="/parametres" title="Paramètres" aria-label="Paramètres" className={cls(pathname.startsWith("/parametres"))}><Settings size={18} strokeWidth={1.5} /></Link>
-          {user.role === "admin" || user.role === "moderator" ? <Link href="/admin" title="Modération" aria-label="Modération" className={cls(pathname.startsWith("/admin"))}><Shield size={18} strokeWidth={1.5} /></Link> : null}
+          {user.role === "admin" ? <Link href="/admin" title="Modération" aria-label="Modération" className={cls(pathname.startsWith("/admin"))}><Shield size={18} strokeWidth={1.5} /></Link> : null}
         </>
       ) : (
         <Link href="/connexion" title="Se connecter" aria-label="Se connecter" className={cls(pathname.startsWith("/connexion"))}><LogIn size={18} strokeWidth={1.5} /></Link>

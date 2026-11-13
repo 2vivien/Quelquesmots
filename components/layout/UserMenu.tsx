@@ -24,7 +24,7 @@ export function UserMenu() {
           <Link href="/auteurs" onClick={() => setOpen(false)} className="block px-4 py-2 text-sm text-encre hover:bg-pilule">Voir tous les auteurs</Link>
           <Link href="/studio/brouillons" onClick={() => setOpen(false)} className="block px-4 py-2 text-sm text-encre hover:bg-pilule">Brouillons &amp; bibliothèque</Link>
           <Link href="/parametres" onClick={() => setOpen(false)} className="block px-4 py-2 text-sm text-encre hover:bg-pilule">Paramètres</Link>
-          {user.role === "admin" || user.role === "moderator" ? (
+          {user.role === "admin" ? (
             <Link href="/admin" onClick={() => setOpen(false)} className="block px-4 py-2 text-sm text-encre hover:bg-pilule">Modération</Link>
           ) : null}
           <button type="button" onClick={() => { setOpen(false); void signOut(); }} className="mt-1 block w-full border-t border-bord px-4 pt-2.5 pb-1.5 text-left text-sm text-muted hover:text-encre">

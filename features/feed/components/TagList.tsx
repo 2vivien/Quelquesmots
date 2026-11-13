@@ -19,8 +19,8 @@ export function TagList({ tags, pill = false }: TagListProps) {
           href={`/tags/${slug}`}
           className={
             pill
-              ? "whitespace-nowrap rounded-full bg-pilule px-3 py-1 text-[13px] text-encre transition-colors hover:bg-bord"
-              : "whitespace-nowrap text-[13px] text-muted transition-colors hover:text-encre"
+              ? "puce text-[12px]"
+              : "text-[13px] font-semibold text-muted transition-colors hover:text-encre"
           }
         >
           #{slug}

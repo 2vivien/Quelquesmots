@@ -24,12 +24,12 @@ export function LikeButton({ postId, initialCount, initialDislikeCount = 0 }: Li
 
   return (
     <div className="inline-flex items-center gap-3">
-      <button type="button" onClick={stop(toggle)} aria-pressed={liked} aria-label={`${count} j'aime`} className="inline-flex min-h-[36px] items-center gap-1.5 text-[13px] tabular-nums text-muted transition-colors hover:text-encre">
-        <ThumbsUp size={16} strokeWidth={1.5} className={liked ? "fill-encre-fort text-encre-fort" : ""} aria-hidden="true" />
+      <button type="button" onClick={stop(toggle)} aria-pressed={liked} aria-label={`${count} j'aime`} className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-full px-2.5 text-[13px] font-semibold tabular-nums transition-all duration-150 ${liked ? "bg-jaune text-encre" : "text-muted hover:bg-pilule hover:text-encre"}`}>
+        <ThumbsUp size={16} strokeWidth={liked ? 2.25 : 1.75} className={liked ? "fill-encre text-encre" : ""} aria-hidden="true" />
         <span>{formatCount(count)}</span>
       </button>
-      <button type="button" onClick={stop(toggleDislike)} aria-pressed={disliked} aria-label={`${dislikeCount} je n'aime pas`} className="inline-flex min-h-[36px] items-center gap-1.5 text-[13px] tabular-nums text-muted transition-colors hover:text-encre">
-        <ThumbsDown size={16} strokeWidth={1.5} className={disliked ? "fill-encre-fort text-encre-fort" : ""} aria-hidden="true" />
+      <button type="button" onClick={stop(toggleDislike)} aria-pressed={disliked} aria-label={`${dislikeCount} je n'aime pas`} className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-full px-2.5 text-[13px] font-semibold tabular-nums transition-all duration-150 ${disliked ? "bg-encre text-ivoire" : "text-muted hover:bg-pilule hover:text-encre"}`}>
+        <ThumbsDown size={16} strokeWidth={disliked ? 2.25 : 1.75} className={disliked ? "fill-ivoire text-ivoire" : ""} aria-hidden="true" />
         <span>{formatCount(dislikeCount)}</span>
       </button>
     </div>

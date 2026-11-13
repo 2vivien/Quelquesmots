@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Archivo_Black } from "next/font/google";
 import { AppProviders } from "@/components/layout/AppProviders";
-import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import "./globals.css";
@@ -57,7 +56,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main className="mx-auto min-h-[68vh] max-w-[920px] px-4 py-6 sm:px-6">
             {children}
           </main>
-          <Footer />
         </AppProviders>
       </body>
     </html>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { openAuthPopup } from "@/lib/open-auth";
 import { toast } from "sonner";
 import { useAuth } from "@/features/auth";
 import { interactionsService } from "../services/interactions.service";
@@ -13,7 +13,6 @@ const EMPTY_STATE: InteractionState = { likedIds: [], dislikedIds: [], bookmarke
 /** Hook optimiste gérant les réactions Like (pouce haut) et Unlike (pouce bas) avec compteurs. */
 export function useLike(postId: string, initialCount: number, initialDislikeCount = 0) {
   const { user } = useAuth();
-  const router = useRouter();
   const qc = useQueryClient();
   const { data } = useInteractionState();
   const liked = data?.likedIds.includes(postId) ?? false;
@@ -50,7 +49,7 @@ export function useLike(postId: string, initialCount: number, initialDislikeCoun
     onError: (_e, _v, ctx) => { if (ctx?.prev) qc.setQueryData(key, ctx.prev); toast.error("Impossible d'enregistrer votre réaction."); },
   });
 
-  const guard = (fn: () => void) => { if (!user) { router.push("/connexion"); return; } fn(); };
+  const guard = (fn: () => void) => { if (!user) { openAuthPopup(); return; } fn(); };
   return {
     liked,
     disliked,

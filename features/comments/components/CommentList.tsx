@@ -1,11 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "@/features/auth";
 import { useComments } from "../hooks/useComments";
 import { CommentForm } from "./CommentForm";
 import { CommentItem } from "./CommentItem";
+import { openAuthPopup } from "@/lib/open-auth";
 
 /** Section commentaires sous un texte lu. */
 export function CommentList({ postId, postAuthorId, commentsEnabled }: { postId: string; postAuthorId: string; commentsEnabled: boolean }) {
@@ -21,7 +21,7 @@ export function CommentList({ postId, postAuthorId, commentsEnabled }: { postId:
       {user ? (
         <CommentForm replyToId={replyTo} onCancelReply={() => setReplyTo(null)} disabled={addMutation.isPending} onSubmit={(body) => { addMutation.mutate({ body, parentId: replyTo }); setReplyTo(null); }} />
       ) : (
-        <p className="text-sm text-muted"><Link href="/connexion" className="underline hover:text-encre">Connectez-vous</Link> pour laisser un commentaire.</p>
+        <p className="text-sm text-muted"><button type="button" onClick={openAuthPopup} className="underline underline-offset-2 hover:text-encre">Connectez-vous</button> pour laisser un commentaire.</p>
       )}
       <div>
         {roots.map((root) => (

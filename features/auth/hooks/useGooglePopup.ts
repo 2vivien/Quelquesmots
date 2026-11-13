@@ -1,16 +1,13 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { authService } from "../services/auth.service";
-import { env } from "@/lib/env";
 
 /** Proportions 9:16 de la fenêtre popup OAuth. */
 const POPUP_FEATURES = "popup=yes,width=414,height=736,resizable=yes,scrollbars=yes";
 
 /**
- * Flux « Continuer avec Google » : session de démonstration instantanée en mode mock,
- * sinon fenêtre popup 9:16 menant au consentement Google.
- * @param onComplete Appelé une fois la connexion terminée.
+ * Flux « Continuer avec Google » : fenêtre popup 9:16 menant au consentement Google.
+ * @param onComplete Appelé une fois la connexion terminée (ou la popup refermée).
  * @returns État `loading` et action `signIn`.
  */
 export function useGooglePopup(onComplete: () => void) {
@@ -18,16 +15,6 @@ export function useGooglePopup(onComplete: () => void) {
 
   const signIn = useCallback(() => {
     setLoading(true);
-    if (env.USE_MOCK) {
-      authService
-        .signInWithGoogle(false)
-        .then(() => {
-          setLoading(false);
-          onComplete();
-        })
-        .catch(() => setLoading(false));
-      return;
-    }
     const popup = window.open("/api/auth/signin/google?popup=1", "qm-google", POPUP_FEATURES);
     if (!popup) {
       // Popup bloquée : repli sur une redirection plein écran.

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { openAuthPopup } from "@/lib/open-auth";
 import { toast } from "sonner";
 import { useAuth } from "@/features/auth";
 import { interactionsService } from "../services/interactions.service";
@@ -15,7 +15,6 @@ import { useInteractionState } from "./useInteractionState";
  */
 export function useBookmark(postId: string) {
   const { user } = useAuth();
-  const router = useRouter();
   const qc = useQueryClient();
   const { data } = useInteractionState();
   const bookmarked = data?.bookmarkedIds.includes(postId) ?? false;
@@ -52,7 +51,7 @@ export function useBookmark(postId: string) {
 
   const toggle = (): void => {
     if (!user) {
-      router.push("/connexion");
+      openAuthPopup();
       return;
     }
     if (!mutation.isPending) mutation.mutate();

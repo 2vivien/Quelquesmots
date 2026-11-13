@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { openAuthPopup } from "@/lib/open-auth";
 import { toast } from "sonner";
 import { useAuth } from "@/features/auth";
 import { interactionsService } from "../services/interactions.service";
@@ -16,7 +16,6 @@ import { useInteractionState } from "./useInteractionState";
  */
 export function useFollow(targetUserId: string, baseCount = 0, authorLabel?: string) {
   const { user } = useAuth();
-  const router = useRouter();
   const qc = useQueryClient();
   const { data } = useInteractionState();
   const isSelf = Boolean(user && user.id === targetUserId);
@@ -51,7 +50,7 @@ export function useFollow(targetUserId: string, baseCount = 0, authorLabel?: str
   });
 
   const toggle = (): void => {
-    if (!user) { router.push("/connexion"); return; }
+    if (!user) { openAuthPopup(); return; }
     if (!isSelf && !mutation.isPending) mutation.mutate();
   };
 

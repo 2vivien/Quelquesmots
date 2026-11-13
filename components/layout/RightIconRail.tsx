@@ -5,6 +5,7 @@ import { Bell, BookMarked, Hash, Home, LogIn, Plus, Search, Settings, Shield, Us
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/features/auth";
 import { useNotifications } from "@/features/notifications";
+import { openAuthPopup } from "@/lib/open-auth";
 
 const PUBLIC_ICONS = [
   { href: "/", label: "Le mur", Icon: Home },
@@ -40,7 +41,7 @@ export function RightIconRail() {
           {user.role === "admin" ? <Link href="/admin" title="Modération" aria-label="Modération" className={cls(pathname.startsWith("/admin"))}><Shield size={18} strokeWidth={1.5} /></Link> : null}
         </>
       ) : (
-        <Link href="/connexion" title="Se connecter" aria-label="Se connecter" className={cls(pathname.startsWith("/connexion"))}><LogIn size={18} strokeWidth={1.5} /></Link>
+        <button type="button" onClick={openAuthPopup} title="Se connecter" aria-label="Se connecter" className={cls(false)}><LogIn size={18} strokeWidth={1.5} /></button>
       )}
     </aside>
   );

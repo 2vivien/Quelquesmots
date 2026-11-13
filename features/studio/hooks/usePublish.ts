@@ -1,7 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { openAuthPopup } from "@/lib/open-auth";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useAuth } from "@/features/auth";
 import { postsService } from "@/features/posts";
@@ -21,7 +22,7 @@ export function usePublish(saveNow: () => Promise<string | null>) {
 
   const publish = async (): Promise<void> => {
     if (!user) {
-      router.push("/connexion");
+      openAuthPopup();
       return;
     }
     const parsed = publishSchema.safeParse({

@@ -3,10 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { openAuthPopup } from "@/lib/open-auth";
 import { useAuth } from "@/features/auth";
 import { authService } from "@/features/auth/services/auth.service";
-import { upsertMockAuthor } from "@/features/authors";
-import { env } from "@/lib/env";
 import { profileSchema, type ProfileFormValues } from "../schemas/profile.schema";
 
 /**
@@ -30,23 +29,6 @@ export function useSettings() {
       toast.error(err instanceof Error ? err.message : "Impossible de mettre à jour le profil.");
       return false;
     }
-    if (env.USE_MOCK && user) {
-      upsertMockAuthor({
-        userId: user.id,
-        username: parsed.data.username,
-        firstName: parsed.data.firstName,
-        lastName: parsed.data.lastName,
-        bio: parsed.data.bio,
-        avatarUrl: user.avatarUrl,
-        defaultPublishAs: parsed.data.defaultPublishAs,
-        listedInDirectory: parsed.data.listedInDirectory,
-        showJoinDate: parsed.data.showJoinDate,
-        postCount: 14,
-        followersCount: 48,
-        joinedAt: "2025-05-20T10:00:00.000Z",
-        status: "ACTIVE",
-      });
-    }
     toast.success("Profil mis à jour");
     return true;
   };
@@ -66,7 +48,8 @@ export function useSettings() {
 
   const signOutAndRedirect = async (): Promise<void> => {
     await signOut();
-    router.push("/connexion");
+    router.push("/");
+    openAuthPopup();
   };
 
   const requestDeletion = async (): Promise<void> => {
@@ -78,7 +61,8 @@ export function useSettings() {
     }
     await signOut();
     toast.success("Demande enregistrée (suppression sous 14 jours).");
-    router.push("/connexion");
+    router.push("/");
+    openAuthPopup();
   };
 
   return { user, saveProfile, changeAvatar, signOutAndRedirect, requestDeletion };

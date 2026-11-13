@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Bell, BookMarked, Hash, LogIn, Plus, Search, Users } from "lucide-react";
 import { useAuth } from "@/features/auth";
+import { openAuthPopup } from "@/lib/open-auth";
 import { UserMenu } from "./UserMenu";
 
 /** Barre d'icônes compacte sur mobile en haut à droite. */
@@ -21,7 +22,7 @@ export function HeaderMobile() {
           <UserMenu />
         </>
       ) : (
-        <Link href="/connexion" aria-label="Se connecter" className="flex h-9 w-9 items-center justify-center rounded-full bg-encre-fort text-ivoire"><LogIn size={16} strokeWidth={1.5} /></Link>
+        <button type="button" onClick={openAuthPopup} aria-label="Se connecter" className="flex h-9 w-9 items-center justify-center rounded-full bg-encre-fort text-ivoire"><LogIn size={16} strokeWidth={1.5} /></button>
       )}
     </div>
   );

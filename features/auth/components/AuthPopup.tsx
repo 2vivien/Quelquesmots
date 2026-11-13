@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { useGooglePopup } from "../hooks/useGooglePopup";
 import { ConnexionCard } from "./ConnexionCard";
@@ -39,6 +39,15 @@ export function AuthPopup() {
   const { user, hydrated } = useAuth();
   const [dismissed, setDismissed] = useState(readDismissed);
   const [errorMessage] = useState(readErrorMessage);
+
+  useEffect(() => {
+    const open = () => {
+      window.sessionStorage.removeItem(DISMISS_KEY);
+      setDismissed(false);
+    };
+    window.addEventListener("qm:open-auth", open);
+    return () => window.removeEventListener("qm:open-auth", open);
+  }, []);
 
   const { loading, signIn } = useGooglePopup(() => window.location.reload());
 

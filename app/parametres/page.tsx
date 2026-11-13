@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { openAuthPopup } from "@/lib/open-auth";
 import { DangerZone, ProfileForm, useSettings } from "@/features/settings";
 
 /** Page des paramètres de profil et confidentialité (écran 11). */
@@ -12,9 +13,9 @@ export default function SettingsPage() {
     return (
       <div className="mx-auto max-w-md py-16 text-center space-y-4">
         <p className="font-serif text-2xl text-encre">Connexion requise</p>
-        <Link href="/connexion?retour=/parametres" className="inline-flex min-h-[44px] items-center rounded-full bg-encre-fort px-6 text-sm text-ivoire">
+        <button type="button" onClick={openAuthPopup} className="inline-flex min-h-[44px] items-center rounded-full bg-encre-fort px-6 text-sm text-ivoire">
           Se connecter
-        </Link>
+        </button>
       </div>
     );
   }

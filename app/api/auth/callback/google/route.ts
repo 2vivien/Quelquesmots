@@ -21,7 +21,7 @@ const userinfoSchema = z.object({
 export async function GET(req: NextRequest) {
   const appUrl = env.APP_URL.replace(/\/$/, "");
   const fail = (reason: string) =>
-    NextResponse.redirect(`${appUrl}/connexion?erreur=${encodeURIComponent(reason)}`, 302);
+    NextResponse.redirect(`${appUrl}/?erreur=${encodeURIComponent(reason)}`, 302);
 
   const code = req.nextUrl.searchParams.get("code");
   const state = req.nextUrl.searchParams.get("state");

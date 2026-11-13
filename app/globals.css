@@ -2,18 +2,21 @@
 
 @theme {
   --color-ivoire: #FAF2EA;
-  --color-carte: #FAF5ED;
-  --color-bord: #EBE5DD;
-  --color-pilule: #F0E8DE;
+  --color-carte: #FFFFFF;
+  --color-bord: #EDE5D8;
+  --color-pilule: #F4EDDE;
   --color-encre: #282524;
   --color-encre-fort: #1E1B1D;
-  --color-muted: #706C69;
-  --color-accent: #B2876D;
+  --color-muted: #847C70;
+  --color-jaune: #F5B921;
+  --color-jaune-fonce: #E8A90F;
+  --color-accent: #F5B921;
 
   --font-serif: var(--font-newsreader), Georgia, serif;
   --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-display: var(--font-archivo), "Archivo Black", "Arial Black", system-ui, sans-serif;
 
-  --radius-carte: 16px;
+  --radius-carte: 24px;
   --radius-pilule: 9999px;
 }
 
@@ -25,7 +28,7 @@ body {
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-encre);
+  outline: 2px solid var(--color-jaune);
   outline-offset: 2px;
 }
 
@@ -34,6 +37,46 @@ body {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* --------------------------- Design system « Otheloo × Oliver » --------------------------- */
+@layer components {
+  /* Carte douce : fond blanc, bordure fine, ombre chaude légère */
+  .carte {
+    @apply rounded-[var(--radius-carte)] border border-bord bg-carte shadow-[0_1px_2px_rgba(40,37,36,0.05),0_10px_30px_rgba(40,37,36,0.07)];
+  }
+  .carte-ronde {
+    @apply rounded-full border border-bord bg-carte shadow-[0_1px_2px_rgba(40,37,36,0.06),0_4px_14px_rgba(40,37,36,0.06)];
+  }
+
+  /* Boutons */
+  .btn-noir {
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-encre px-6 py-2.5 font-semibold text-ivoire transition-colors hover:bg-encre-fort;
+  }
+  .btn-jaune {
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-jaune px-6 py-2.5 font-bold text-encre transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_6px_18px_rgba(245,185,33,0.45)] active:translate-y-0;
+  }
+  .btn-fantome {
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-bord bg-carte px-6 py-2.5 font-semibold text-encre transition-colors hover:bg-pilule;
+  }
+
+  /* Pastille / chip */
+  .puce {
+    @apply inline-flex min-h-[36px] items-center whitespace-nowrap rounded-full border border-bord bg-carte px-4 py-1.5 text-[13px] font-semibold text-muted transition-colors hover:border-encre hover:text-encre;
+  }
+  .puce-active {
+    @apply inline-flex min-h-[36px] items-center whitespace-nowrap rounded-full bg-jaune px-4 py-1.5 text-[13px] font-bold text-encre;
+  }
+
+  /* Champ de saisie */
+  .champ {
+    @apply w-full rounded-full border border-bord bg-ivoire px-4 py-2.5 text-sm text-encre placeholder:text-muted focus:border-encre focus:outline-none;
+  }
+
+  /* Badge compteur */
+  .badge-noir {
+    @apply inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-encre px-1.5 text-[10px] font-bold text-jaune;
   }
 }
 

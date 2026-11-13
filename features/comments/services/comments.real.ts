@@ -1,6 +1,15 @@
 import { apiUrl } from "@/lib/env";
 import type { CommentItemData, CommentsService } from "../types/comments.types";
 
+async function readErrorMessage(res: Response, fallback: string): Promise<string> {
+  try {
+    const data = (await res.json()) as { error?: { message?: string } };
+    return data?.error?.message ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 /** Implémentation réelle du service de commentaires via API. */
 export const commentsReal: CommentsService = {
   async listByPost(postId: string): Promise<CommentItemData[]> {
@@ -13,12 +22,19 @@ export const commentsReal: CommentsService = {
     const res = await fetch(apiUrl(`/api/posts/${encodeURIComponent(input.postId)}/comments`), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
+      // Le serveur dérive l'auteur depuis la session ; ces champs sont ignorés.
+      body: JSON.stringify({ body: input.body, parentId: input.parentId }),
     });
+    if (!res.ok) {
+      throw new Error(await readErrorMessage(res, "Impossible de publier le commentaire."));
+    }
     const data = (await res.json()) as { comment: CommentItemData };
     return data.comment;
   },
   async hideComment(commentId: string): Promise<void> {
-    await fetch(apiUrl(`/api/comments/${encodeURIComponent(commentId)}/hide`), { method: "POST" });
+    const res = await fetch(apiUrl(`/api/comments/${encodeURIComponent(commentId)}/hide`), { method: "POST" });
+    if (!res.ok) {
+      throw new Error(await readErrorMessage(res, "Impossible de masquer le commentaire."));
+    }
   },
 };

@@ -2,6 +2,15 @@ import { apiUrl } from "@/lib/env";
 import type { PostStatus } from "@/types";
 import type { FeedPage, FeedQuery, PostRecord, PostsService } from "../types/posts.types";
 
+async function readErrorMessage(res: Response, fallback: string): Promise<string> {
+  try {
+    const data = (await res.json()) as { error?: { message?: string } };
+    return data?.error?.message ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 /** Implémentation réelle du service des textes via API Next.js. */
 export const postsReal: PostsService = {
   async listFeed(query: FeedQuery): Promise<FeedPage> {
@@ -45,12 +54,13 @@ export const postsReal: PostsService = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(draft),
     });
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Impossible de sauvegarder le brouillon."));
     const data = (await res.json()) as { draft: PostRecord };
     return data.draft;
   },
   async publishPost(id: string): Promise<PostRecord | null> {
     const res = await fetch(apiUrl(`/api/studio/publish/${encodeURIComponent(id)}`), { method: "POST" });
-    if (!res.ok) return null;
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Publication impossible."));
     const data = (await res.json()) as { post: PostRecord | null };
     return data.post;
   },
@@ -59,11 +69,12 @@ export const postsReal: PostsService = {
     return res.ok;
   },
   async setModerationStatus(id: string, status: PostStatus, locked: boolean): Promise<void> {
-    await fetch(apiUrl(`/api/admin/posts/${encodeURIComponent(id)}`), {
+    const res = await fetch(apiUrl(`/api/admin/posts/${encodeURIComponent(id)}`), {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status, locked }),
     });
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Impossible de mettre à jour le texte."));
   },
   async adjustCounter(): Promise<void> {
     return;

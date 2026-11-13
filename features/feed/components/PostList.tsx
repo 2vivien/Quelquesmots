@@ -33,7 +33,7 @@ export function PostList({ posts, isLoading, hasMore, onLoadMore, isFetchingMore
     return <p className="py-16 text-center font-serif italic text-muted">Rien ici pour l&apos;instant.</p>;
   }
   return (
-    <div>
+    <div className="space-y-4">
       {posts.map((post) => <PostCard key={post.id} post={post} />)}
       {hasMore ? (
         <div className="pt-8 text-center">

@@ -20,7 +20,7 @@ export function PostCard({ post }: { post: PostRecord }) {
   });
 
   return (
-    <motion.article initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18 }} className="carte group space-y-3 p-5 transition-shadow duration-200 hover:shadow-[0_2px_4px_rgba(40,37,36,0.06),0_16px_40px_rgba(40,37,36,0.12)]">
+    <motion.article initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.16 }} className="carte group space-y-2 p-4 transition-shadow duration-200 hover:shadow-[0_2px_4px_rgba(40,37,36,0.06),0_14px_36px_rgba(40,37,36,0.11)] sm:p-5">
       <div className="flex items-center justify-between gap-3 text-[13px] text-muted">
         <div className="flex min-w-0 items-center gap-2">
           <AuthorAvatar src={post.authorAvatarUrl} alt={author.label} size={32} ring />
@@ -29,7 +29,7 @@ export function PostCard({ post }: { post: PostRecord }) {
           {post.publishAs !== "ANONYMOUS" ? <FollowButton targetUserId={post.authorId} authorLabel={author.label} variant="inline" /> : null}
           {post.publishedAt ? <RelativeTime isoDate={post.publishedAt} /> : <span className="shrink-0">brouillon</span>}
         </div>
-        <Link href={`/mots/${post.slug}`} title="Agrandir ce texte" aria-label={`Agrandir ${post.title}`} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-pilule hover:text-encre">
+        <Link href={`/mots/${post.slug}`} title="Agrandir ce texte" aria-label={`Agrandir ${post.title}`} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-bord bg-carte text-encre transition-colors hover:bg-pilule">
           <Maximize2 size={16} strokeWidth={1.75} aria-hidden="true" />
         </Link>
       </div>

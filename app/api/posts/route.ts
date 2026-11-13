@@ -1,18 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
-import { postsService } from "@/features/posts";
+import { z } from "zod";
+import { getSessionUser } from "@/lib/server/auth";
+import { getInteractionState, listFeed } from "@/lib/server/store";
+import { badRequest, rateLimit, clientIp } from "@/lib/server/http";
 
-/** Retourne une page de textes paginée par curseur pour le Mur et les filtres. */
+const querySchema = z.object({
+  theme: z.string().trim().max(64).optional(),
+  tag: z.string().trim().max(64).optional(),
+  author: z.string().trim().max(64).optional(),
+  sort: z.enum(["recent", "top"]).default("recent"),
+  cursor: z.string().trim().max(64).nullish(),
+});
+
+/** Retourne une page de textes paginée par curseur (mur et filtres). */
 export async function GET(req: NextRequest) {
-  const sp = req.nextUrl.searchParams;
-  const sortParam = sp.get("sort") === "top" ? "top" : "recent";
-  const page = await postsService.listFeed({
-    themeSlug: sp.get("theme") ?? undefined,
-    tagSlug: sp.get("tag") ?? undefined,
-    authorUsername: sp.get("author") ?? undefined,
-    sort: sortParam,
-    cursor: sp.get("cursor"),
+  const limited = rateLimit(`feed:${clientIp(req)}`, 120, 60_000);
+  if (limited) return limited;
+  const parsed = querySchema.safeParse({
+    theme: req.nextUrl.searchParams.get("theme") ?? undefined,
+    tag: req.nextUrl.searchParams.get("tag") ?? undefined,
+    author: req.nextUrl.searchParams.get("author") ?? undefined,
+    sort: req.nextUrl.searchParams.get("sort") ?? "recent",
+    cursor: req.nextUrl.searchParams.get("cursor"),
+  });
+  if (!parsed.success) return badRequest("Paramètres invalides.");
+  const viewer = getSessionUser(req);
+  const blockedAuthorIds = viewer ? getInteractionState(viewer.id).blockedUserIds : [];
+  const page = listFeed({
+    themeSlug: parsed.data.theme,
+    tagSlug: parsed.data.tag,
+    authorUsername: parsed.data.author,
+    sort: parsed.data.sort,
+    cursor: parsed.data.cursor ?? null,
     limit: 20,
-    viewerId: null,
+    viewerId: viewer?.id ?? null,
+    blockedAuthorIds,
   });
   return NextResponse.json(page);
 }

@@ -6,7 +6,7 @@ import { DangerZone, ProfileForm, useSettings } from "@/features/settings";
 
 /** Page des paramètres de profil et confidentialité (écran 11). */
 export default function SettingsPage() {
-  const { user, saveProfile, exportData, requestDeletion } = useSettings();
+  const { user, saveProfile, changeAvatar, signOutAndRedirect, requestDeletion } = useSettings();
 
   if (!user) {
     return (
@@ -34,13 +34,14 @@ export default function SettingsPage() {
           lastName: user.lastName,
           username: user.username,
           bio: user.bio,
-          defaultPublishAs: user.defaultPublishAs,
+          defaultPublishAs: user.defaultPublishAs === "ANONYMOUS" ? "USERNAME" : user.defaultPublishAs,
           listedInDirectory: user.listedInDirectory,
           showJoinDate: user.showJoinDate,
         }}
         onSave={saveProfile}
+        onAvatarChange={changeAvatar}
       />
-      <DangerZone onExport={exportData} onDelete={() => void requestDeletion()} />
+      <DangerZone onSignOut={() => void signOutAndRedirect()} onDelete={() => void requestDeletion()} />
     </div>
   );
 }

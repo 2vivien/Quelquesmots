@@ -8,7 +8,7 @@ interface PublishAsRadioProps {
 }
 
 /**
- * Choix de signature « Publier sous » (Pseudonyme par défaut, Anonyme bientôt).
+ * Choix de signature « Publier sous » (Pseudonyme par défaut, ou nom réel).
  * @param props Option sélectionnée et callback de changement.
  */
 export function PublishAsRadio({ value, onChange }: PublishAsRadioProps) {
@@ -24,14 +24,7 @@ export function PublishAsRadio({ value, onChange }: PublishAsRadioProps) {
           <input type="radio" name="publishAs" checked={value === "USERNAME"} onChange={() => onChange("USERNAME")} className="accent-encre-fort" />
           <span>Pseudonyme</span>
         </label>
-        <label className="inline-flex cursor-not-allowed items-center gap-2 text-muted">
-          <input type="radio" name="publishAs" disabled checked={false} onChange={() => {}} />
-          <span>Anonyme (Bientôt)</span>
-        </label>
       </div>
-      <p className="text-xs text-muted">
-        Le choix « Anonyme » masque votre profil publiquement tout en gardant le texte rattaché à votre compte pour la modération.
-      </p>
     </fieldset>
   );
 }

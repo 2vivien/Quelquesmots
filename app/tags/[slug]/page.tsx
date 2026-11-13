@@ -1,5 +1,8 @@
 import { PostCard } from "@/features/feed";
+
 import { postsService } from "@/features/posts";
+
+export const dynamic = "force-dynamic";
 
 interface TagPageProps {
   params: Promise<{ slug: string }>;

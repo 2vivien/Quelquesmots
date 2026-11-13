@@ -1,5 +1,8 @@
 import { AuthorsDirectoryView, authorsService } from "@/features/authors";
 
+export const dynamic = "force-dynamic";
+
+
 /** Annuaire des auteurs (écran 7). */
 export default async function AuthorsPage() {
   const authors = await authorsService.listDirectory();

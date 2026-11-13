@@ -1,8 +1,11 @@
 import { notFound } from "next/navigation";
+
 import { AuthorHeader, authorsService } from "@/features/authors";
 import { PostCard } from "@/features/feed";
 import { ReportDialog } from "@/features/moderation";
 import { postsService } from "@/features/posts";
+
+export const dynamic = "force-dynamic";
 
 interface AuthorProfilePageProps {
   params: Promise<{ username: string }>;

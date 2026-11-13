@@ -1,5 +1,8 @@
 import { FeedView } from "@/features/feed";
+
 import { postsService } from "@/features/posts";
+
+export const dynamic = "force-dynamic";
 
 interface HomePageProps {
   searchParams: Promise<{ theme?: string }>;

@@ -1,8 +1,11 @@
 import { notFound } from "next/navigation";
+
 import { authorsService } from "@/features/authors";
 import { ThemeDetailView } from "@/features/feed";
 import { postsService } from "@/features/posts";
 import { ThemeHero, themesService } from "@/features/themes";
+
+export const dynamic = "force-dynamic";
 
 interface ThemePageProps {
   params: Promise<{ slug: string }>;

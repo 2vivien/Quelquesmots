@@ -1,5 +1,8 @@
 import { ThemesDirectoryView, themesService } from "@/features/themes";
 
+export const dynamic = "force-dynamic";
+
+
 /** Page de répertoire de tous les thèmes (écran 4). */
 export default async function ThemesPage() {
   const themes = await themesService.listActive();

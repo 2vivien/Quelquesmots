@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+
 import { notFound } from "next/navigation";
 import { displayAuthor } from "@/features/authors";
 import { CommentList } from "@/features/comments";
@@ -12,6 +13,8 @@ import {
   RelatedPosts,
   ViewTrackerMount,
 } from "@/features/reader";
+
+export const dynamic = "force-dynamic";
 
 interface PostPageProps {
   params: Promise<{ slug: string }>;

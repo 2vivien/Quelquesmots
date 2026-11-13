@@ -1,39 +1,61 @@
 "use client";
 
 import Link from "next/link";
-import { Plus, Minus } from "lucide-react";
-import { useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import type { ThemeItem } from "@/features/themes";
 
-const INITIAL_VISIBLE = 6;
-
-/** Barre de filtres par thème avec compteur +N dépliable et lien vers /themes. */
+/** Liste horizontale défilante des thèmes (un seul défilement, chevrons < >). */
 export function FeedChips({ activeTheme, themes, onSelectTheme }: { activeTheme: string; themes: ThemeItem[]; onSelectTheme: (slug: string) => void }) {
-  const [expanded, setExpanded] = useState(false);
-  const visible = expanded ? themes : themes.slice(0, INITIAL_VISIBLE);
-  const remaining = Math.max(0, themes.length - INITIAL_VISIBLE);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(true);
+
+  const updateChevrons = () => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    setCanLeft(el.scrollLeft > 4);
+    setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  };
+
+  useEffect(() => {
+    updateChevrons();
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", updateChevrons, { passive: true });
+    window.addEventListener("resize", updateChevrons);
+    return () => {
+      el.removeEventListener("scroll", updateChevrons);
+      window.removeEventListener("resize", updateChevrons);
+    };
+  }, [themes.length]);
+
+  const nudge = (direction: -1 | 1) => {
+    const el = scrollerRef.current;
+    if (el) el.scrollBy({ left: direction * 320, behavior: "smooth" });
+  };
 
   return (
-    <div className="space-y-2.5">
-      <div className="flex flex-wrap items-center gap-2">
-        <button type="button" onClick={() => onSelectTheme("")} className={activeTheme === "" ? "puce-active" : "puce"}>
+    <div className="flex items-center gap-2">
+      <button type="button" onClick={() => nudge(-1)} aria-label="Thèmes précédents" disabled={!canLeft} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-bord bg-carte text-encre transition-colors hover:bg-pilule disabled:pointer-events-none disabled:opacity-30">
+        <ChevronLeft size={18} strokeWidth={2} aria-hidden="true" />
+      </button>
+      <div ref={scrollerRef} className="no-scrollbar flex flex-1 items-center gap-2 overflow-x-auto py-0.5" role="tablist" aria-label="Thèmes">
+        <button type="button" role="tab" aria-selected={activeTheme === ""} onClick={() => onSelectTheme("")} className={activeTheme === "" ? "puce-active" : "puce"}>
           Tout
         </button>
-        {visible.map((t) => (
-          <button key={t.slug} type="button" onClick={() => onSelectTheme(t.slug)} className={activeTheme === t.slug ? "puce-active" : "puce"}>
+        {themes.map((t) => (
+          <button key={t.slug} type="button" role="tab" aria-selected={activeTheme === t.slug} onClick={() => onSelectTheme(t.slug)} className={activeTheme === t.slug ? "puce-active" : "puce"}>
             {t.name}
           </button>
         ))}
-        {remaining > 0 ? (
-          <button type="button" onClick={() => setExpanded((v) => !v)} aria-expanded={expanded} className="inline-flex min-h-[34px] items-center gap-1 whitespace-nowrap rounded-full border border-bord bg-carte px-3.5 py-1 text-sm font-medium tabular-nums text-encre hover:bg-pilule">
-            {expanded ? <Minus size={14} strokeWidth={1.5} /> : <Plus size={14} strokeWidth={1.5} />}
-            <span>{expanded ? "Réduire" : remaining}</span>
-          </button>
-        ) : null}
-        <Link href="/themes" className="ml-auto whitespace-nowrap text-[13px] text-muted hover:text-encre hover:underline">
-          Page thèmes ({themes.length}) →
+        <Link href="/themes" className="ml-1 whitespace-nowrap text-[13px] text-muted underline-offset-2 hover:text-encre hover:underline">
+          Voir tout ({themes.length}) →
         </Link>
       </div>
+      <button type="button" onClick={() => nudge(1)} aria-label="Thèmes suivants" disabled={!canRight} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-bord bg-carte text-encre transition-colors hover:bg-pilule disabled:pointer-events-none disabled:opacity-30">
+        <ChevronRight size={18} strokeWidth={2} aria-hidden="true" />
+      </button>
     </div>
   );
 }

@@ -80,6 +80,14 @@ body {
   }
 }
 
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 .tiptap p.is-editor-empty:first-child::before {
   color: var(--color-muted);
   content: attr(data-placeholder);

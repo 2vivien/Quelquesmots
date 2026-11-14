@@ -1,14 +1,7 @@
 /**
- * Client S3 compatible (Neon Object Storage, MinIO, AWS, Cloudflare R2…) pour les photos de profil.
- * Configuration par variables d'environnement (format AWS standard) :
- *   AWS_ENDPOINT_URL_S3        (ex. https://<project>.storage.aws.neon.tech)
- *   AWS_REGION                 (ex. us-east-2 ; défaut us-east-2)
- *   AWS_ACCESS_KEY_ID
- *   AWS_SECRET_ACCESS_KEY
- *   S3_BUCKET                  (défaut « assets »)
- *   S3_PREFIX                  (défaut « uploads »)
- * Repli rétrocompatible : S3_ENDPOINT, S3_REGION, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY.
- * Si rien n'est configuré, l'upload bascule sur le stockage fichier local (`.uploads/`).
+ * Client S3 compatible pour les avatars.
+ * En production, un stockage objet configuré est obligatoire : le disque local
+ * n'est conservé que pour le développement local.
  */
 import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -19,20 +12,18 @@ const region = process.env.AWS_REGION ?? process.env.S3_REGION ?? "us-east-2";
 const accessKeyId = process.env.AWS_ACCESS_KEY_ID ?? process.env.S3_ACCESS_KEY_ID ?? "";
 const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY ?? process.env.S3_SECRET_ACCESS_KEY ?? "";
 const prefix = (process.env.S3_PREFIX ?? "uploads").replace(/\/+$/, "");
+const storageReady = Boolean(endpoint && accessKeyId && secretAccessKey);
 
-const client = endpoint
+const client = storageReady
   ? new S3Client({
       forcePathStyle: true,
       endpoint,
       region,
-      credentials: {
-        accessKeyId,
-        secretAccessKey,
-      },
+      credentials: { accessKeyId, secretAccessKey },
     })
   : null;
 
-/** Indique si S3 est configuré et utilisable. */
+/** Indique si le stockage objet dispose de son endpoint et de ses identifiants. */
 export function s3Configured(): boolean {
   return client !== null;
 }
@@ -44,7 +35,7 @@ export function s3Key(file: string): string {
 
 /** Enregistre un fichier dans S3. */
 export async function s3PutObject(file: string, body: Buffer, contentType: string): Promise<void> {
-  if (!client) throw new Error("S3 non configuré.");
+  if (!client) throw new Error("Stockage objet non configuré.");
   await client.send(new PutObjectCommand({ Bucket: bucket, Key: s3Key(file), Body: body, ContentType: contentType }));
 }
 
@@ -55,8 +46,7 @@ export async function s3GetObject(file: string): Promise<Buffer | null> {
     const result = await client.send(new GetObjectCommand({ Bucket: bucket, Key: s3Key(file) }));
     const body = result.Body;
     if (!body) return null;
-    const bytes = await body.transformToByteArray();
-    return Buffer.from(bytes);
+    return Buffer.from(await body.transformToByteArray());
   } catch {
     return null;
   }

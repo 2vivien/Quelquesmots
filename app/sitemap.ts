@@ -1,20 +1,18 @@
 import type { MetadataRoute } from "next";
-import { postsService } from "@/features/posts";
-import { themesService } from "@/features/themes";
+import { listFeed, listThemes } from "@/lib/server/store";
 import { env } from "@/lib/env";
 
-/** Génère le sitemap XML des pages publiques, thèmes et textes publics. */
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [feed, themes] = await Promise.all([
-    postsService.listFeed({ limit: 50, viewerId: null }),
-    themesService.listActive(),
-  ]);
-  const base = env.APP_URL;
+/** Génère le sitemap XML sans auto-appel HTTP pendant le pré-rendu. */
+export default function sitemap(): MetadataRoute.Sitemap {
+  const feed = listFeed({ limit: 50, viewerId: null, sort: "recent" });
+  const themes = listThemes();
+  const base = env.APP_URL.replace(/\/$/, "");
+
   return [
     { url: `${base}/`, changeFrequency: "hourly", priority: 1 },
     { url: `${base}/themes`, changeFrequency: "weekly", priority: 0.8 },
     { url: `${base}/auteurs`, changeFrequency: "weekly", priority: 0.7 },
-    ...themes.map((t) => ({ url: `${base}/themes/${t.id}`, priority: 0.7 })),
-    ...feed.items.map((p) => ({ url: `${base}/mots/${p.id}`, priority: 0.8 })),
+    ...themes.map((theme) => ({ url: `${base}/themes/${theme.id}`, priority: 0.7 })),
+    ...feed.items.map((post) => ({ url: `${base}/mots/${post.id}`, priority: 0.8 })),
   ];
 }

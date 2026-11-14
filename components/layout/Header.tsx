@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Bell, LogIn, Plus, Search } from "lucide-react";
+import { Bell, Plus, Search } from "lucide-react";
 import { useAuth } from "@/features/auth";
 import { useNotifications } from "@/features/notifications";
 import { openAuthPopup } from "@/lib/open-auth";
@@ -39,9 +39,6 @@ export function Header() {
             className="h-10 w-full rounded-full border-[1.5px] border-bord bg-carte pl-10 pr-4 text-[15px] font-medium placeholder:font-normal placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-jaune"
           />
         </form>
-        <Link href="/recherche" aria-label="Recherche" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-encre hover:bg-pilule md:hidden">
-          <Search size={18} strokeWidth={1.75} aria-hidden="true" />
-        </Link>
         <div className="ml-auto flex items-center gap-1.5">
           {user ? (
             <>
@@ -60,8 +57,7 @@ export function Header() {
               <Link href="/a-propos" className="btn-fantome hidden !min-h-[38px] !px-4 !py-0 !text-[13px] sm:inline-flex">
                 À propos
               </Link>
-              <button type="button" onClick={openAuthPopup} className="btn-noir !min-h-[38px] !px-4 !py-0 !text-[13px]">
-                <LogIn size={16} strokeWidth={2} aria-hidden="true" />
+              <button type="button" onClick={openAuthPopup} className="btn-noir !min-h-[38px] !px-5 !py-0 !text-[13px]">
                 Connexion
               </button>
             </>

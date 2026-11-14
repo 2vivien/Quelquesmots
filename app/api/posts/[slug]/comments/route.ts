@@ -18,7 +18,7 @@ export async function GET(
   const key = parsed.data.slug;
   const post = getPostById(key) ?? getPostBySlug(key, viewer?.id ?? null);
   if (!post) return notFound("Texte introuvable.");
-  return NextResponse.json({ comments: listComments(post.id) });
+  return NextResponse.json({ comments: listComments(post.id, viewer?.id ?? null) });
 }
 
 /** Ajoute un commentaire (auteur dérivé de la session, limité à 10 par 10 minutes). */

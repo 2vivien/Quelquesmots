@@ -55,6 +55,12 @@ const MOCK_TAGS: TagItem[] = [
 const ago = (minutes: number): string =>
   new Date(Date.now() - minutes * 60_000).toISOString();
 
+// Zéro commentaire d'amorçage pour pouvoir démontrer les likes.
+const SEED_COMMENT_LIKES: Record<string, string[]> = {
+  "com-1": ["user-emma", "user-plume"],
+  "com-2": ["user-une"],
+};
+
 const SEED_COMMENTS: CommentItemData[] = [
   {
     id: "com-1",
@@ -66,6 +72,8 @@ const SEED_COMMENTS: CommentItemData[] = [
     body: "Cette image de la chambre calme est d'une justesse rare. Merci pour ces mots.",
     status: "VISIBLE",
     createdAt: ago(8),
+    likeCount: 0,
+    likedByMe: false,
   },
   {
     id: "com-2",
@@ -77,6 +85,8 @@ const SEED_COMMENTS: CommentItemData[] = [
     body: "Merci de tout cœur pour votre lecture attentive.",
     status: "VISIBLE",
     createdAt: ago(4),
+    likeCount: 0,
+    likedByMe: false,
   },
 ];
 
@@ -117,6 +127,7 @@ interface Db {
   bookmarks: Map<string, Set<string>>;
   follows: Map<string, Set<string>>;
   blocks: Map<string, Set<string>>;
+  commentLikes: Map<string, Set<string>>;
   recentViews: Map<string, number>;
   publishedToday: Map<string, { date: string; count: number }>;
 }
@@ -149,6 +160,7 @@ function seedDb(): Db {
     posts: SEED_POSTS.map((p) => ({ ...p })),
     themes: SEED_THEMES.map((t) => ({ ...t })),
     tags: MOCK_TAGS.map((t) => ({ ...t })),
+    commentLikes: new Map(Object.entries(SEED_COMMENT_LIKES).map(([id, users]) => [id, new Set(users)])),
     comments: SEED_COMMENTS.map((c) => ({ ...c })),
     notifications: SEED_NOTIFICATIONS.map((n) => ({ ...n })),
     reports: SEED_REPORTS.map((r) => ({ ...r })),
@@ -571,10 +583,33 @@ export function toggleFollow(followerId: string, targetUserId: string): { follow
 
 /* -------------------------------- Commentaires -------------------------------- */
 
-export function listComments(postId: string): CommentItemData[] {
-  return getDb()
-    .comments.filter((c) => c.postId === postId && c.status === "VISIBLE")
-    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+/** Nombre de likes d'un commentaire. */
+function commentLikeCount(commentId: string): number {
+  return getDb().commentLikes.get(commentId)?.size ?? 0;
+}
+
+export function toggleCommentLike(commentId: string, userId: string): { liked: boolean; likeCount: number } | null {
+  const db = getDb();
+  const comment = db.comments.find((c) => c.id === commentId && c.status !== "DELETED");
+  if (!comment) return null;
+  const set = getSet(db.commentLikes, commentId);
+  const liked = !set.has(userId);
+  if (liked) set.add(userId);
+  else set.delete(userId);
+  const likeCount = set.size;
+  return { liked, likeCount };
+}
+
+export function listComments(postId: string, viewerId?: string | null): CommentItemData[] {
+  const db = getDb();
+  return db.comments
+    .filter((c) => c.postId === postId && c.status === "VISIBLE")
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    .map((c) => ({
+      ...c,
+      likeCount: commentLikeCount(c.id),
+      likedByMe: viewerId ? (getDb().commentLikes.get(c.id) ?? new Set()).has(viewerId) : false,
+    }));
 }
 
 export function addComment(input: {
@@ -596,6 +631,8 @@ export function addComment(input: {
     body: input.body,
     status: "VISIBLE",
     createdAt: new Date().toISOString(),
+    likeCount: 0,
+    likedByMe: false,
   };
   db.comments.push(created);
   adjustCounter(input.postId, "commentCount", 1);

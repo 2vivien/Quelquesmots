@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "check": "tsx scripts/check-conventions.ts",
+    "smoke:neon": "tsx scripts/neon-smoke.ts",
     "clean": "next clean",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",

@@ -44,6 +44,15 @@ export const postsReal: PostsService = {
     const data = (await res.json()) as { post: PostRecord | null };
     return data.post;
   },
+  async getByIds(ids: string[]): Promise<PostRecord[]> {
+    if (ids.length === 0) return [];
+    const params = new URLSearchParams();
+    ids.slice(0, 100).forEach((id) => params.append("id", id));
+    const res = await fetch(apiUrl(`/api/posts/by-id?${params.toString()}`));
+    if (!res.ok) return throwRequestError(res, "Impossible de charger la bibliothèque.");
+    const data = (await res.json()) as { posts: PostRecord[] };
+    return data.posts;
+  },
   async listRelated(post: PostRecord): Promise<PostSummary[]> {
     const res = await fetch(apiUrl(`/api/posts/${encodeURIComponent(post.id)}/related`));
     if (res.status === 404) return [];

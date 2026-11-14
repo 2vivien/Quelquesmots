@@ -5,7 +5,7 @@ import { badRequest, notFound } from "@/lib/server/http";
 import { canViewPost } from "@/features/posts/utils/visibility";
 import { getSessionUser } from "@/lib/server/auth";
 
-const paramsSchema = z.object({ id: z.string().trim().min(1).max(64) });
+const paramsSchema = z.object({ id: z.string().uuid("Identifiant invalide.") });
 
 /** Fiche d'un texte par identifiant interne. */
 export async function GET(

@@ -5,7 +5,7 @@ import { getPostById, pushAudit, setModerationStatus } from "@/lib/server/reposi
 import { badRequest, notFound, parseJsonBody, rateLimit } from "@/lib/server/http";
 import { adminPostPatchSchema } from "@/lib/server/schemas";
 
-const paramsSchema = z.object({ id: z.string().trim().min(1).max(64) });
+const paramsSchema = z.object({ id: z.string().uuid("Identifiant invalide.") });
 
 /** Change le statut/verrouillage éditorial d'un texte (modération). */
 export async function PATCH(

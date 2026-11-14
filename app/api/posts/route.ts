@@ -5,9 +5,9 @@ import { getInteractionState, listFeed, InvalidFeedCursorError } from "@/lib/ser
 import { badRequest, rateLimit, clientIp } from "@/lib/server/http";
 
 const querySchema = z.object({
-  theme: z.string().trim().max(64).optional(),
-  tag: z.string().trim().max(64).optional(),
-  author: z.string().trim().max(64).optional(),
+  themeId: z.string().uuid().optional(),
+  tagId: z.string().uuid().optional(),
+  authorId: z.string().uuid().optional(),
   sort: z.enum(["recent", "top"]).default("recent"),
   cursor: z.string().trim().max(128).nullish(),
   limit: z.coerce.number().int().min(1).max(50).default(20),
@@ -19,9 +19,9 @@ export async function GET(req: NextRequest) {
   if (limited) return limited;
 
   const parsed = querySchema.safeParse({
-    theme: req.nextUrl.searchParams.get("theme") ?? undefined,
-    tag: req.nextUrl.searchParams.get("tag") ?? undefined,
-    author: req.nextUrl.searchParams.get("author") ?? undefined,
+    themeId: req.nextUrl.searchParams.get("themeId") ?? undefined,
+    tagId: req.nextUrl.searchParams.get("tagId") ?? undefined,
+    authorId: req.nextUrl.searchParams.get("authorId") ?? undefined,
     sort: req.nextUrl.searchParams.get("sort") ?? "recent",
     cursor: req.nextUrl.searchParams.get("cursor"),
     limit: req.nextUrl.searchParams.get("limit") ?? undefined,
@@ -32,9 +32,9 @@ export async function GET(req: NextRequest) {
   const blockedAuthorIds = viewer ? (await getInteractionState(viewer.id)).blockedUserIds : [];
   try {
     const page = await listFeed({
-      themeSlug: parsed.data.theme,
-      tagSlug: parsed.data.tag,
-      authorUsername: parsed.data.author,
+      themeId: parsed.data.themeId,
+      tagId: parsed.data.tagId,
+      authorId: parsed.data.authorId,
       sort: parsed.data.sort,
       cursor: parsed.data.cursor ?? null,
       limit: parsed.data.limit,

@@ -50,8 +50,8 @@ export async function POST(req: NextRequest) {
     contentJson: cleanJson,
     contentText,
     visibility: body.data.visibility,
-    themeSlugs: body.data.themeSlugs,
-    tagSlugs: body.data.tagSlugs,
+    themeIds: body.data.themeIds,
+    tagIds: body.data.tagIds,
     heroImageUrl: body.data.heroImageUrl,
     commentsEnabled: body.data.commentsEnabled,
   });

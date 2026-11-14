@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/server/auth";
 import { toggleCommentLike } from "@/lib/server/repository";
 import { badRequest, notFound, rateLimit } from "@/lib/server/http";
 
-const paramsSchema = z.object({ id: z.string().trim().min(1).max(64) });
+const paramsSchema = z.object({ id: z.string().uuid("Identifiant invalide.") });
 
 /** Bascule le « j'aime » sur un commentaire (auteur ou lecteur). */
 export async function POST(

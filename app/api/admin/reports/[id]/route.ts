@@ -5,7 +5,7 @@ import { pushAudit, setReportStatus } from "@/lib/server/repository";
 import { badRequest, notFound, parseJsonBody, rateLimit } from "@/lib/server/http";
 import { reportStatusSchema } from "@/lib/server/schemas";
 
-const paramsSchema = z.object({ id: z.string().trim().min(1).max(64) });
+const paramsSchema = z.object({ id: z.string().uuid("Identifiant invalide.") });
 
 /** Clôture un signalement (RESOLVED ou DISMISSED). */
 export async function PATCH(

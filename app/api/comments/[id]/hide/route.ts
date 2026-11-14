@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/server/auth";
 import { hideComment } from "@/lib/server/repository";
 import { badRequest, forbidden, notFound, rateLimit } from "@/lib/server/http";
 
-const paramsSchema = z.object({ id: z.string().trim().min(1).max(64) });
+const paramsSchema = z.object({ id: z.string().uuid("Identifiant invalide.") });
 
 /** Masque un commentaire (auteur du commentaire, auteur du texte, ou modération). */
 export async function POST(

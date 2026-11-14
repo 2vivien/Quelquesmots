@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/server/auth";
 import { getPostById, getSettings, publishPost } from "@/lib/server/repository";
 import { badRequest, notFound, rateLimit, jsonError } from "@/lib/server/http";
 
-const paramsSchema = z.object({ id: z.string().trim().min(1).max(64) });
+const paramsSchema = z.object({ id: z.string().uuid("Identifiant invalide.") });
 
 /** Publie un brouillon après validation serveur (limites du site + quotidien). */
 export async function POST(
@@ -34,10 +34,10 @@ export async function POST(
   if (bodyLength > settings.maxChars) {
     return badRequest(`Votre texte dépasse la limite de ${settings.maxChars} caractères.`);
   }
-  if (draft.themeSlugs.length < 1) {
+  if (draft.themeIds.length < 1) {
     return badRequest("Choisissez au moins 1 thème.");
   }
-  if (draft.themeSlugs.length > settings.maxTags) {
+  if (draft.themeIds.length > settings.maxTags) {
     return badRequest(`Maximum ${settings.maxTags} thèmes.`);
   }
   const published = await publishPost(draft.id, auth.user.id, settings.dailyPublishLimit);

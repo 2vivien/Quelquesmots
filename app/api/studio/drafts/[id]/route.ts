@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/server/auth";
 import { deletePost } from "@/lib/server/repository";
 import { badRequest, notFound, rateLimit } from "@/lib/server/http";
 
-const paramsSchema = z.object({ id: z.string().trim().min(1).max(64) });
+const paramsSchema = z.object({ id: z.string().uuid("Identifiant invalide.") });
 
 /** Supprime (logiquement) un texte : auteur du texte, ou administrateur. */
 export async function DELETE(

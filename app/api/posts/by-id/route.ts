@@ -5,7 +5,7 @@ import { getPostsByIds } from "@/lib/server/repository";
 import { badRequest, clientIp, rateLimit } from "@/lib/server/http";
 
 const querySchema = z.object({
-  ids: z.array(z.string().trim().min(1).max(64)).min(1).max(100),
+  ids: z.array(z.string().uuid("Identifiant invalide.")).min(1).max(100),
 });
 
 /** Charge jusqu'à 100 textes visibles en une requête, notamment pour la bibliothèque. */

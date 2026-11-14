@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/server/auth";
 import { findUserById, toggleBlockUser } from "@/lib/server/repository";
 import { badRequest, notFound, rateLimit } from "@/lib/server/http";
 
-const paramsSchema = z.object({ id: z.string().trim().min(1).max(64) });
+const paramsSchema = z.object({ id: z.string().uuid("Identifiant invalide.") });
 
 /** Bloque/débloque un auteur (masque ses textes dans votre mur). */
 export async function POST(

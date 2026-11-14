@@ -14,19 +14,18 @@ export function useLibrary() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const { data: interactions } = useInteractionState();
+  const bookmarkedIds = interactions?.bookmarkedIds ?? [];
 
   const draftsQuery = useQuery({
     queryKey: ["library", "drafts", user?.id ?? "guest"],
     queryFn: () => (user ? postsService.listDrafts(user.id) : Promise.resolve([])),
+    enabled: Boolean(user),
   });
 
   const bookmarksQuery = useQuery({
-    queryKey: ["library", "bookmarks", interactions?.bookmarkedIds ?? []],
-    queryFn: async () => {
-      const ids = interactions?.bookmarkedIds ?? [];
-      const resolved = await Promise.all(ids.map((id) => postsService.getById(id)));
-      return resolved.filter((p): p is NonNullable<typeof p> => p !== null);
-    },
+    queryKey: ["library", "bookmarks", user?.id ?? "guest", bookmarkedIds],
+    queryFn: () => postsService.getByIds(bookmarkedIds),
+    enabled: Boolean(user && interactions),
   });
 
   const deleteDraft = useMutation({
@@ -41,7 +40,7 @@ export function useLibrary() {
   return {
     drafts: draftsQuery.data ?? [],
     bookmarks: bookmarksQuery.data ?? [],
-    isLoading: draftsQuery.isLoading,
+    isLoading: draftsQuery.isLoading || bookmarksQuery.isLoading,
     deleteDraft,
   };
 }

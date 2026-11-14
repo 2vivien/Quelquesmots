@@ -13,7 +13,7 @@ export async function GET(
   const parsed = paramsSchema.safeParse(await context.params);
   if (!parsed.success) return badRequest("Identifiant invalide.");
   const key = parsed.data.id;
-  const theme = getThemeById(key) ?? getThemeBySlug(key);
+  const theme = await getThemeById(key) ?? await getThemeBySlug(key);
   if (!theme) return notFound("Thème introuvable.");
   return NextResponse.json({ theme });
 }

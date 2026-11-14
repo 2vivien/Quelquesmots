@@ -31,15 +31,26 @@ const SIGNATURES: Array<{ ext: string; type: string; matches: (b: Buffer) => boo
 
 const FILE_NAME = /^avatar-[0-9a-f-]{36}\.(jpg|png|webp)$/;
 
-/** Valide et enregistre une photo de profil ; renvoie son URL publique, ou `null` si le contenu n'est pas une image acceptée. */
-export async function saveAvatar(buffer: Buffer): Promise<{ url: string } | null> {
+/** Détecte la signature d'un fichier image ; renvoie son extension et type MIME. */
+export function matchImageBuffer(buffer: Buffer): { ext: string; type: string } | null {
   if (buffer.length === 0 || buffer.length > MAX_BYTES) return null;
   const signature = SIGNATURES.find((s) => s.matches(buffer));
-  if (!signature) return null;
+  return signature ? { ext: signature.ext, type: signature.type } : null;
+}
+
+/** Nom de fichier sûr pour un upload (UUID). */
+export function newAvatarFilename(ext: string): string {
+  return `avatar-${randomUUID()}.${ext}`;
+}
+
+/** Valide et enregistre une photo de profil ; renvoie son URL publique, ou `null` si le contenu n'est pas une image acceptée. */
+export async function saveAvatar(buffer: Buffer): Promise<{ url: string; file: string } | null> {
+  const match = matchImageBuffer(buffer);
+  if (!match) return null;
   await mkdir(UPLOAD_DIR, { recursive: true });
-  const file = `avatar-${randomUUID()}.${signature.ext}`;
+  const file = newAvatarFilename(match.ext);
   await writeFile(path.join(UPLOAD_DIR, file), buffer);
-  return { url: `/api/uploads/${file}` };
+  return { url: `/api/uploads/${file}`, file };
 }
 
 /** Relit un fichier uploadé avec un nom strictement validé (anti-traversée). */

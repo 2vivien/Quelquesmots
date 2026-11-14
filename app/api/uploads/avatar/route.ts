@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/server/auth";
-import { saveAvatar } from "@/lib/server/uploads";
+import { saveAvatar, matchImageBuffer, newAvatarFilename } from "@/lib/server/uploads";
+import { s3Configured, s3PutObject } from "@/lib/server/s3";
 import { badRequest, rateLimit } from "@/lib/server/http";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 
-/** Upload d'une photo de profil (JPEG/PNG/WebP, 5 Mo max). */
+/** Upload d'une photo de profil (JPEG/PNG/WebP, 5 Mo max) — stockée sur S3 si configuré, sinon sur disque. */
 export async function POST(req: NextRequest) {
   const auth = requireUser(req);
   if (!auth.ok) return auth.response;
@@ -22,7 +23,14 @@ export async function POST(req: NextRequest) {
   if (file.size === 0) return badRequest("Fichier vide.");
   if (file.size > MAX_BYTES) return badRequest("Image trop lourde : 5 Mo maximum.");
   const buffer = Buffer.from(await file.arrayBuffer());
+  const match = matchImageBuffer(buffer);
+  if (!match) return badRequest("Format non supporté : JPEG, PNG ou WebP uniquement.");
+
+  if (s3Configured()) {
+    const key = newAvatarFilename(match.ext);
+    await s3PutObject(key, buffer, match.type);
+    return NextResponse.json({ url: `/api/uploads/${key}` }, { status: 201 });
+  }
   const saved = await saveAvatar(buffer);
-  if (!saved) return badRequest("Format non supporté : JPEG, PNG ou WebP uniquement.");
-  return NextResponse.json({ url: saved.url }, { status: 201 });
+  return NextResponse.json({ url: saved!.url }, { status: 201 });
 }

@@ -3,7 +3,6 @@ import type { PostStatus, PublishAs, TiptapDoc, Visibility } from "@/types";
 /** Enregistrement complet d'un texte court ou brouillon. */
 export interface PostRecord {
   id: string;
-  slug: string;
   title: string;
   excerpt: string;
   contentJson: TiptapDoc;
@@ -16,8 +15,9 @@ export interface PostRecord {
   publishAs: PublishAs;
   visibility: Visibility;
   status: PostStatus;
-  themeSlugs: string[];
-  tagSlugs: string[];
+  themeIds: string[];
+  tagIds: string[];
+  tagLabels: string[];
   heroImageUrl: string;
   commentsEnabled: boolean;
   viewCount: number;
@@ -35,9 +35,9 @@ export type PostSummary = Omit<PostRecord, "contentJson" | "contentText">;
 
 /** Critères de requête pour le mur et les listes paginées. */
 export interface FeedQuery {
-  themeSlug?: string;
-  tagSlug?: string;
-  authorUsername?: string;
+  themeId?: string;
+  tagId?: string;
+  authorId?: string;
   sort?: "recent" | "top";
   cursor?: string | null;
   limit?: number;
@@ -54,7 +54,6 @@ export interface FeedPage {
 /** Contrat du service des textes. */
 export interface PostsService {
   listFeed(query: FeedQuery): Promise<FeedPage>;
-  getBySlug(slug: string, viewerId?: string | null): Promise<PostRecord | null>;
   getById(id: string): Promise<PostRecord | null>;
   getByIds(ids: string[]): Promise<PostSummary[]>;
   listRelated(post: PostRecord, viewerId?: string | null): Promise<PostSummary[]>;

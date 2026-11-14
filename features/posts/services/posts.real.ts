@@ -20,22 +20,15 @@ async function throwRequestError(res: Response, fallback: string): Promise<never
 export const postsReal: PostsService = {
   async listFeed(query: FeedQuery): Promise<FeedPage> {
     const params = new URLSearchParams();
-    if (query.themeSlug) params.set("theme", query.themeSlug);
-    if (query.tagSlug) params.set("tag", query.tagSlug);
-    if (query.authorUsername) params.set("author", query.authorUsername);
+    if (query.themeId) params.set("themeId", query.themeId);
+    if (query.tagId) params.set("tagId", query.tagId);
+    if (query.authorId) params.set("authorId", query.authorId);
     if (query.sort) params.set("sort", query.sort);
     if (query.cursor) params.set("cursor", query.cursor);
     if (query.limit !== undefined) params.set("limit", String(query.limit));
     const res = await fetch(apiUrl(`/api/posts?${params.toString()}`));
     if (!res.ok) return throwRequestError(res, "Impossible de charger les publications.");
     return (await res.json()) as FeedPage;
-  },
-  async getBySlug(slug: string): Promise<PostRecord | null> {
-    const res = await fetch(apiUrl(`/api/posts/${encodeURIComponent(slug)}`));
-    if (res.status === 404) return null;
-    if (!res.ok) return throwRequestError(res, "Impossible de charger ce texte.");
-    const data = (await res.json()) as { post: PostRecord | null };
-    return data.post;
   },
   async getById(id: string): Promise<PostRecord | null> {
     const res = await fetch(apiUrl(`/api/posts/by-id/${encodeURIComponent(id)}`));

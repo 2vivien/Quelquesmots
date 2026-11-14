@@ -10,9 +10,9 @@ export function ThemePicker({ selected, onChange }: { selected: string[]; onChan
   const [query, setQuery] = useState("");
   const needle = normalizeSearchText(query);
   const filtered = needle ? themes.filter((t) => normalizeSearchText(t.name).includes(needle)) : themes;
-  const toggle = (slug: string) => {
-    if (selected.includes(slug)) { onChange(selected.filter((s) => s !== slug)); return; }
-    if (selected.length < 5) onChange([...selected, slug]);
+  const toggle = (id: string) => {
+    if (selected.includes(id)) { onChange(selected.filter((s) => s !== id)); return; }
+    if (selected.length < 5) onChange([...selected, id]);
   };
 
   return (
@@ -25,18 +25,18 @@ export function ThemePicker({ selected, onChange }: { selected: string[]; onChan
       </div>
       {selected.length > 0 ? (
         <div className="flex flex-wrap gap-1.5">
-          {selected.map((slug) => (
-            <button key={slug} type="button" onClick={() => toggle(slug)} className="rounded-full border-[1.5px] border-bord bg-jaune px-3 py-1 font-bold text-encre shadow-[2px_2px_0_0_var(--color-encre)]">
-              {themes.find((t) => t.slug === slug)?.name ?? slug} ×
+          {selected.map((id) => (
+            <button key={id} type="button" onClick={() => toggle(id)} className="rounded-full border-[1.5px] border-bord bg-jaune px-3 py-1 font-bold text-encre shadow-[2px_2px_0_0_var(--color-encre)]">
+              {themes.find((t) => t.id === id)?.name ?? id} ×
             </button>
           ))}
         </div>
       ) : null}
       <div className="flex max-h-36 flex-wrap gap-1.5 overflow-y-auto pr-1">
         {filtered.map((t) => {
-          const active = selected.includes(t.slug);
+          const active = selected.includes(t.id);
           return (
-            <button key={t.slug} type="button" disabled={!active && selected.length >= 5} onClick={() => toggle(t.slug)} className={`rounded-full border-[1.5px] border-bord px-3 py-1 font-semibold transition-all disabled:opacity-40 ${active ? "bg-jaune text-encre shadow-[2px_2px_0_0_var(--color-encre)]" : "bg-carte text-encre hover:bg-pilule"}`}>
+            <button key={t.id} type="button" disabled={!active && selected.length >= 5} onClick={() => toggle(t.id)} className={`rounded-full border-[1.5px] border-bord px-3 py-1 font-semibold transition-all disabled:opacity-40 ${active ? "bg-jaune text-encre shadow-[2px_2px_0_0_var(--color-encre)]" : "bg-carte text-encre hover:bg-pilule"}`}>
               {t.name}
             </button>
           );

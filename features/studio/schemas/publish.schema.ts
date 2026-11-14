@@ -22,8 +22,8 @@ export const publishSchema = z.object({
     .trim()
     .min(STUDIO_LIMITS.BODY_MIN, "Votre texte doit contenir au moins 20 caractères.")
     .max(STUDIO_LIMITS.BODY_MAX, "Votre texte dépasse la limite de 50 000 caractères."),
-  themeSlugs: z
-    .array(z.string())
+  themeIds: z
+    .array(z.string().uuid())
     .min(STUDIO_LIMITS.THEMES_MIN, "Choisissez au moins 1 thème.")
     .max(STUDIO_LIMITS.THEMES_MAX, "Maximum 5 thèmes."),
   visibility: z.enum(["PUBLIC", "PRIVATE"]),

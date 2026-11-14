@@ -18,7 +18,7 @@ export default async function AuthorProfilePage({ params }: AuthorProfilePagePro
   if (!author) notFound();
 
   const { items } = await postsService.listFeed({
-    authorUsername: author.username,
+    authorId: author.userId,
     limit: 20,
     viewerId: null,
   });

@@ -10,13 +10,13 @@ interface HomePageProps {
 
 /** Page d'accueil : Mur éditorial des textes courts. */
 export default async function HomePage({ searchParams }: HomePageProps) {
-  const { theme } = await searchParams;
+  const { theme: themeId } = await searchParams;
   const initialPage = await postsService.listFeed({
-    themeSlug: theme,
+    themeId,
     sort: "recent",
     limit: 10,
     viewerId: null,
   });
 
-  return <FeedView initialTheme={theme ?? ""} initialPage={initialPage} />;
+  return <FeedView initialTheme={themeId ?? ""} initialPage={initialPage} />;
 }

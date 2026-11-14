@@ -18,11 +18,4 @@ export const themesReal: ThemesService = {
     const data = (await res.json()) as { theme: ThemeItem | null };
     return data.theme;
   },
-  async getBySlug(slug: string): Promise<ThemeItem | null> {
-    const res = await fetch(apiUrl(`/api/themes/${encodeURIComponent(slug)}`));
-    if (res.status === 404) return null;
-    if (!res.ok) throw new Error(await apiErrorMessage(res, "Impossible de charger ce thème."));
-    const data = (await res.json()) as { theme: ThemeItem | null };
-    return data.theme;
-  },
 };

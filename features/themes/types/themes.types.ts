@@ -9,14 +9,12 @@ export type ThemeCategory =
 /** Représentation d'un thème littéraire purement typographique (sans image). */
 export interface ThemeItem {
   id: string;
-  slug: string;
   name: string;
   category: ThemeCategory;
   tagline: string;
   position: number;
   postCount: number;
   tagCount: number;
-  relatedTags: string[];
   active: boolean;
 }
 
@@ -24,5 +22,4 @@ export interface ThemeItem {
 export interface ThemesService {
   listActive(query?: string): Promise<ThemeItem[]>;
   getById(id: string): Promise<ThemeItem | null>;
-  getBySlug(slug: string): Promise<ThemeItem | null>;
 }

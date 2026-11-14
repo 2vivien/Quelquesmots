@@ -25,7 +25,7 @@ export function useStudioDraft(initialDraftId?: string) {
         title: post.title === "Sans titre" ? "" : post.title,
         contentJson: post.contentJson,
         contentText: post.contentText,
-        themeSlugs: post.themeSlugs.slice(0, 5),
+        themeIds: post.themeIds.slice(0, 5),
         visibility: post.visibility === "PRIVATE" ? "PRIVATE" : "PUBLIC",
       });
     });
@@ -51,7 +51,7 @@ export function useStudioDraft(initialDraftId?: string) {
     const t = setTimeout(() => { void saveNow(); }, 1500);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.title, state.contentText, state.themeSlugs, state.visibility]);
+  }, [state.title, state.contentText, state.themeIds, state.visibility]);
 
   const applyDoc = (doc: TiptapDoc) => {
     state.setField("contentJson", doc);

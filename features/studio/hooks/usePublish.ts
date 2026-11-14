@@ -28,7 +28,7 @@ export function usePublish(saveNow: () => Promise<string | null>) {
     const parsed = publishSchema.safeParse({
       title: store.title,
       contentText: store.contentText,
-      themeSlugs: store.themeSlugs,
+      themeIds: store.themeIds,
       visibility: store.visibility,
     });
     if (!parsed.success) {

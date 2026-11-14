@@ -50,6 +50,7 @@ export default async function PostReaderPage({ params }: PostPageProps) {
   if (!post) notFound();
 
   const related = await postsService.listRelated(post, null);
+  const tagItems = post.tagIds.map((id, index) => ({ id, label: post.tagLabels[index] ?? id }));
 
   return (
     <article className="mx-auto max-w-[680px] space-y-8">
@@ -60,7 +61,7 @@ export default async function PostReaderPage({ params }: PostPageProps) {
         extraAction={<ReaderActions post={post} />}
       />
       <ReaderBody doc={post.contentJson} />
-      <TagList tags={post.tagSlugs} />
+      <TagList tags={tagItems} />
       <CommentList postId={post.id} postAuthorId={post.authorId} commentsEnabled={post.commentsEnabled} />
       <RelatedPosts posts={related} />
     </article>

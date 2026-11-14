@@ -81,9 +81,9 @@ const SEED_COMMENTS: CommentItemData[] = [
 ];
 
 const SEED_NOTIFICATIONS: NotificationItem[] = [
-  { id: "notif-1", userId: "user-emma", type: "LIKE", actorUsername: "plume.libre", actorAvatarUrl: "/images/editorial/avatar-plume.jpg", postTitle: "Les rues où l'on se croise.", postSlug: "les-rues-ou-l-on-se-croise", read: false, createdAt: ago(2) },
-  { id: "notif-2", userId: "user-emma", type: "COMMENT", actorUsername: "une.plume", actorAvatarUrl: "/images/editorial/avatar-une.jpg", postTitle: "Les rues où l'on se croise.", postSlug: "les-rues-ou-l-on-se-croise", read: false, createdAt: ago(12) },
-  { id: "notif-3", userId: "user-emma", type: "SHARE", actorUsername: "lise.mots", actorAvatarUrl: "/images/editorial/avatar-emma.jpg", postTitle: "Les rues où l'on se croise.", postSlug: "les-rues-ou-l-on-se-croise", read: true, createdAt: ago(60) },
+  { id: "notif-1", userId: "user-emma", type: "LIKE", actorUsername: "plume.libre", actorAvatarUrl: "/images/editorial/avatar-plume.jpg", postTitle: "Les rues où l'on se croise.", postId: "post-6", postSlug: "les-rues-ou-l-on-se-croise", read: false, createdAt: ago(2) },
+  { id: "notif-2", userId: "user-emma", type: "COMMENT", actorUsername: "une.plume", actorAvatarUrl: "/images/editorial/avatar-une.jpg", postTitle: "Les rues où l'on se croise.", postId: "post-6", postSlug: "les-rues-ou-l-on-se-croise", read: false, createdAt: ago(12) },
+  { id: "notif-3", userId: "user-emma", type: "SHARE", actorUsername: "lise.mots", actorAvatarUrl: "/images/editorial/avatar-emma.jpg", postTitle: "Les rues où l'on se croise.", postId: "post-6", postSlug: "les-rues-ou-l-on-se-croise", read: true, createdAt: ago(60) },
 ];
 
 const SEED_REPORTS: ReportItem[] = [
@@ -460,6 +460,7 @@ function notify(
     actorUsername: actor.username,
     actorAvatarUrl: actor.avatarUrl,
     postTitle: post.title,
+    postId: post.id,
     postSlug: post.slug,
     read: false,
     createdAt: new Date().toISOString(),
@@ -728,18 +729,18 @@ export function search(query: string, tab: SearchTab, viewerId?: string | null):
   if (tab === "all" || tab === "posts") {
     for (const p of feed.items) {
       if (isFuzzyMatch(`${p.title} ${p.excerpt} ${p.tagSlugs.join(" ")}`, query)) {
-        items.push({ id: p.id, kind: "post", title: p.title, subtitle: `Par ${p.authorUsername} · 2 min`, href: `/mots/${p.slug}`, imageUrl: p.heroImageUrl });
+        items.push({ id: p.id, kind: "post", title: p.title, subtitle: `Par ${p.authorUsername} · 2 min`, href: `/mots/${p.id}`, imageUrl: p.heroImageUrl });
       }
     }
   }
   if (tab === "all" || tab === "themes") {
     for (const t of db.themes.filter((t) => t.active && isFuzzyMatch(`${t.name} ${t.tagline}`, query))) {
-      items.push({ id: t.id, kind: "theme", title: `Thème : ${t.name}`, subtitle: `${formatCount(t.postCount)} publications`, href: `/themes/${t.slug}` });
+      items.push({ id: t.id, kind: "theme", title: `Thème : ${t.name}`, subtitle: `${formatCount(t.postCount)} publications`, href: `/themes/${t.id}` });
     }
   }
   if (tab === "all" || tab === "authors") {
     for (const a of db.authors.filter((a) => a.listedInDirectory && a.status === "ACTIVE" && isFuzzyMatch(`${a.username} ${a.bio}`, query))) {
-      items.push({ id: a.userId, kind: "author", title: a.username, subtitle: `Auteur · ${formatCount(a.postCount)} publications`, href: `/auteurs/${a.username}`, imageUrl: a.avatarUrl });
+      items.push({ id: a.userId, kind: "author", title: a.username, subtitle: `Auteur · ${formatCount(a.postCount)} publications`, href: `/auteurs/${a.userId}`, imageUrl: a.avatarUrl });
     }
   }
   if (tab === "all" || tab === "tags") {
@@ -774,6 +775,10 @@ export function listThemes(query?: string): ThemeItem[] {
     .sort((a, b) => a.position - b.position);
 }
 
+export function getThemeById(id: string): ThemeItem | null {
+  return getDb().themes.find((t) => t.id === id && t.active) ?? null;
+}
+
 export function getThemeBySlug(slug: string): ThemeItem | null {
   return getDb().themes.find((t) => t.slug === slug && t.active) ?? null;
 }
@@ -788,6 +793,15 @@ export function listAuthors(query?: string): AuthorProfile[] {
       normalizeSearchText(a.bio).includes(clean)
     );
   });
+}
+
+export function getAuthorById(id: string): AuthorProfile | null {
+  const target = id;
+  return (
+    getDb().authors.find(
+      (a) => a.userId === target && a.status === "ACTIVE",
+    ) ?? null
+  );
 }
 
 export function getAuthorByUsername(username: string): AuthorProfile | null {

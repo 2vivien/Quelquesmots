@@ -11,6 +11,7 @@ export interface NotificationItem {
   type: NotificationKind;
   actorUsername: string;
   actorAvatarUrl: string;
+  postId: string;
   postTitle: string;
   postSlug: string;
   read: boolean;

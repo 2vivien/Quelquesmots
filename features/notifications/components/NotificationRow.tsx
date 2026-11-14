@@ -26,7 +26,7 @@ interface NotificationRowProps {
 export function NotificationRow({ item, onRead }: NotificationRowProps) {
   return (
     <Link
-      href={item.postSlug ? `/mots/${item.postSlug}` : "/notifications"}
+      href={item.postId ? `/mots/${item.postId}` : "/notifications"}
       onClick={() => onRead(item.id)}
       className={`flex items-center gap-3.5 border-b border-bord py-4 transition-colors hover:bg-carte/70 ${item.read ? "opacity-75" : ""}`}
     >

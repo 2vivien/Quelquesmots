@@ -981,16 +981,35 @@ export async function addComment(input: {
 
 export async function hideComment(commentId: string, actor: AuthUser): Promise<"ok" | "not-found" | "forbidden"> {
   const db = getDatabase();
-  const row = await db.select({ id: comments.id, postId: comments.postId, authorId: comments.authorId }).from(comments).where(eq(comments.id, commentId)).limit(1);
-  if (row.length === 0) return "not-found";
-  const comment = row[0]!;
-  const postRows = await db.select({ authorId: posts.authorId }).from(posts).where(eq(posts.id, comment.postId)).limit(1);
-  const postAuthor = postRows[0]?.authorId ?? null;
-  const canHide = actor.role === "admin" || actor.id === comment.authorId || actor.id === postAuthor;
-  if (!canHide) return "forbidden";
-  await db.update(comments).set({ status: "HIDDEN_BY_AUTHOR" as const, updatedAt: new Date() }).where(eq(comments.id, commentId));
-  await adjustCounter(comment.postId, "commentCount", -1);
-  return "ok";
+  return db.transaction(async (tx) => {
+    const row = await tx
+      .select({ id: comments.id, postId: comments.postId, authorId: comments.authorId, status: comments.status })
+      .from(comments)
+      .where(eq(comments.id, commentId))
+      .for("update")
+      .limit(1);
+    if (row.length === 0) return "not-found";
+    const comment = row[0]!;
+    const postRows = await tx.select({ authorId: posts.authorId }).from(posts).where(eq(posts.id, comment.postId)).limit(1);
+    const postAuthor = postRows[0]?.authorId ?? null;
+    const canHide = actor.role === "admin" || actor.role === "moderator" || actor.id === comment.authorId || actor.id === postAuthor;
+    if (!canHide) return "forbidden";
+    // Décision éditoriale : l'auteur masque son propre commentaire ; sinon modération (admin, modérateur ou auteur du texte).
+    const nextStatus = actor.id === comment.authorId ? ("HIDDEN_BY_AUTHOR" as const) : ("HIDDEN_BY_MOD" as const);
+    // N'agit que sur une transition depuis VISIBLE : le compteur ne décrémente qu'une fois, même si l'appel est répété.
+    const updated = await tx
+      .update(comments)
+      .set({ status: nextStatus, updatedAt: new Date() })
+      .where(and(eq(comments.id, commentId), eq(comments.status, "VISIBLE")))
+      .returning({ id: comments.id });
+    if (updated.length > 0) {
+      await tx
+        .update(posts)
+        .set({ commentCount: sql`greatest(${posts.commentCount} - 1, 0)` })
+        .where(eq(posts.id, comment.postId));
+    }
+    return "ok";
+  });
 }
 
 async function insertNotification(entry: {

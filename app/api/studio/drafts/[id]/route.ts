@@ -11,14 +11,14 @@ export async function DELETE(
   req: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
-  const auth = requireUser(req);
+  const auth = await requireUser(req);
   if (!auth.ok) return auth.response;
   const limited = rateLimit(`delete-post:${auth.user.id}`, 30, 60_000);
   if (limited) return limited;
   const parsed = paramsSchema.safeParse(await context.params);
   if (!parsed.success) return badRequest("Identifiant invalide.");
   const isMod = auth.user.role === "admin";
-  const ok = deletePost(parsed.data.id, auth.user.id, isMod);
+  const ok = await deletePost(parsed.data.id, auth.user.id, isMod);
   if (!ok) return notFound("Texte introuvable.");
   return NextResponse.json({ ok: true });
 }

@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
   const q = (req.nextUrl.searchParams.get("q") ?? "").trim();
   if (q.length < 2) return NextResponse.json({ items: [] });
   if (q.length > 120) return badRequest("Recherche trop longue.");
-  const viewer = getSessionUser(req);
-  return NextResponse.json({ items: search(q, "all", viewer?.id ?? null).items.slice(0, 5) });
+  const viewer = await getSessionUser(req);
+  const result = await search(q, "all", viewer?.id ?? null);
+  return NextResponse.json({ items: result.items.slice(0, 5) });
 }

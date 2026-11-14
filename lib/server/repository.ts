@@ -1376,19 +1376,24 @@ export async function search(query: string, tab: SearchTab, viewerId?: string | 
   const items: SearchResultItem[] = [];
 
   if (tab === "all" || tab === "posts") {
-    const limit = 50;
+    const limit = 20;
+    const raw = query.trim().slice(0, 120);
+    // Recherche plein-texte française (index GIN posts_fts_fr), filtrée par visibilité.
+    const visCond = viewerId
+      ? or(eq(posts.visibility, "PUBLIC"), eq(posts.authorId, viewerId))!
+      : eq(posts.visibility, "PUBLIC");
+    // Requête brute (non normalisée) : le stemmer français gère accents et pluriels.
+    const tsvector = sql`to_tsvector('french', coalesce(${posts.title},'') || ' ' || coalesce(${posts.excerpt},'') || ' ' || coalesce(${posts.contentText},''))`;
+    const tsquery = sql`websearch_to_tsquery('french', ${raw})`;
     const postRows = await db
       .select(postColumns)
       .from(posts)
-      .where(eq(posts.status, "PUBLISHED"))
-      .orderBy(desc(posts.publishedAt))
+      .where(and(eq(posts.status, "PUBLISHED"), visCond, sql`${tsvector} @@ ${tsquery}`))
+      .orderBy(desc(sql`ts_rank(${tsvector}, ${tsquery})`), desc(posts.publishedAt))
       .limit(limit);
     const summaries = await mapSummaries(postRows);
     for (const p of summaries) {
-      if (!viewerId && p.visibility === "PRIVATE") continue;
-      if (isFuzzyMatch(`${p.title} ${p.excerpt} ${p.tagSlugs.join(" ")}`, clean)) {
-        items.push({ id: p.id, kind: "post", title: p.title, subtitle: `Par ${p.authorUsername} · 2 min`, href: `/mots/${p.id}`, imageUrl: p.heroImageUrl });
-      }
+      items.push({ id: p.id, kind: "post", title: p.title, subtitle: `Par ${p.authorUsername}`, href: `/mots/${p.id}`, imageUrl: p.heroImageUrl });
     }
   }
   if (tab === "all" || tab === "themes") {

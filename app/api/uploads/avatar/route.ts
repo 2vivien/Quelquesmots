@@ -28,8 +28,13 @@ export async function POST(req: NextRequest) {
 
   if (s3Configured()) {
     const key = newAvatarFilename(match.ext);
-    await s3PutObject(key, buffer, match.type);
-    return NextResponse.json({ url: `/api/uploads/${key}` }, { status: 201 });
+    try {
+      await s3PutObject(key, buffer, match.type);
+      return NextResponse.json({ url: `/api/uploads/${key}` }, { status: 201 });
+    } catch (err) {
+      console.error("[uploads] S3 échec, repli disque :", err instanceof Error ? err.message : String(err));
+      // Repli disque si S3 échoue (endpoint indisponible, credentials rejetés…)
+    }
   }
   const saved = await saveAvatar(buffer);
   return NextResponse.json({ url: saved!.url }, { status: 201 });

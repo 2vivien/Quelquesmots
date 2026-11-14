@@ -18,17 +18,20 @@ export async function GET(
   const type = ext === "jpg" ? "image/jpeg" : ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "application/octet-stream";
 
   if (s3Configured()) {
-    const buffer = await s3GetObject(file);
-    if (buffer) {
-      return new NextResponse(new Uint8Array(buffer), {
-        headers: {
-          "Content-Type": type,
-          "Cache-Control": "public, max-age=31536000, immutable",
-          "X-Content-Type-Options": "nosniff",
-        },
-      });
+    try {
+      const buffer = await s3GetObject(file);
+      if (buffer) {
+        return new NextResponse(new Uint8Array(buffer), {
+          headers: {
+            "Content-Type": type,
+            "Cache-Control": "public, max-age=31536000, immutable",
+            "X-Content-Type-Options": "nosniff",
+          },
+        });
+      }
+    } catch (err) {
+      console.error("[uploads] S3 GET échec, repli disque :", err instanceof Error ? err.message : String(err));
     }
-    // Repli disque si S3 ne renvoie rien
   }
   const local = await readUpload(file);
   if (!local) return notFound("Photo introuvable.");

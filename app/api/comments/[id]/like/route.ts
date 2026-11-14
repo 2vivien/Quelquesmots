@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireUser } from "@/lib/server/auth";
-import { toggleCommentLike } from "@/lib/server/store";
+import { toggleCommentLike } from "@/lib/server/repository";
 import { badRequest, notFound, rateLimit } from "@/lib/server/http";
 
 const paramsSchema = z.object({ id: z.string().trim().min(1).max(64) });

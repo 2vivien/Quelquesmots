@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/server/auth";
-import { createReport } from "@/lib/server/store";
+import { createReport } from "@/lib/server/repository";
 import { badRequest, jsonError, parseJsonBody, rateLimit } from "@/lib/server/http";
 import { reportCreateSchema } from "@/lib/server/schemas";
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/server/auth";
-import { adminModerate } from "@/lib/server/store";
+import { adminModerate } from "@/lib/server/repository";
 import { parseJsonBody, rateLimit } from "@/lib/server/http";
 import { moderateSchema } from "@/lib/server/schemas";
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/server/auth";
-import { markNotificationsRead } from "@/lib/server/store";
+import { markNotificationsRead } from "@/lib/server/repository";
 import { parseJsonBody, rateLimit } from "@/lib/server/http";
 import { notificationsReadSchema } from "@/lib/server/schemas";
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSessionUser } from "@/lib/server/auth";
-import { search } from "@/lib/server/store";
+import { search } from "@/lib/server/repository";
 import { badRequest, clientIp, rateLimit } from "@/lib/server/http";
 
 const querySchema = z.object({

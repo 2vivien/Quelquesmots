@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireUser } from "@/lib/server/auth";
-import { getPostById, getPostBySlug, toggleLike } from "@/lib/server/store";
+import { getPostById, getPostBySlug, toggleLike } from "@/lib/server/repository";
 import { canViewPost } from "@/features/posts/utils/visibility";
 import { badRequest, notFound, rateLimit } from "@/lib/server/http";
 

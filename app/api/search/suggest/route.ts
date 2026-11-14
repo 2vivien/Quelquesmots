@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/server/auth";
-import { search } from "@/lib/server/store";
+import { search } from "@/lib/server/repository";
 import { badRequest, clientIp, rateLimit } from "@/lib/server/http";
 
 /** Jusqu'à 5 suggestions mixtes dès 2 caractères. */

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getThemeById, getThemeBySlug } from "@/lib/server/store";
+import { getThemeById, getThemeBySlug } from "@/lib/server/repository";
 import { badRequest, notFound } from "@/lib/server/http";
 
 const paramsSchema = z.object({ id: z.string().trim().min(1).max(64) });

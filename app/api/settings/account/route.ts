@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/server/auth";
 import { clearSessionCookie } from "@/lib/server/session";
-import { deleteAccount } from "@/lib/server/store";
+import { deleteAccount } from "@/lib/server/repository";
 import { rateLimit } from "@/lib/server/http";
 
 /** Suppression définitive du compte courant : contenu supprimé, session invalidée. */

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { listTags } from "@/lib/server/store";
+import { listTags } from "@/lib/server/repository";
 
 /** Tags approuvés les plus utilisés. */
 export async function GET() {

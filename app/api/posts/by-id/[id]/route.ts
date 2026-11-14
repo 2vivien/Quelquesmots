@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getPostById } from "@/lib/server/store";
+import { getPostById } from "@/lib/server/repository";
 import { badRequest, notFound } from "@/lib/server/http";
 import { canViewPost } from "@/features/posts/utils/visibility";
 import { getSessionUser } from "@/lib/server/auth";

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSessionUser, requireUser } from "@/lib/server/auth";
-import { addComment, getPostById, getPostBySlug, listComments } from "@/lib/server/store";
+import { addComment, getPostById, getPostBySlug, listComments } from "@/lib/server/repository";
 import { canViewPost } from "@/features/posts/utils/visibility";
 import { badRequest, notFound, parseJsonBody, rateLimit } from "@/lib/server/http";
 import { commentCreateSchema } from "@/lib/server/schemas";

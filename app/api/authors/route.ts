@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { listAuthors } from "@/lib/server/store";
+import { listAuthors } from "@/lib/server/repository";
 
 /** Annuaire public des plumes, filtrable par `?q=`. */
 export async function GET(req: NextRequest) {

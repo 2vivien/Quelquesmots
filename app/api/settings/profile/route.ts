@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/server/auth";
-import { isUsernameAvailable, updateUserProfile } from "@/lib/server/store";
+import { isUsernameAvailable, updateUserProfile } from "@/lib/server/repository";
 import { jsonError, parseJsonBody, rateLimit } from "@/lib/server/http";
 import { profilePatchSchema } from "@/lib/server/schemas";
 

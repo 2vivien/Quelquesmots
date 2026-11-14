@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { isUsernameAvailable } from "@/lib/server/store";
+import { isUsernameAvailable } from "@/lib/server/repository";
 import { badRequest, rateLimit, clientIp } from "@/lib/server/http";
 
 const querySchema = z.object({

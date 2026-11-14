@@ -5,7 +5,7 @@ import {
   upsertDraft,
   findUserById,
   countDraftsByAuthor,
-} from "@/lib/server/store";
+} from "@/lib/server/repository";
 import { badRequest, notFound, parseJsonBody, rateLimit } from "@/lib/server/http";
 import { draftUpsertSchema } from "@/lib/server/schemas";
 import { extractPlainText, sanitizeTiptapDoc } from "@/lib/sanitize";

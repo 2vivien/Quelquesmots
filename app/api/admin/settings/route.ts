@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/server/auth";
-import { getSettings, pushAudit, updateSettings } from "@/lib/server/store";
+import { getSettings, pushAudit, updateSettings } from "@/lib/server/repository";
 import { badRequest, parseJsonBody, rateLimit } from "@/lib/server/http";
 import { siteSettingsSchema } from "@/lib/server/schemas";
 

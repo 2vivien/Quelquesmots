@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { listThemes } from "@/lib/server/store";
+import { listThemes } from "@/lib/server/repository";
 
 /** Thèmes actifs, triés par position, filtrables par `?q=`. */
 export async function GET(req: NextRequest) {

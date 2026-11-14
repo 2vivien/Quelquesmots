@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/server/auth";
-import { pushAudit, setReportStatus } from "@/lib/server/store";
+import { pushAudit, setReportStatus } from "@/lib/server/repository";
 import { badRequest, notFound, parseJsonBody, rateLimit } from "@/lib/server/http";
 import { reportStatusSchema } from "@/lib/server/schemas";
 

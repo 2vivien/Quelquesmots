@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/server/auth";
-import { getPostById, pushAudit, setModerationStatus } from "@/lib/server/store";
+import { getPostById, pushAudit, setModerationStatus } from "@/lib/server/repository";
 import { badRequest, notFound, parseJsonBody, rateLimit } from "@/lib/server/http";
 import { adminPostPatchSchema } from "@/lib/server/schemas";
 

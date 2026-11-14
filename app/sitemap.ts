@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { listFeed, listThemes } from "@/lib/server/store";
+import { listFeed, listThemes } from "@/lib/server/repository";
 import { env } from "@/lib/env";
 
 /** Génère le sitemap XML sans auto-appel HTTP pendant le pré-rendu. */

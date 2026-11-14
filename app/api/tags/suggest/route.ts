@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { suggestTagsFromText } from "@/lib/server/store";
+import { suggestTagsFromText } from "@/lib/server/repository";
 import { parseJsonBody, rateLimit } from "@/lib/server/http";
 import { tagsSuggestSchema } from "@/lib/server/schemas";
 

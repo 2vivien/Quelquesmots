@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { setSessionCookie } from "@/lib/server/session";
-import { findOrCreateGoogleUser, setAdminRoleForUser } from "@/lib/server/store";
+import { findOrCreateGoogleUser, setAdminRoleForUser } from "@/lib/server/repository";
 import { env } from "@/lib/env";
 
 const STATE_COOKIE = "qm_oauth_state";

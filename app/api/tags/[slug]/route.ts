@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getTagBySlug } from "@/lib/server/store";
+import { getTagBySlug } from "@/lib/server/repository";
 import { badRequest, notFound } from "@/lib/server/http";
 
 const paramsSchema = z.object({ slug: z.string().trim().min(1).max(64) });

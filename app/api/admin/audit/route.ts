@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/server/auth";
-import { listAudit } from "@/lib/server/store";
+import { listAudit } from "@/lib/server/repository";
 
 /** Journal d'audit administratif (200 dernières entrées). */
 export async function GET(req: NextRequest) {

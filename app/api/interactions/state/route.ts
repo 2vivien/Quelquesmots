@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/server/auth";
-import { getInteractionState } from "@/lib/server/store";
+import { getInteractionState } from "@/lib/server/repository";
 
 /** État des interactions de l'utilisateur connecté (vide pour un invité). */
 export async function GET(req: NextRequest) {

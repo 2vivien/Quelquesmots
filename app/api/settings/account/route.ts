@@ -12,6 +12,6 @@ export async function DELETE(req: NextRequest) {
   if (limited) return limited;
   await deleteAccount(auth.user.id);
   const res = NextResponse.json({ ok: true });
-  clearSessionCookie(res);
+  await clearSessionCookie(res, req);
   return res;
 }

@@ -6,7 +6,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 
 const SESSION_COOKIE = "qm_session";
-const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 jours
+const SESSION_TTL_SECONDS = 60 * 60 * 24 * 90; // 90 jours
 const DEV_FALLBACK_SECRET = "qm-dev-secret-change-me";
 
 function secret(): string {

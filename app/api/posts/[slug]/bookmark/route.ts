@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireUser } from "@/lib/server/auth";
 import { getPostById, getPostBySlug, toggleBookmark } from "@/lib/server/store";
+import { canViewPost } from "@/features/posts/utils/visibility";
 import { badRequest, notFound, rateLimit } from "@/lib/server/http";
 
 const paramsSchema = z.object({ slug: z.string().trim().min(1).max(120) });
@@ -17,7 +18,10 @@ export async function POST(
   if (limited) return limited;
   const parsed = paramsSchema.safeParse(await context.params);
   if (!parsed.success) return badRequest("Identifiant invalide.");
-  const post = getPostById(parsed.data.slug) ?? getPostBySlug(parsed.data.slug, auth.user.id);
+  const byId = getPostById(parsed.data.slug);
+  const post = byId
+    ? canViewPost(byId, auth.user.id) ? byId : null
+    : getPostBySlug(parsed.data.slug, auth.user.id);
   if (!post) return notFound("Texte introuvable.");
   const result = toggleBookmark(auth.user.id, post.id);
   if (!result) return notFound("Texte introuvable.");

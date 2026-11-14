@@ -1,21 +1,26 @@
 /**
- * Sessions signées HMAC-SHA256 pour le mode réel sans base de données.
+ * Sessions signées HMAC-SHA256.
  * Cookie `qm_session` : `base64url({ uid, exp }).base64url(signature)`.
  */
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 
 const SESSION_COOKIE = "qm_session";
-const SESSION_TTL_SECONDS = 60 * 60 * 24 * 90; // 90 jours
+const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30;
 const DEV_FALLBACK_SECRET = "qm-dev-secret-change-me";
 
 function secret(): string {
   const value = process.env.SESSION_SECRET;
-  if (value) return value;
-  if (process.env.NODE_ENV === "production") {
-    console.warn("[auth] SESSION_SECRET manquant : clé de développement utilisée. Définissez SESSION_SECRET en production.");
+  if (!value) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("SESSION_SECRET est obligatoire en production.");
+    }
+    return DEV_FALLBACK_SECRET;
   }
-  return DEV_FALLBACK_SECRET;
+  if (Buffer.byteLength(value, "utf8") < 32) {
+    throw new Error("SESSION_SECRET doit contenir au moins 32 octets.");
+  }
+  return value;
 }
 
 const base64url = (buf: Buffer): string =>

@@ -1,8 +1,8 @@
 import Link from "next/link";
-import type { PostRecord } from "@/features/posts";
+import type { PostSummary } from "@/features/posts";
 
 interface RelatedPostsProps {
-  posts: PostRecord[];
+  posts: PostSummary[];
 }
 
 /**

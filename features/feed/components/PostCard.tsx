@@ -6,12 +6,12 @@ import { motion } from "motion/react";
 import { RelativeTime } from "@/components/ui/RelativeTime";
 import { AuthorAvatar, displayAuthor } from "@/features/authors";
 import { FollowButton } from "@/features/interactions";
-import type { PostRecord } from "@/features/posts";
+import type { PostSummary } from "@/features/posts";
 import { PostMetrics } from "./PostMetrics";
 import { TagList } from "./TagList";
 
 /** Carte éditoriale d'un texte court sur le Mur avec Suivre devant la date et agrandissement à droite. */
-export function PostCard({ post }: { post: PostRecord }) {
+export function PostCard({ post }: { post: PostSummary }) {
   const author = displayAuthor({
     publishAs: post.publishAs,
     username: post.authorUsername,

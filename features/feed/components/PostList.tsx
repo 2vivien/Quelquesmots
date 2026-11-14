@@ -1,10 +1,10 @@
 "use client";
 
-import type { PostRecord } from "@/features/posts";
+import type { PostSummary } from "@/features/posts";
 import { PostCard } from "./PostCard";
 
 interface PostListProps {
-  posts: PostRecord[];
+  posts: PostSummary[];
   isLoading: boolean;
   hasMore: boolean;
   onLoadMore: () => void;

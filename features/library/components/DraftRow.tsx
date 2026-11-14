@@ -4,10 +4,10 @@ import Link from "next/link";
 import { FileText, MoreHorizontal } from "lucide-react";
 import { useState } from "react";
 import { RelativeTime } from "@/components/ui/RelativeTime";
-import type { PostRecord } from "@/features/posts";
+import type { PostSummary } from "@/features/posts";
 
 interface DraftRowProps {
-  draft: PostRecord;
+  draft: PostSummary;
   onDelete: (id: string) => void;
 }
 

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { Metadata } from "next";
 
 import { notFound } from "next/navigation";
@@ -16,6 +17,8 @@ import {
 
 export const dynamic = "force-dynamic";
 
+const getPostForId = cache((id: string) => postsService.getById(id));
+
 interface PostPageProps {
   params: Promise<{ id: string }>;
 }
@@ -23,7 +26,7 @@ interface PostPageProps {
 /** Métadonnées SEO et indexation conditionnelle (noindex pour PRIVATE). */
 export async function generateMetadata({ params }: PostPageProps): Promise<Metadata> {
   const { id } = await params;
-  const post = await postsService.getById(id);
+  const post = await getPostForId(id);
   if (!post) return { title: "Texte introuvable — Quelques mots" };
   const author = displayAuthor({
     publishAs: post.publishAs,
@@ -43,7 +46,7 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
 /** Page de lecture éditoriale d'un texte court (écran 6). */
 export default async function PostReaderPage({ params }: PostPageProps) {
   const { id } = await params;
-  const post = await postsService.getById(id);
+  const post = await getPostForId(id);
   if (!post) notFound();
 
   const related = await postsService.listRelated(post, null);

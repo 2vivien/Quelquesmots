@@ -1398,7 +1398,7 @@ export async function search(query: string, tab: SearchTab, viewerId?: string | 
     }
   }
   if (tab === "all" || tab === "themes") {
-    const rows = await db.select().from(themes).where(eq(themes.active, true)).orderBy(asc(themes.position));
+    const rows = await db.select().from(themes).where(eq(themes.active, true)).orderBy(asc(themes.position)).limit(100);
     for (const t of rows) {
       if (isFuzzyMatch(`${t.name} ${t.tagline}`, clean)) {
         items.push({ id: t.id, kind: "theme", title: `Thème : ${t.name}`, subtitle: `${formatCount(0)} publications`, href: `/themes/${t.id}` });
@@ -1410,7 +1410,8 @@ export async function search(query: string, tab: SearchTab, viewerId?: string | 
       .select(authorRowColumns)
       .from(authorProfiles)
       .innerJoin(users, eq(users.id, authorProfiles.userId))
-      .where(and(eq(authorProfiles.status, "ACTIVE"), eq(authorProfiles.listedInDirectory, true)));
+      .where(and(eq(authorProfiles.status, "ACTIVE"), eq(authorProfiles.listedInDirectory, true)))
+      .limit(50);
     for (const a of rows as unknown as AuthorRowFlat[]) {
       if (isFuzzyMatch(`${a.username} ${a.bio}`, clean)) {
         items.push({ id: a.userId, kind: "author", title: a.username, subtitle: "Auteur", href: `/auteurs/${a.userId}`, imageUrl: a.avatarUrl });
@@ -1418,7 +1419,7 @@ export async function search(query: string, tab: SearchTab, viewerId?: string | 
     }
   }
   if (tab === "all" || tab === "tags") {
-    const rows = await db.select().from(tags).where(eq(tags.status, "APPROVED"));
+    const rows = await db.select().from(tags).where(eq(tags.status, "APPROVED")).limit(100);
     for (const g of rows) {
       if (isFuzzyMatch(g.label, clean)) {
         items.push({ id: g.slug, kind: "tag", title: `#${g.label}`, subtitle: "", href: `/tags/${g.slug}` });

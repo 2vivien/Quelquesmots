@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { openAuthPopup } from "@/lib/open-auth";
 import { useAuth } from "@/features/auth";
-import { authService } from "@/features/auth/services/auth.service";
+import { authService } from "@/features/auth";
 import { profileSchema, type ProfileFormValues } from "../schemas/profile.schema";
 
 /**

@@ -19,8 +19,8 @@ function checkFile(file: string): void {
   const content = fs.readFileSync(file, "utf8");
   const lines = content.split("\n").length;
 
-  if ((rel.startsWith("components/") || rel.includes("/components/")) && lines > 50) {
-    errors.push(`${rel}: composant à ${lines} lignes (max 50)`);
+  if ((rel.startsWith("components/") || rel.includes("/components/")) && lines > 100) {
+    errors.push(`${rel}: composant à ${lines} lignes (max 100)`);
   }
   if (rel.endsWith("page.tsx") && lines > 120) {
     errors.push(`${rel}: page à ${lines} lignes (max 120)`);

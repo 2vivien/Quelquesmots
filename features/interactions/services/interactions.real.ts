@@ -1,25 +1,13 @@
+import { apiErrorMessage } from "@/lib/api-errors";
 import { apiUrl } from "@/lib/env";
 import type { InteractionState, InteractionsService } from "../types/interactions.types";
 
-const EMPTY_STATE: InteractionState = {
-  likedIds: [],
-  dislikedIds: [],
-  bookmarkedIds: [],
-  blockedUserIds: [],
-  followedUserIds: [],
-};
-
-/** Message d'erreur métier porté par le corps `{ error: { message } }` du serveur. */
+/** Message d'erreur métier porté par le corps standardisé des routes API. */
 async function readErrorMessage(res: Response, fallback: string): Promise<string> {
-  try {
-    const data = (await res.json()) as { error?: { message?: string } };
-    return data?.error?.message ?? fallback;
-  } catch {
-    return fallback;
-  }
+  return apiErrorMessage(res, fallback);
 }
 
-/** POST bascule authentifiée ; lance une erreur explicite si le serveur refuse. */
+/** Bascule authentifiée ; expose les erreurs serveur plutôt que de simuler un succès. */
 async function togglePost<T>(url: string, fallback: string): Promise<T> {
   const res = await fetch(apiUrl(url), { method: "POST" });
   if (!res.ok) throw new Error(await readErrorMessage(res, fallback));
@@ -30,7 +18,7 @@ async function togglePost<T>(url: string, fallback: string): Promise<T> {
 export const interactionsReal: InteractionsService = {
   async getUserState(): Promise<InteractionState> {
     const res = await fetch(apiUrl("/api/interactions/state"));
-    if (!res.ok) return EMPTY_STATE;
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Impossible de charger vos interactions."));
     return (await res.json()) as InteractionState;
   },
   async toggleLike(_userId: string, postId: string): Promise<{ liked: boolean }> {
@@ -44,9 +32,10 @@ export const interactionsReal: InteractionsService = {
   },
   async recordView(postId: string): Promise<boolean> {
     const res = await fetch(apiUrl(`/api/posts/${encodeURIComponent(postId)}/view`), { method: "POST" });
-    if (!res.ok) return false;
+    if (res.status === 404) return false;
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Impossible d'enregistrer cette consultation."));
     const data = (await res.json().catch(() => null)) as { counted?: boolean } | null;
-    return data?.counted ?? true;
+    return data?.counted ?? false;
   },
   async toggleBlockUser(_blockerId: string, targetUserId: string): Promise<{ blocked: boolean }> {
     return togglePost(`/api/users/${encodeURIComponent(targetUserId)}/block`, "Impossible de bloquer cet auteur.");

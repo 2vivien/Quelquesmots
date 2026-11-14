@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSessionUser, requireUser } from "@/lib/server/auth";
 import { addComment, getPostById, getPostBySlug, listComments } from "@/lib/server/store";
+import { canViewPost } from "@/features/posts/utils/visibility";
 import { badRequest, notFound, parseJsonBody, rateLimit } from "@/lib/server/http";
 import { commentCreateSchema } from "@/lib/server/schemas";
 
@@ -16,7 +17,10 @@ export async function GET(
   if (!parsed.success) return badRequest("Identifiant invalide.");
   const viewer = getSessionUser(req);
   const key = parsed.data.slug;
-  const post = getPostById(key) ?? getPostBySlug(key, viewer?.id ?? null);
+  const byId = getPostById(key);
+  const post = byId
+    ? canViewPost(byId, viewer?.id ?? null) ? byId : null
+    : getPostBySlug(key, viewer?.id ?? null);
   if (!post) return notFound("Texte introuvable.");
   return NextResponse.json({ comments: listComments(post.id, viewer?.id ?? null) });
 }
@@ -35,7 +39,10 @@ export async function POST(
   const body = await parseJsonBody(req, commentCreateSchema);
   if (!body.ok) return body.response;
   const key = parsed.data.slug;
-  const post = getPostById(key) ?? getPostBySlug(key, auth.user.id);
+  const byId = getPostById(key);
+  const post = byId
+    ? canViewPost(byId, auth.user.id) ? byId : null
+    : getPostBySlug(key, auth.user.id);
   if (!post) return notFound("Texte introuvable.");
   const created = addComment({ postId: post.id, author: auth.user, parentId: body.data.parentId ?? null, body: body.data.body });
   if (!created) return badRequest("Les commentaires sont désactivés pour ce texte.");

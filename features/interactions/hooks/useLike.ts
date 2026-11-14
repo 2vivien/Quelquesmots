@@ -8,54 +8,106 @@ import { interactionsService } from "../services/interactions.service";
 import type { InteractionState } from "../types/interactions.types";
 import { useInteractionState } from "./useInteractionState";
 
-const EMPTY_STATE: InteractionState = { likedIds: [], dislikedIds: [], bookmarkedIds: [], blockedUserIds: [], followedUserIds: [] };
+const EMPTY_STATE: InteractionState = {
+  likedIds: [],
+  dislikedIds: [],
+  bookmarkedIds: [],
+  blockedUserIds: [],
+  followedUserIds: [],
+};
 
-/** Hook optimiste gérant les réactions Like (pouce haut) et Unlike (pouce bas) avec compteurs. */
+/** Hook optimiste gérant les likes, dislikes et leurs compteurs. */
 export function useLike(postId: string, initialCount: number, initialDislikeCount = 0) {
   const { user } = useAuth();
-  const qc = useQueryClient();
+  const queryClient = useQueryClient();
   const { data } = useInteractionState();
+  const userId = user?.id ?? "guest";
+  const key = ["interactions", userId];
+  const baseline = queryClient.getQueryData<InteractionState>(["interactions-baseline", userId]);
   const liked = data?.likedIds.includes(postId) ?? false;
   const disliked = data?.dislikedIds.includes(postId) ?? false;
-  const key = ["interactions", user?.id ?? "guest"];
+  const baselineLiked = baseline?.likedIds.includes(postId) ?? false;
+  const baselineDisliked = baseline?.dislikedIds.includes(postId) ?? false;
+  const ready = !user || Boolean(data && baseline);
 
-  const likeMut = useMutation({
+  const likeMutation = useMutation({
     mutationFn: () => interactionsService.toggleLike(user!.id, postId),
     onMutate: async () => {
-      await qc.cancelQueries({ queryKey: key });
-      const prev = qc.getQueryData<InteractionState>(key);
-      qc.setQueryData<InteractionState>(key, (old) => {
-        const base = old ?? EMPTY_STATE;
-        const has = base.likedIds.includes(postId);
-        return { ...base, likedIds: has ? base.likedIds.filter((id) => id !== postId) : [...base.likedIds, postId], dislikedIds: has ? base.dislikedIds : base.dislikedIds.filter((id) => id !== postId) };
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<InteractionState>(key);
+      queryClient.setQueryData<InteractionState>(key, (current) => {
+        const state = current ?? EMPTY_STATE;
+        const alreadyLiked = state.likedIds.includes(postId);
+        return {
+          ...state,
+          likedIds: alreadyLiked
+            ? state.likedIds.filter((id) => id !== postId)
+            : [...state.likedIds, postId],
+          dislikedIds: alreadyLiked
+            ? state.dislikedIds
+            : state.dislikedIds.filter((id) => id !== postId),
+        };
       });
-      return { prev };
+      return { previous };
     },
-    onError: (_e, _v, ctx) => { if (ctx?.prev) qc.setQueryData(key, ctx.prev); toast.error("Impossible d'enregistrer votre réaction."); },
+    onError: (_error, _variables, context) => {
+      if (context?.previous) queryClient.setQueryData(key, context.previous);
+      toast.error("Impossible d'enregistrer votre réaction.");
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: key });
+      void queryClient.invalidateQueries({ queryKey: ["feed"] });
+    },
   });
 
-  const dislikeMut = useMutation({
+  const dislikeMutation = useMutation({
     mutationFn: () => interactionsService.toggleDislike(user!.id, postId),
     onMutate: async () => {
-      await qc.cancelQueries({ queryKey: key });
-      const prev = qc.getQueryData<InteractionState>(key);
-      qc.setQueryData<InteractionState>(key, (old) => {
-        const base = old ?? EMPTY_STATE;
-        const has = base.dislikedIds.includes(postId);
-        return { ...base, dislikedIds: has ? base.dislikedIds.filter((id) => id !== postId) : [...base.dislikedIds, postId], likedIds: has ? base.likedIds : base.likedIds.filter((id) => id !== postId) };
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<InteractionState>(key);
+      queryClient.setQueryData<InteractionState>(key, (current) => {
+        const state = current ?? EMPTY_STATE;
+        const alreadyDisliked = state.dislikedIds.includes(postId);
+        return {
+          ...state,
+          dislikedIds: alreadyDisliked
+            ? state.dislikedIds.filter((id) => id !== postId)
+            : [...state.dislikedIds, postId],
+          likedIds: alreadyDisliked
+            ? state.likedIds
+            : state.likedIds.filter((id) => id !== postId),
+        };
       });
-      return { prev };
+      return { previous };
     },
-    onError: (_e, _v, ctx) => { if (ctx?.prev) qc.setQueryData(key, ctx.prev); toast.error("Impossible d'enregistrer votre réaction."); },
+    onError: (_error, _variables, context) => {
+      if (context?.previous) queryClient.setQueryData(key, context.previous);
+      toast.error("Impossible d'enregistrer votre réaction.");
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: key });
+      void queryClient.invalidateQueries({ queryKey: ["feed"] });
+    },
   });
 
-  const guard = (fn: () => void) => { if (!user) { openAuthPopup(); return; } fn(); };
+  const guard = (action: () => void) => {
+    if (!user) {
+      openAuthPopup();
+      return;
+    }
+    if (!ready) {
+      toast.info("Chargement de vos interactions…");
+      return;
+    }
+    action();
+  };
+
   return {
     liked,
     disliked,
-    count: initialCount + (liked ? 1 : 0),
-    dislikeCount: initialDislikeCount + (disliked ? 1 : 0),
-    toggle: () => guard(() => !likeMut.isPending && likeMut.mutate()),
-    toggleDislike: () => guard(() => !dislikeMut.isPending && dislikeMut.mutate()),
+    count: initialCount + Number(liked) - Number(baselineLiked),
+    dislikeCount: initialDislikeCount + Number(disliked) - Number(baselineDisliked),
+    toggle: () => guard(() => !likeMutation.isPending && likeMutation.mutate()),
+    toggleDislike: () => guard(() => !dislikeMutation.isPending && dislikeMutation.mutate()),
   };
 }

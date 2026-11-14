@@ -5,7 +5,8 @@ export type ErrorCode =
   | "NOT_FOUND"
   | "RATE_LIMITED"
   | "VALIDATION"
-  | "LOCKED";
+  | "LOCKED"
+  | "INTERNAL";
 
 /** Résultat typé retourné par les actions et services. */
 export type ActionResult<T> =

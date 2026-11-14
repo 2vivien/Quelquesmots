@@ -10,20 +10,24 @@ const querySchema = z.object({
   author: z.string().trim().max(64).optional(),
   sort: z.enum(["recent", "top"]).default("recent"),
   cursor: z.string().trim().max(64).nullish(),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
 });
 
-/** Retourne une page de textes paginée par curseur (mur et filtres). */
+/** Retourne une page de textes filtrée et paginée par curseur. */
 export async function GET(req: NextRequest) {
   const limited = rateLimit(`feed:${clientIp(req)}`, 120, 60_000);
   if (limited) return limited;
+
   const parsed = querySchema.safeParse({
     theme: req.nextUrl.searchParams.get("theme") ?? undefined,
     tag: req.nextUrl.searchParams.get("tag") ?? undefined,
     author: req.nextUrl.searchParams.get("author") ?? undefined,
     sort: req.nextUrl.searchParams.get("sort") ?? "recent",
     cursor: req.nextUrl.searchParams.get("cursor"),
+    limit: req.nextUrl.searchParams.get("limit") ?? undefined,
   });
   if (!parsed.success) return badRequest("Paramètres invalides.");
+
   const viewer = getSessionUser(req);
   const blockedAuthorIds = viewer ? getInteractionState(viewer.id).blockedUserIds : [];
   const page = listFeed({
@@ -32,7 +36,7 @@ export async function GET(req: NextRequest) {
     authorUsername: parsed.data.author,
     sort: parsed.data.sort,
     cursor: parsed.data.cursor ?? null,
-    limit: 20,
+    limit: parsed.data.limit,
     viewerId: viewer?.id ?? null,
     blockedAuthorIds,
   });

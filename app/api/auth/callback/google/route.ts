@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
   const db = getDb();
   let userId = googleSubs.get(info.sub);
   let createdNew = false;
-  if (!userId) {
+  if (!userId || !db.users.some((user) => user.id === userId)) {
     const created = {
       id: `user-${info.sub.slice(0, 16)}`,
       username: `plume-${info.sub.slice(0, 8)}`,

@@ -1,7 +1,7 @@
 /**
- * Store serveur en mémoire pour le mode réel sans base de données.
- * Épinglé sur `globalThis` pour survivre aux rechargements de modules (HMR).
- * Les données sont seedées depuis `lib/server/seed/`.
+ * Store mémoire réservé au développement et aux démonstrations locales.
+ * Il survit aux rechargements HMR mais ne fournit aucune persistance multi-instance.
+ * Les données seedées ne sont jamais chargées en production.
  */
 import { createHash, randomUUID } from "node:crypto";
 import type { AuthUser } from "@/features/auth";
@@ -152,22 +152,27 @@ function seedUsers(): AuthUser[] {
 }
 
 function seedDb(): Db {
+  const demoMode = process.env.NODE_ENV !== "production";
   const bookmarks = new Map<string, Set<string>>();
-  bookmarks.set("user-emma", new Set(["post-1", "post-2"]));
   const follows = new Map<string, Set<string>>();
-  follows.set("user-emma", new Set(["user-plume"]));
+  if (demoMode) {
+    bookmarks.set("user-emma", new Set(["post-1", "post-2"]));
+    follows.set("user-emma", new Set(["user-plume"]));
+  }
   return {
-    posts: SEED_POSTS.map((p) => ({ ...p })),
-    themes: SEED_THEMES.map((t) => ({ ...t })),
-    tags: MOCK_TAGS.map((t) => ({ ...t })),
-    commentLikes: new Map(Object.entries(SEED_COMMENT_LIKES).map(([id, users]) => [id, new Set(users)])),
-    comments: SEED_COMMENTS.map((c) => ({ ...c })),
-    notifications: SEED_NOTIFICATIONS.map((n) => ({ ...n })),
-    reports: SEED_REPORTS.map((r) => ({ ...r })),
+    posts: demoMode ? SEED_POSTS.map((p) => ({ ...p })) : [],
+    themes: demoMode ? SEED_THEMES.map((t) => ({ ...t })) : [],
+    tags: demoMode ? MOCK_TAGS.map((t) => ({ ...t })) : [],
+    commentLikes: demoMode
+      ? new Map(Object.entries(SEED_COMMENT_LIKES).map(([id, users]) => [id, new Set(users)]))
+      : new Map(),
+    comments: demoMode ? SEED_COMMENTS.map((c) => ({ ...c })) : [],
+    notifications: demoMode ? SEED_NOTIFICATIONS.map((n) => ({ ...n })) : [],
+    reports: demoMode ? SEED_REPORTS.map((r) => ({ ...r })) : [],
     audit: [],
     settings: { maxChars: 50000, minChars: 20, maxTags: 5, dailyPublishLimit: 10 },
-    users: seedUsers(),
-    authors: SEED_AUTHORS.map((a) => ({ ...a })),
+    users: demoMode ? seedUsers() : [],
+    authors: demoMode ? SEED_AUTHORS.map((a) => ({ ...a })) : [],
     likes: new Map(),
     dislikes: new Map(),
     bookmarks,
@@ -226,6 +231,9 @@ export function isUsernameAvailable(username: string, exceptUserId?: string): bo
 
 /** Crée un compte de démonstration (mode sans identifiants Google). */
 export function createDemoUser(): AuthUser {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Les comptes de démonstration sont désactivés en production.");
+  }
   const db = getDb();
   const user: AuthUser = {
     id: `user-${randomUUID().slice(0, 8)}`,
@@ -317,6 +325,20 @@ export function getPostBySlug(slug: string, viewerId?: string | null): PostRecor
 
 export function getPostById(id: string): PostRecord | null {
   return getDb().posts.find((p) => p.id === id) ?? null;
+}
+
+/** Charge plusieurs publications visibles en une seule lecture logique. */
+export function getPostsByIds(ids: string[], viewerId?: string | null): PostSummary[] {
+  const requested = new Set(ids);
+  const found = new Map(
+    getDb().posts
+      .filter((post) => requested.has(post.id) && canViewPost(post, viewerId))
+      .map((post) => [post.id, post] as const),
+  );
+  return ids.flatMap((id) => {
+    const post = found.get(id);
+    return post ? [stripPostContent(post)] : [];
+  });
 }
 
 export function listRelated(post: PostRecord, viewerId?: string | null): PostSummary[] {
@@ -541,7 +563,11 @@ export function toggleBookmark(userId: string, postId: string): { bookmarked: bo
 
 /** Clé de déduplication des vues : hachée, jamais l'IP en clair. */
 export function viewerKeyFromIp(ip: string): string {
-  const salt = process.env.VIEW_HASH_SALT ?? "qm-view-salt";
+  const configuredSalt = process.env.VIEW_HASH_SALT;
+  if (process.env.NODE_ENV === "production" && (!configuredSalt || Buffer.byteLength(configuredSalt, "utf8") < 32)) {
+    throw new Error("VIEW_HASH_SALT doit être configuré avec au moins 32 octets en production.");
+  }
+  const salt = configuredSalt ?? "qm-view-salt";
   return createHash("sha256").update(`${salt}:${ip}`).digest("hex").slice(0, 16);
 }
 
@@ -871,12 +897,20 @@ export function suggestTagsFromText(text: string): string[] {
 }
 
 export function listThemes(query?: string): ThemeItem[] {
+  const db = getDb();
   const clean = normalizeSearchText(query ?? "");
-  return getDb()
-    .themes.filter((t) => t.active)
-    .filter((t) => !clean || normalizeSearchText(t.name).includes(clean) || normalizeSearchText(t.tagline).includes(clean))
+  const postCounts = new Map<string, number>();
+  for (const post of db.posts) {
+    if (post.status !== "PUBLISHED") continue;
+    for (const themeSlug of post.themeSlugs) {
+      postCounts.set(themeSlug, (postCounts.get(themeSlug) ?? 0) + 1);
+    }
+  }
+  return db.themes
+    .filter((theme) => theme.active)
+    .filter((theme) => !clean || normalizeSearchText(theme.name).includes(clean) || normalizeSearchText(theme.tagline).includes(clean))
     .sort((a, b) => a.position - b.position)
-    .map(withThemeStats);
+    .map((theme) => ({ ...theme, postCount: postCounts.get(theme.slug) ?? 0 }));
 }
 
 export function getThemeById(id: string): ThemeItem | null {
@@ -890,17 +924,33 @@ export function getThemeBySlug(slug: string): ThemeItem | null {
 }
 
 export function listAuthors(query?: string): AuthorProfile[] {
+  const db = getDb();
   const clean = normalizeSearchText(query ?? "");
-  return getDb()
-    .authors.filter((a) => {
-      if (!a.listedInDirectory || a.status !== "ACTIVE") return false;
+  const postCounts = new Map<string, number>();
+  const followerCounts = new Map<string, number>();
+
+  for (const post of db.posts) {
+    if (post.status === "PUBLISHED") {
+      postCounts.set(post.authorId, (postCounts.get(post.authorId) ?? 0) + 1);
+    }
+  }
+  for (const followedIds of db.follows.values()) {
+    for (const followedId of followedIds) {
+      followerCounts.set(followedId, (followerCounts.get(followedId) ?? 0) + 1);
+    }
+  }
+
+  return db.authors
+    .filter((author) => {
+      if (!author.listedInDirectory || author.status !== "ACTIVE") return false;
       if (!clean) return true;
-      return (
-        normalizeSearchText(a.username).includes(clean) ||
-        normalizeSearchText(a.bio).includes(clean)
-      );
+      return normalizeSearchText(author.username).includes(clean) || normalizeSearchText(author.bio).includes(clean);
     })
-    .map(withAuthorStats)
+    .map((author) => ({
+      ...author,
+      postCount: postCounts.get(author.userId) ?? 0,
+      followersCount: followerCounts.get(author.userId) ?? 0,
+    }))
     .sort((a, b) => (b.followersCount + b.postCount * 2) - (a.followersCount + a.postCount * 2));
 }
 

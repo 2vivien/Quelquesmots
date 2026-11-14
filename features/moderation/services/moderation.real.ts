@@ -1,20 +1,12 @@
+import { apiErrorMessage } from "@/lib/api-errors";
 import { apiUrl } from "@/lib/env";
 import type { ModerationService, ReportItem } from "../types/moderation.types";
-
-async function readErrorMessage(res: Response, fallback: string): Promise<string> {
-  try {
-    const data = (await res.json()) as { error?: { message?: string } };
-    return data?.error?.message ?? fallback;
-  } catch {
-    return fallback;
-  }
-}
 
 /** Implémentation réelle du service de modération via API. */
 export const moderationReal: ModerationService = {
   async listReports(): Promise<ReportItem[]> {
     const res = await fetch(apiUrl("/api/admin/reports"));
-    if (!res.ok) return [];
+    if (!res.ok) throw new Error(await apiErrorMessage(res, "Impossible de charger les signalements."));
     const data = (await res.json()) as { reports: ReportItem[] };
     return data.reports;
   },
@@ -30,9 +22,7 @@ export const moderationReal: ModerationService = {
         details: input.details,
       }),
     });
-    if (!res.ok) {
-      throw new Error(await readErrorMessage(res, "Impossible d'envoyer le signalement."));
-    }
+    if (!res.ok) throw new Error(await apiErrorMessage(res, "Impossible d'envoyer le signalement."));
     const data = (await res.json()) as { report: ReportItem };
     return data.report;
   },
@@ -42,8 +32,6 @@ export const moderationReal: ModerationService = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
     });
-    if (!res.ok) {
-      throw new Error(await readErrorMessage(res, "Impossible de traiter le signalement."));
-    }
+    if (!res.ok) throw new Error(await apiErrorMessage(res, "Impossible de traiter le signalement."));
   },
 };

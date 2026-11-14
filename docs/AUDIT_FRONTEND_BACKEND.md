@@ -66,7 +66,7 @@ Certaines routes de lecture acceptaient un identifiant interne et contournaient 
 - `next` est en version majeure 15 tandis que `eslint-config-next` est en majeure 16.
 - `next.config.ts` désactive ESLint pendant `next build`.
 - Aucun script `test` n'est défini.
-- Une CI GitHub Actions a été ajoutée sur cette branche pour exécuter typecheck, lint, conventions et build. Aucun résultat n'est encore disponible avant l'ouverture/exécution de la PR.
+- La CI GitHub Actions a été exécutée sur le commit `e2a816e470c7476db8a6f25916ba1b87c40e6dd9` : installation, TypeScript, ESLint, conventions et build de production réussis. Exécution : https://github.com/2vivien/Quelquesmots/actions/runs/43599013007.
 - Le script `scripts/check-conventions.ts` existe, mais il n'a pas pu être exécuté depuis le connecteur GitHub.
 
 ## 3. Corrections présentes sur cette branche
@@ -101,9 +101,9 @@ Certaines routes de lecture acceptaient un identifiant interne et contournaient 
 
 ## 5. Vérification
 
-Les modifications ont été enregistrées dans des commits GitHub sur cette branche. L'environnement de travail disponible ici permet de lire et modifier le dépôt via GitHub, mais pas de cloner le projet, d'installer les dépendances ou d'exécuter les commandes du dépôt. Par conséquent, **typecheck, lint, build, tests et QA navigateur ne sont pas déclarés réussis**. Ils doivent être exécutés dans un environnement de développement connecté au dépôt avant fusion.
+Les modifications ont été enregistrées sur cette branche et la CI GitHub Actions a exécuté avec succès : installation figée, typecheck, lint, conventions et build de production. Cette exécution ne remplace pas des tests unitaires/E2E ni une QA navigateur : aucun test applicatif n'est actuellement présent dans le dépôt.
 
-Commandes attendues :
+Commandes reproductibles :
 
 ```bash
 bun install --frozen-lockfile

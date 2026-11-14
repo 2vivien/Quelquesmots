@@ -1,4 +1,4 @@
-import type { PostStatus, PublishAs, TiptapDoc, UserRole, Visibility } from "../types";
+import type { TiptapDoc } from "../types";
 import {
   AnyPgColumn,
   boolean,
@@ -20,11 +20,11 @@ import { sql } from "drizzle-orm";
 const timestampColumn = (name: string) =>
   timestamp(name, { withTimezone: true, mode: "date" });
 
-export const userRoleEnum = pgEnum("user_role", ["user", "moderator", "admin"] satisfies UserRole[]);
+export const userRoleEnum = pgEnum("user_role", ["user", "moderator", "admin"]);
 export const accountStatusEnum = pgEnum("account_status", ["ACTIVE", "SUSPENDED", "BANNED"]);
-export const publishAsEnum = pgEnum("publish_as", ["USERNAME", "REAL_NAME", "ANONYMOUS"] satisfies PublishAs[]);
-export const visibilityEnum = pgEnum("post_visibility", ["PUBLIC", "PRIVATE"] satisfies Visibility[]);
-export const postStatusEnum = pgEnum("post_status", ["DRAFT", "PUBLISHED", "UNDER_REVIEW", "HIDDEN", "DELETED"] satisfies PostStatus[]);
+export const publishAsEnum = pgEnum("publish_as", ["USERNAME", "REAL_NAME", "ANONYMOUS"]);
+export const visibilityEnum = pgEnum("post_visibility", ["PUBLIC", "PRIVATE"]);
+export const postStatusEnum = pgEnum("post_status", ["DRAFT", "PUBLISHED", "UNDER_REVIEW", "HIDDEN", "DELETED"]);
 export const commentStatusEnum = pgEnum("comment_status", ["VISIBLE", "HIDDEN_BY_AUTHOR", "HIDDEN_BY_MOD", "DELETED"]);
 export const reactionTypeEnum = pgEnum("reaction_type", ["LIKE", "DISLIKE"]);
 export const tagStatusEnum = pgEnum("tag_status", ["PENDING", "APPROVED", "BLOCKED"]);

@@ -22,7 +22,7 @@ export function CommentItem({ comment, canHide, onReply, onHide }: CommentItemPr
       <div className="flex items-center justify-between text-[13px] text-muted">
         <div className="flex items-center gap-2">
           <AuthorAvatar src={comment.authorAvatarUrl} alt={comment.authorUsername} size={24} />
-          <Link href={`/auteurs/${comment.authorUsername}`} className="font-medium text-encre hover:underline">
+          <Link href={`/auteurs/${comment.authorId}`} className="font-medium text-encre hover:underline">
             {comment.authorUsername}
           </Link>
           <span>· <RelativeTime isoDate={comment.createdAt} /></span>

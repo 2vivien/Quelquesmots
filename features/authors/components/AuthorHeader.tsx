@@ -20,7 +20,7 @@ export function AuthorHeader({ author, actions }: AuthorHeaderProps) {
   }).format(new Date(author.joinedAt));
 
   return (
-    <header className="flex flex-col gap-5 border-b border-bord pb-8 sm:flex-row sm:items-start sm:justify-between">
+    <header className="flex flex-col gap-5 rounded-[20px] border-[1.5px] border-bord bg-carte p-6 shadow-[3px_3px_0_0_var(--color-encre)] sm:flex-row sm:items-start sm:justify-between">
       <div className="flex items-start gap-5">
         <AuthorAvatar src={author.avatarUrl} alt={author.username} size={88} ring />
         <div className="space-y-2">

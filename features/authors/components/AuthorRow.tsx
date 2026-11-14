@@ -15,8 +15,8 @@ interface AuthorRowProps {
 export function AuthorRow({ author }: AuthorRowProps) {
   return (
     <Link
-      href={`/auteurs/${author.username}`}
-      className="group flex items-center justify-between gap-4 border-b border-bord py-4 transition-colors hover:bg-carte/70 focus-visible:outline-none"
+      href={`/auteurs/${author.userId}`}
+      className="group flex items-center justify-between gap-4 rounded-2xl border-[1.5px] border-bord bg-carte px-4 py-4 shadow-[2px_2px_0_0_var(--color-encre)] transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_var(--color-encre)] focus-visible:outline-none"
     >
       <div className="flex min-w-0 items-center gap-3.5">
         <AuthorAvatar src={author.avatarUrl} alt={author.username} size={44} />

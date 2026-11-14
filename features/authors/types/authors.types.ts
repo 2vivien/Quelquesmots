@@ -23,11 +23,13 @@ export interface DisplayAuthorInput {
   username: string;
   firstName?: string;
   lastName?: string;
+  userId?: string;
 }
 
 /** Contrat du service des auteurs. */
 export interface AuthorsService {
   listDirectory(query?: string): Promise<AuthorProfile[]>;
+  getById(id: string): Promise<AuthorProfile | null>;
   getByUsername(username: string): Promise<AuthorProfile | null>;
   isUsernameAvailable(username: string): Promise<boolean>;
 }

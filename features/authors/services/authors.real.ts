@@ -10,6 +10,12 @@ export const authorsReal: AuthorsService = {
     const data = (await res.json()) as { authors: AuthorProfile[] };
     return data.authors;
   },
+  async getById(id: string): Promise<AuthorProfile | null> {
+    const res = await fetch(apiUrl(`/api/authors/${encodeURIComponent(id)}`));
+    if (!res.ok) return null;
+    const data = (await res.json()) as { author: AuthorProfile | null };
+    return data.author;
+  },
   async getByUsername(username: string): Promise<AuthorProfile | null> {
     const res = await fetch(apiUrl(`/api/authors/${encodeURIComponent(username)}`));
     if (!res.ok) return null;

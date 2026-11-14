@@ -16,8 +16,8 @@ export function displayAuthor(input: DisplayAuthorInput): {
   if (input.publishAs === "REAL_NAME") {
     const full = [input.firstName, input.lastName].filter(Boolean).join(" ").trim();
     if (full.length > 0) {
-      return { label: full, href: `/auteurs/${input.username}` };
+      return { label: full, href: `/auteurs/${input.userId ?? input.username}` };
     }
   }
-  return { label: input.username, href: `/auteurs/${input.username}` };
+  return { label: input.username, href: `/auteurs/${input.userId ?? input.username}` };
 }

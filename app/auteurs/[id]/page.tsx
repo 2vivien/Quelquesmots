@@ -8,13 +8,13 @@ import { postsService } from "@/features/posts";
 export const dynamic = "force-dynamic";
 
 interface AuthorProfilePageProps {
-  params: Promise<{ username: string }>;
+  params: Promise<{ id: string }>;
 }
 
 /** Profil public d'un auteur et ses publications accessibles. */
 export default async function AuthorProfilePage({ params }: AuthorProfilePageProps) {
-  const { username } = await params;
-  const author = await authorsService.getByUsername(username);
+  const { id } = await params;
+  const author = await authorsService.getById(id);
   if (!author) notFound();
 
   const { items } = await postsService.listFeed({

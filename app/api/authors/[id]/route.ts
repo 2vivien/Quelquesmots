@@ -1,18 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getAuthorByUsername } from "@/lib/server/store";
+import { getAuthorById, getAuthorByUsername } from "@/lib/server/store";
 import { badRequest, notFound } from "@/lib/server/http";
 
-const paramsSchema = z.object({ username: z.string().trim().min(1).max(64) });
+const paramsSchema = z.object({ id: z.string().trim().min(1).max(64) });
 
-/** Fiche publique d'un auteur par pseudonyme. */
+/** Fiche publique d'un auteur par id (ou pseudonyme en rétrocompatibilité). */
 export async function GET(
   _req: NextRequest,
-  context: { params: Promise<{ username: string }> },
+  context: { params: Promise<{ id: string }> },
 ) {
   const parsed = paramsSchema.safeParse(await context.params);
-  if (!parsed.success) return badRequest("Pseudonyme invalide.");
-  const author = getAuthorByUsername(decodeURIComponent(parsed.data.username));
+  if (!parsed.success) return badRequest("Identifiant invalide.");
+  const key = parsed.data.id;
+  const author = getAuthorById(key) ?? getAuthorByUsername(key);
   if (!author) return notFound("Auteur introuvable.");
   return NextResponse.json({ author });
 }

@@ -66,7 +66,7 @@ Certaines routes de lecture acceptaient un identifiant interne et contournaient 
 - `next` est en version majeure 15 tandis que `eslint-config-next` est en majeure 16.
 - `next.config.ts` désactive ESLint pendant `next build`.
 - Aucun script `test` n'est défini.
-- Aucun workflow GitHub Actions n'est configuré ou recensé dans le dépôt au moment de l'audit.
+- Une CI GitHub Actions a été ajoutée sur cette branche pour exécuter typecheck, lint, conventions et build. Aucun résultat n'est encore disponible avant l'ouverture/exécution de la PR.
 - Le script `scripts/check-conventions.ts` existe, mais il n'a pas pu être exécuté depuis le connecteur GitHub.
 
 ## 3. Corrections présentes sur cette branche
@@ -79,6 +79,8 @@ Certaines routes de lecture acceptaient un identifiant interne et contournaient 
 - Données SSR initiales conservées 30 secondes côté client afin d'éviter un re-fetch immédiat ; la page utilisateur authentifié ne réutilise pas une page SSR anonyme.
 - Chargement groupé des favoris (jusqu'à 100 textes) et réponse en résumé afin de réduire le nombre d'appels et le volume transféré.
 - Comptage des publications par thème et auteur agrégé en un seul passage.
+- Compteurs de likes/dislikes et de suivis corrigés : ils tiennent compte de l'état initial chargé, attendent le chargement de l'état utilisateur et réconcilient les listes après mutation.
+- Les comptes, publications, commentaires, notifications et signalements de démonstration ne sont plus initialisés en production ; les données de référence thèmes/tags restent statiques tant que leur persistance n'est pas migrée.
 - Erreurs HTTP des adaptateurs remontées au lieu de fausses listes vides.
 - Stockage local d'avatars interdit en production ; le stockage objet doit être configuré.
 - Configuration d'URL canonique validée ; `APP_URL` serveur est prioritaire.

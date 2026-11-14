@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { createPortal } from "react-dom";
 import { useEffect, useState } from "react";
 import {
   Bell,
@@ -57,8 +58,9 @@ export function MobileMenu() {
       <button type="button" onClick={() => setOpen(true)} aria-label="Ouvrir le menu" aria-expanded={open} className="flex h-11 w-11 items-center justify-center rounded-full border-[1.5px] border-bord bg-carte text-encre shadow-[2px_2px_0_0_var(--color-encre)] transition-colors hover:bg-pilule">
         <Menu size={20} strokeWidth={2} aria-hidden="true" />
       </button>
-      {open ? (
-        <div role="dialog" aria-modal="true" aria-label="Menu" className="fixed inset-0 z-50">
+      {open
+        ? createPortal(
+            <div role="dialog" aria-modal="true" aria-label="Menu" className="fixed inset-0 z-[70]">
           <button type="button" aria-label="Fermer le menu" onClick={() => setOpen(false)} className="absolute inset-0 bg-encre/40 backdrop-blur-sm" />
           <div className="absolute bottom-0 right-0 top-0 flex w-[85vw] max-w-sm flex-col gap-4 overflow-y-auto border-l-[1.5px] border-bord bg-ivoire p-5 shadow-[-4px_0_24px_rgba(40,37,36,0.25)]">
             <div className="flex items-center justify-between">
@@ -93,8 +95,10 @@ export function MobileMenu() {
               </div>
             )}
           </div>
-        </div>
-      ) : null}
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

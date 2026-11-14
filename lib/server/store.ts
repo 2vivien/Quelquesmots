@@ -320,7 +320,7 @@ export function getPostById(id: string): PostRecord | null {
 }
 
 /** Charge plusieurs publications visibles en une seule lecture logique. */
-export function getPostsByIds(ids: string[], viewerId?: string | null): PostRecord[] {
+export function getPostsByIds(ids: string[], viewerId?: string | null): PostSummary[] {
   const requested = new Set(ids);
   const found = new Map(
     getDb().posts
@@ -329,7 +329,7 @@ export function getPostsByIds(ids: string[], viewerId?: string | null): PostReco
   );
   return ids.flatMap((id) => {
     const post = found.get(id);
-    return post ? [post] : [];
+    return post ? [stripPostContent(post)] : [];
   });
 }
 

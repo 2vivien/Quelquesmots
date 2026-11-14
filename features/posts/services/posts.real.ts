@@ -96,7 +96,4 @@ export const postsReal: PostsService = {
     });
     if (!res.ok) return throwRequestError(res, "Impossible de mettre à jour le texte.");
   },
-  async adjustCounter(): Promise<void> {
-    return;
-  },
 };

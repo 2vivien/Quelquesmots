@@ -50,7 +50,7 @@ export const postsReal: PostsService = {
     ids.slice(0, 100).forEach((id) => params.append("id", id));
     const res = await fetch(apiUrl(`/api/posts/by-id?${params.toString()}`));
     if (!res.ok) return throwRequestError(res, "Impossible de charger la bibliothèque.");
-    const data = (await res.json()) as { posts: PostRecord[] };
+    const data = (await res.json()) as { posts: PostSummary[] };
     return data.posts;
   },
   async listRelated(post: PostRecord): Promise<PostSummary[]> {

@@ -1,26 +1,18 @@
+import { apiErrorMessage } from "@/lib/api-errors";
 import { apiUrl } from "@/lib/env";
 import type { AdminService, AuditEntry, SiteSettings } from "../types/admin.types";
-
-async function readErrorMessage(res: Response, fallback: string): Promise<string> {
-  try {
-    const data = (await res.json()) as { error?: { message?: string } };
-    return data?.error?.message ?? fallback;
-  } catch {
-    return fallback;
-  }
-}
 
 /** Implémentation réelle du service d'administration via API. */
 export const adminReal: AdminService = {
   async listAudit(): Promise<AuditEntry[]> {
     const res = await fetch(apiUrl("/api/admin/audit"));
-    if (!res.ok) return [];
+    if (!res.ok) throw new Error(await apiErrorMessage(res, "Impossible de charger le journal d'audit."));
     const data = (await res.json()) as { entries: AuditEntry[] };
     return data.entries;
   },
   async getSettings(): Promise<SiteSettings> {
     const res = await fetch(apiUrl("/api/admin/settings"));
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Paramètres indisponibles."));
+    if (!res.ok) throw new Error(await apiErrorMessage(res, "Paramètres indisponibles."));
     return (await res.json()) as SiteSettings;
   },
   async updateSettings(next: SiteSettings): Promise<SiteSettings> {
@@ -29,9 +21,7 @@ export const adminReal: AdminService = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(next),
     });
-    if (!res.ok) {
-      throw new Error(await readErrorMessage(res, "Impossible d'enregistrer les paramètres."));
-    }
+    if (!res.ok) throw new Error(await apiErrorMessage(res, "Impossible d'enregistrer les paramètres."));
     return (await res.json()) as SiteSettings;
   },
   async moderateTarget(input): Promise<void> {
@@ -40,8 +30,6 @@ export const adminReal: AdminService = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
     });
-    if (!res.ok) {
-      throw new Error(await readErrorMessage(res, "Impossible d'appliquer la décision."));
-    }
+    if (!res.ok) throw new Error(await apiErrorMessage(res, "Impossible d'appliquer la décision."));
   },
 };

@@ -28,13 +28,13 @@ export function useLike(postId: string, initialCount: number, initialDislikeCoun
   const liked = data?.likedIds.includes(postId) ?? false;
   const disliked = data?.dislikedIds.includes(postId) ?? false;
   const key = ["interactions", user?.id ?? "guest"];
+  const [baseline, setBaseline] = useState<LikeBaseline | null>(null);
   const baselineMatches = Boolean(
     baseline && baseline.postId === postId &&
     baseline.userId === (user?.id ?? null) &&
     baseline.initialCount === initialCount &&
     baseline.initialDislikeCount === initialDislikeCount
   );
-  const [baseline, setBaseline] = useState<LikeBaseline | null>(null);
 
   useEffect(() => {
     if (user && !data) return;

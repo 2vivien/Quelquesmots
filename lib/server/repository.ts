@@ -44,9 +44,6 @@ import {
   posts,
 } from "@/db/schema";
 
-const today = (): string => new Date().toISOString().slice(0, 10);
-
-type Row<T> = T extends (infer U)[] ? U : never;
 
 /** Handle de transaction Drizzle (équivalent typé de db pour les helpers internes). */
 type DbTx = Parameters<Parameters<ReturnType<typeof getDatabase>["transaction"]>[0]>[0];
@@ -182,15 +179,7 @@ async function mapSummaries(rows: PostRow[]): Promise<PostSummary[]> {
   return full.map(stripPostContent);
 }
 
-async function canViewPostWithBlocks(post: { id: string; status: string; visibility: string; authorId: string | null }, viewerId: string | null | undefined, viewerBlockedAuthorIds?: string[]): Promise<boolean> {
-  if (post.status === "DELETED" || post.status === "HIDDEN") return false;
-  const isOwner = Boolean(viewerId && viewerId === post.authorId);
-  if (post.status !== "PUBLISHED") return isOwner;
-  if (post.visibility === "PRIVATE") return isOwner;
-  return true;
-}
-
-/** ID par stable/aléatoire pour les nouveaux comptes démo. */
+/** Génère un identifiant utilisateur vérifiant l'unicité en base. */
 async function generateUserId(): Promise<string> {
   const db = getDatabase();
   // Boucle rare : collision presque impossible, avec retry préventif.
@@ -238,34 +227,6 @@ export async function isUsernameAvailable(username: string, exceptUserId?: strin
         .where(sql`lower(${authorProfiles.usernameNormalized}) = ${target}`)
         .limit(1);
   return rows.length === 0;
-}
-
-export async function createDemoUser(): Promise<AuthUser> {
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("Les comptes de démonstration sont désactivés en production.");
-  }
-  const db = getDatabase();
-  const id = await generateUserId();
-  const suffix = randomUUID().slice(0, 6);
-  const username = `lecteur-${suffix}`;
-  const avatarUrl = "/images/editorial/avatar-emma.jpg";
-  await db.transaction(async (tx) => {
-    await tx.insert(users).values({ id, email: null, role: "user", status: "ACTIVE", onboarded: false });
-    await tx.insert(authorProfiles).values({
-      userId: id,
-      username,
-      usernameNormalized: normalizeSearchText(username),
-      firstName: "",
-      lastName: "",
-      bio: "",
-      avatarUrl,
-      defaultPublishAs: "USERNAME",
-      listedInDirectory: true,
-      showJoinDate: true,
-      status: "ACTIVE",
-    });
-  });
-  return (await selectAuthUserById(id))!;
 }
 
 export async function getOAuthUserByProvider(provider: string, providerAccountId: string): Promise<string | null> {
@@ -632,21 +593,6 @@ export async function deletePost(id: string, authorId: string, isAdmin: boolean)
 export async function setModerationStatus(id: string, status: PostStatus, locked: boolean): Promise<void> {
   const db = getDatabase();
   await db.update(posts).set({ status, moderationLocked: locked, updatedAt: new Date() }).where(eq(posts.id, id));
-}
-
-export async function adjustCounter(
-  id: string,
-  field: "likeCount" | "dislikeCount" | "commentCount" | "bookmarkCount" | "viewCount",
-  delta: number,
-): Promise<void> {
-  const db = getDatabase();
-  const column = { likeCount: posts.likeCount, dislikeCount: posts.dislikeCount, commentCount: posts.commentCount, bookmarkCount: posts.bookmarkCount, viewCount: posts.viewCount }[field];
-  if (!column) return;
-  await db.update(posts).set(
-    delta >= 0
-      ? { [field]: sql`${column} + ${delta}` }
-      : { [field]: sql`greatest(${column} + ${delta}, 0)` },
-  ).where(eq(posts.id, id));
 }
 
 /* --------------------------------- Interactions --------------------------------- */

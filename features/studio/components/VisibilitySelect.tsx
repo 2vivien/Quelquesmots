@@ -18,7 +18,7 @@ export function VisibilitySelect({ value, onChange }: VisibilitySelectProps) {
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as Visibility)}
-        className="rounded-full border border-bord bg-carte px-3 py-1 text-xs font-medium text-encre focus:border-encre focus:outline-none"
+        className="rounded-full border-[1.5px] border-bord bg-carte px-3 py-1.5 text-xs font-bold text-encre focus:outline-none focus:ring-2 focus:ring-jaune"
       >
         <option value="PUBLIC">Tout le monde</option>
         <option value="PRIVATE">Privé</option>

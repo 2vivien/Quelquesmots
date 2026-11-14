@@ -32,10 +32,10 @@ export function EditorSurface({ content, onUpdate }: { content: TiptapDoc; onUpd
   if (!editor) return <div className="min-h-[260px] animate-pulse rounded-[16px] bg-pilule/40" />;
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-1 border-b border-bord pb-2">
-        <button type="button" onClick={() => editor.chain().focus().toggleBold().run()} aria-label="Gras" className={`rounded-md p-2 ${editor.isActive("bold") ? "bg-pilule text-encre" : "text-muted hover:text-encre"}`}><Bold size={16} strokeWidth={1.5} /></button>
-        <button type="button" onClick={() => editor.chain().focus().toggleItalic().run()} aria-label="Italique" className={`rounded-md p-2 ${editor.isActive("italic") ? "bg-pilule text-encre" : "text-muted hover:text-encre"}`}><Italic size={16} strokeWidth={1.5} /></button>
-        <button type="button" onClick={() => editor.chain().focus().toggleBlockquote().run()} aria-label="Citation" className={`rounded-md p-2 ${editor.isActive("blockquote") ? "bg-pilule text-encre" : "text-muted hover:text-encre"}`}><Quote size={16} strokeWidth={1.5} /></button>
+      <div className="flex items-center gap-2 border-b-[1.5px] border-bord pb-3">
+        <button type="button" onClick={() => editor.chain().focus().toggleBold().run()} aria-label="Gras" className={`rounded-xl border-[1.5px] border-bord p-2 transition-all ${editor.isActive("bold") ? "bg-jaune text-encre shadow-[2px_2px_0_0_var(--color-encre)]" : "bg-carte text-muted hover:text-encre"}`}><Bold size={16} strokeWidth={2} /></button>
+        <button type="button" onClick={() => editor.chain().focus().toggleItalic().run()} aria-label="Italique" className={`rounded-xl border-[1.5px] border-bord p-2 transition-all ${editor.isActive("italic") ? "bg-jaune text-encre shadow-[2px_2px_0_0_var(--color-encre)]" : "bg-carte text-muted hover:text-encre"}`}><Italic size={16} strokeWidth={2} /></button>
+        <button type="button" onClick={() => editor.chain().focus().toggleBlockquote().run()} aria-label="Citation" className={`rounded-xl border-[1.5px] border-bord p-2 transition-all ${editor.isActive("blockquote") ? "bg-jaune text-encre shadow-[2px_2px_0_0_var(--color-encre)]" : "bg-carte text-muted hover:text-encre"}`}><Quote size={16} strokeWidth={2} /></button>
       </div>
       <EditorContent editor={editor} />
     </div>

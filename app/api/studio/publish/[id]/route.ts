@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireUser } from "@/lib/server/auth";
-import { countPublishedToday, getPostById, getSettings, publishPost } from "@/lib/server/store";
+import { getPostById, getSettings, publishPost } from "@/lib/server/store";
 import { badRequest, notFound, rateLimit, jsonError } from "@/lib/server/http";
 
 const paramsSchema = z.object({ id: z.string().trim().min(1).max(64) });
@@ -40,10 +40,10 @@ export async function POST(
   if (draft.themeSlugs.length > settings.maxTags) {
     return badRequest(`Maximum ${settings.maxTags} thèmes.`);
   }
-  if ((await countPublishedToday(auth.user.id)) >= settings.dailyPublishLimit) {
+  const published = await publishPost(draft.id, auth.user.id, settings.dailyPublishLimit);
+  if (published === "not-found") return notFound("Brouillon introuvable.");
+  if (published === "limit") {
     return jsonError(429, "RATE_LIMITED", "Limite quotidienne de publications atteinte. Revenez demain.");
   }
-  const published = await publishPost(draft.id, auth.user.id);
-  if (!published) return notFound("Brouillon introuvable.");
   return NextResponse.json({ post: published });
 }

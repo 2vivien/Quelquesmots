@@ -583,33 +583,41 @@ async function replacePostTags(tx: unknown, postId: string, tagSlugs: string[]):
     .onConflictDoNothing({ target: [postTags.postId, postTags.tagSlug] });
 }
 
-export async function publishPost(id: string, authorId: string): Promise<PostRecord | null> {
-  const db = getDatabase();
-  const rows = await db.select(postColumns).from(posts).where(and(eq(posts.id, id), eq(posts.authorId, authorId))).limit(1);
-  if (rows.length === 0) return null;
-  const target = rows[0]!;
-  if (target.status !== "DRAFT" && target.status !== "UNDER_REVIEW") return null;
-  const slug = target.slug ?? toSlug(target.title, target.id);
-  const now = new Date();
-  const nextStatus = target.moderationLocked ? "UNDER_REVIEW" : "PUBLISHED";
-  await db.update(posts).set({
-    status: nextStatus,
-    slug,
-    publishedAt: target.publishedAt ?? now,
-    updatedAt: now,
-  }).where(eq(posts.id, id));
-  return getPostById(id);
-}
+export type PublishPostResult = "not-found" | "limit" | PostRecord;
 
-export async function countPublishedToday(authorId: string): Promise<number> {
+export async function publishPost(id: string, authorId: string, dailyLimit: number): Promise<PublishPostResult> {
   const db = getDatabase();
-  const start = new Date();
-  start.setUTCHours(0, 0, 0, 0);
-  const rows = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(posts)
-    .where(and(eq(posts.authorId, authorId), eq(posts.status, "PUBLISHED"), sql`${posts.publishedAt} >= ${start}`));
-  return rows[0]?.count ?? 0;
+  return db.transaction(async (tx) => {
+    // Verrouille la ligne utilisateur : deux publications concurrentes ne dépassent pas la limite.
+    const lockedUser = await tx.select({ id: users.id }).from(users).where(eq(users.id, authorId)).for("update").limit(1);
+    if (lockedUser.length === 0) return "not-found";
+
+    const rows = await tx.select(postColumns).from(posts).where(and(eq(posts.id, id), eq(posts.authorId, authorId))).limit(1);
+    const target = rows[0];
+    if (!target) return "not-found";
+    if (target.status !== "DRAFT" && target.status !== "UNDER_REVIEW") return "not-found";
+
+    const start = new Date();
+    start.setUTCHours(0, 0, 0, 0);
+    const publishedToday = await tx
+      .select({ count: sql<number>`count(*)::int` })
+      .from(posts)
+      .where(and(eq(posts.authorId, authorId), eq(posts.status, "PUBLISHED"), sql`${posts.publishedAt} >= ${start}`));
+    if ((publishedToday[0]?.count ?? 0) >= dailyLimit) return "limit";
+
+    const slug = target.slug ?? toSlug(target.title, target.id);
+    const now = new Date();
+    const nextStatus = target.moderationLocked ? "UNDER_REVIEW" : "PUBLISHED";
+    await tx.update(posts).set({
+      status: nextStatus,
+      slug,
+      publishedAt: target.publishedAt ?? now,
+      updatedAt: now,
+    }).where(eq(posts.id, id));
+    const updatedRows = await tx.select(postColumns).from(posts).where(eq(posts.id, id)).limit(1);
+    const [mapped] = await mapPostRowIds(updatedRows);
+    return mapped ?? "not-found";
+  });
 }
 
 export async function deletePost(id: string, authorId: string, isAdmin: boolean): Promise<boolean> {

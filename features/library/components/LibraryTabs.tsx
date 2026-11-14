@@ -12,16 +12,16 @@ interface LibraryTabsProps {
  */
 export function LibraryTabs({ active }: LibraryTabsProps) {
   return (
-    <div className="flex items-center gap-6 border-b border-bord">
+    <div className="flex items-center gap-2">
       <Link
         href="/studio/brouillons"
-        className={`border-b-2 pb-2.5 text-sm ${active === "drafts" ? "border-encre font-medium text-encre" : "border-transparent text-muted hover:text-encre"}`}
+        className={`rounded-full border-[1.5px] border-bord px-4 py-2 text-sm font-bold transition-all ${active === "drafts" ? "bg-jaune text-encre shadow-[2px_2px_0_0_var(--color-encre)]" : "bg-carte text-muted hover:text-encre"}`}
       >
         Brouillons
       </Link>
       <Link
         href="/bibliotheque"
-        className={`border-b-2 pb-2.5 text-sm ${active === "bookmarks" ? "border-encre font-medium text-encre" : "border-transparent text-muted hover:text-encre"}`}
+        className={`rounded-full border-[1.5px] border-bord px-4 py-2 text-sm font-bold transition-all ${active === "bookmarks" ? "bg-jaune text-encre shadow-[2px_2px_0_0_var(--color-encre)]" : "bg-carte text-muted hover:text-encre"}`}
       >
         Bibliothèque
       </Link>

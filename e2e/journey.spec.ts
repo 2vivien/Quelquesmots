@@ -47,9 +47,15 @@ test("une page thème s'ouvre depuis le catalogue", async ({ page }) => {
   await expect(page.locator("main, article").first()).toBeVisible({ timeout: 30_000 });
 });
 
-test("un page tag approuvé répond", async ({ page }) => {
-  const res = await page.goto("/tags/resilience");
-  expect(res?.status()).toBeLessThan(400);
+test("une page tag approuvée répond (id UUID)", async ({ page, request }) => {
+  const res = await request.get("/api/tags");
+  expect(res.ok()).toBe(true);
+  const body = (await res.json()) as { tags: Array<{ id: string; label: string }> };
+  const tag = body.tags.find((t) => t.label === "resilience") ?? body.tags[0];
+  expect(tag, "au moins un tag approuvé attendu").toBeTruthy();
+  const pageRes = await page.goto(`/tags/${tag!.id}`);
+  expect(pageRes?.status()).toBeLessThan(400);
+  await expect(page.locator("main, article").first()).toBeVisible();
 });
 
 test("le sitemap liste les URLs publiques", async ({ request }) => {

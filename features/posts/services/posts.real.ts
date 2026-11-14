@@ -44,7 +44,7 @@ export const postsReal: PostsService = {
     const data = (await res.json()) as { post: PostRecord | null };
     return data.post;
   },
-  async getByIds(ids: string[]): Promise<PostRecord[]> {
+  async getByIds(ids: string[]): Promise<PostSummary[]> {
     if (ids.length === 0) return [];
     const params = new URLSearchParams();
     ids.slice(0, 100).forEach((id) => params.append("id", id));

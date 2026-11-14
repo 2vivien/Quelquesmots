@@ -4,9 +4,9 @@ import { notFound } from "next/navigation";
 import { displayAuthor } from "@/features/authors";
 import { CommentList } from "@/features/comments";
 import { TagList } from "@/features/feed";
-import { ReportDialog } from "@/features/moderation";
 import { postsService } from "@/features/posts";
 import {
+  ReaderActions,
   ReaderBody,
   ReaderHeader,
   ReaderHero,
@@ -54,7 +54,7 @@ export default async function PostReaderPage({ params }: PostPageProps) {
       <ReaderHero imageUrl={post.heroImageUrl} alt={post.title} />
       <ReaderHeader
         post={post}
-        extraAction={<ReportDialog targetType="POST" targetId={post.id} targetLabel={post.title} />}
+        extraAction={<ReaderActions post={post} />}
       />
       <ReaderBody doc={post.contentJson} />
       <TagList tags={post.tagSlugs} />

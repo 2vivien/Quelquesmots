@@ -9,7 +9,7 @@ on:
       - "feat/**"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   quality:
-    name: Typecheck, lint, conventions, Drizzle generation and build
+    name: Typecheck, lint, conventions, Drizzle checks and build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -28,10 +28,8 @@ jobs:
         with:
           bun-version: latest
 
-      # Première génération contrôlée du lockfile. Une fois le lockfile commité,
-      # cette étape repasse à bun install --frozen-lockfile.
-      - name: Install dependencies and write Bun lockfile
-        run: bun install
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
 
       - name: TypeScript
         run: bun run typecheck
@@ -42,35 +40,10 @@ jobs:
       - name: Project conventions
         run: bun run check
 
-      - name: Generate initial Drizzle migration (schema-only, no database connection)
-        run: bun run db:generate -- --name=initial_schema
+      - name: Check Drizzle migration journal (no database connection)
+        run: bun run db:check
         env:
           DATABASE_MIGRATION_URL: postgresql://ci:ci@127.0.0.1:5432/schema_only
-
-      - name: Upload generated lockfile and SQL migration
-        uses: actions/upload-artifact@v4
-        with:
-          name: drizzle-bootstrap
-          if-no-files-found: error
-          path: |
-            bun.lock
-            db/migrations/**
-
-      - name: Verify the generated lockfile is reproducible
-        run: bun install --frozen-lockfile
-
-      - name: Commit generated lockfile and initial migration
-        if: github.event_name == 'push' && github.ref == 'refs/heads/feat/postgres-drizzle-foundation'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add bun.lock db/migrations
-          if git diff --cached --quiet; then
-            echo "Lockfile and Drizzle migration are already committed."
-            exit 0
-          fi
-          git commit -m "chore(db): add Bun lockfile and initial Drizzle migration"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
 
       - name: Production build
         run: bun run build

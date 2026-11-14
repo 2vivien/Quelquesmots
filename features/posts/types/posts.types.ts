@@ -56,7 +56,7 @@ export interface PostsService {
   listFeed(query: FeedQuery): Promise<FeedPage>;
   getBySlug(slug: string, viewerId?: string | null): Promise<PostRecord | null>;
   getById(id: string): Promise<PostRecord | null>;
-  getByIds(ids: string[]): Promise<PostRecord[]>;
+  getByIds(ids: string[]): Promise<PostSummary[]>;
   listRelated(post: PostRecord, viewerId?: string | null): Promise<PostSummary[]>;
   listDrafts(authorId: string): Promise<PostSummary[]>;
   upsertDraft(draft: Partial<PostRecord> & { authorId: string }): Promise<PostRecord>;

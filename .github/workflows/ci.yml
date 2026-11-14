@@ -9,7 +9,7 @@ on:
       - "feat/**"
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -55,6 +55,22 @@ jobs:
           path: |
             bun.lock
             db/migrations/**
+
+      - name: Verify the generated lockfile is reproducible
+        run: bun install --frozen-lockfile
+
+      - name: Commit generated lockfile and initial migration
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feat/postgres-drizzle-foundation'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add bun.lock db/migrations
+          if git diff --cached --quiet; then
+            echo "Lockfile and Drizzle migration are already committed."
+            exit 0
+          fi
+          git commit -m "chore(db): add Bun lockfile and initial Drizzle migration"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
 
       - name: Production build
         run: bun run build

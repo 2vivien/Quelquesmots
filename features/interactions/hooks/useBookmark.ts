@@ -18,6 +18,7 @@ export function useBookmark(postId: string) {
   const qc = useQueryClient();
   const { data } = useInteractionState();
   const bookmarked = data?.bookmarkedIds.includes(postId) ?? false;
+  const key = ["interactions", user?.id ?? "guest"];
 
   const mutation = useMutation({
     mutationFn: () => {
@@ -25,7 +26,7 @@ export function useBookmark(postId: string) {
       return interactionsService.toggleBookmark(user.id, postId);
     },
     onMutate: async () => {
-      const key = ["interactions", user?.id ?? "guest"];
+      await qc.cancelQueries({ queryKey: key });
       const prev = qc.getQueryData<InteractionState>(key);
       qc.setQueryData<InteractionState>(key, (old) => {
         const base = old ?? { likedIds: [], dislikedIds: [], bookmarkedIds: [], blockedUserIds: [], followedUserIds: [] };
@@ -40,18 +41,25 @@ export function useBookmark(postId: string) {
       return { prev };
     },
     onSuccess: (res) => {
-      toast.success(
-        res.bookmarked ? "Ajouté à votre bibliothèque" : "Retiré de votre bibliothèque",
-      );
+      toast.success(res.bookmarked ? "Ajouté à votre bibliothèque" : "Retiré de votre bibliothèque");
     },
-    onError: (_e, _v, ctx) => {
-      if (ctx?.prev) qc.setQueryData(["interactions", user?.id ?? "guest"], ctx.prev);
+    onError: (_error, _variables, ctx) => {
+      if (ctx?.prev) qc.setQueryData(key, ctx.prev);
+      toast.error("Impossible de mettre à jour la bibliothèque.");
+    },
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: ["library", "bookmarks"] });
+      void qc.invalidateQueries({ queryKey: ["feed"] });
     },
   });
 
   const toggle = (): void => {
     if (!user) {
       openAuthPopup();
+      return;
+    }
+    if (!data) {
+      toast.info("Chargement de vos interactions…");
       return;
     }
     if (!mutation.isPending) mutation.mutate();

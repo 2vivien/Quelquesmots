@@ -18,8 +18,8 @@ export async function GET(req: NextRequest) {
   });
   if (!parsed.success) return badRequest("Liste de textes invalide.");
 
-  const viewer = getSessionUser(req);
+  const viewer = await getSessionUser(req);
   const ids = Array.from(new Set(parsed.data.ids));
-  const posts = getPostsByIds(ids, viewer?.id ?? null);
+  const posts = await getPostsByIds(ids, viewer?.id ?? null);
   return NextResponse.json({ posts });
 }

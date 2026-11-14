@@ -14,8 +14,8 @@ export async function GET(
 ) {
   const parsed = paramsSchema.safeParse(await context.params);
   if (!parsed.success) return badRequest("Identifiant invalide.");
-  const viewer = getSessionUser(req);
-  const post = getPostById(parsed.data.id);
+  const viewer = await getSessionUser(req);
+  const post = await getPostById(parsed.data.id);
   if (!post || !canViewPost(post, viewer?.id ?? null)) return notFound("Texte introuvable.");
   return NextResponse.json({ post });
 }

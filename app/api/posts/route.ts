@@ -28,9 +28,9 @@ export async function GET(req: NextRequest) {
   });
   if (!parsed.success) return badRequest("Paramètres invalides.");
 
-  const viewer = getSessionUser(req);
-  const blockedAuthorIds = viewer ? getInteractionState(viewer.id).blockedUserIds : [];
-  const page = listFeed({
+  const viewer = await getSessionUser(req);
+  const blockedAuthorIds = viewer ? (await getInteractionState(viewer.id)).blockedUserIds : [];
+  const page = await listFeed({
     themeSlug: parsed.data.theme,
     tagSlug: parsed.data.tag,
     authorUsername: parsed.data.author,

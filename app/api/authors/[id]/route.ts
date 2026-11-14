@@ -13,7 +13,7 @@ export async function GET(
   const parsed = paramsSchema.safeParse(await context.params);
   if (!parsed.success) return badRequest("Identifiant invalide.");
   const key = parsed.data.id;
-  const author = getAuthorById(key) ?? getAuthorByUsername(key);
+  const author = await getAuthorById(key) ?? await getAuthorByUsername(key);
   if (!author) return notFound("Auteur introuvable.");
   return NextResponse.json({ author });
 }

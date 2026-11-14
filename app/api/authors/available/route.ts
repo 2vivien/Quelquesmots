@@ -15,5 +15,5 @@ export async function GET(req: NextRequest) {
     username: req.nextUrl.searchParams.get("username") ?? "",
   });
   if (!parsed.success) return badRequest("Pseudonyme invalide.");
-  return NextResponse.json({ available: isUsernameAvailable(parsed.data.username) });
+  return NextResponse.json({ available: await isUsernameAvailable(parsed.data.username) });
 }

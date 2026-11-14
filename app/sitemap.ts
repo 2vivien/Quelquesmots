@@ -3,9 +3,9 @@ import { listFeed, listThemes } from "@/lib/server/store";
 import { env } from "@/lib/env";
 
 /** Génère le sitemap XML sans auto-appel HTTP pendant le pré-rendu. */
-export default function sitemap(): MetadataRoute.Sitemap {
-  const feed = listFeed({ limit: 50, viewerId: null, sort: "recent" });
-  const themes = listThemes();
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const feed = await listFeed({ limit: 50, viewerId: null, sort: "recent" });
+  const themes = await listThemes();
   const base = env.APP_URL.replace(/\/$/, "");
 
   return [

@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { openAuthPopup } from "@/lib/open-auth";
 import { toast } from "sonner";
@@ -8,13 +7,6 @@ import { useAuth } from "@/features/auth";
 import { interactionsService } from "../services/interactions.service";
 import type { InteractionState } from "../types/interactions.types";
 import { useInteractionState } from "./useInteractionState";
-
-interface FollowBaseline {
-  userId: string | null;
-  targetUserId: string;
-  count: number;
-  following: boolean;
-}
 
 /**
  * Hook optimiste de suivi d'un auteur et calcul du nombre de suivis.
@@ -24,29 +16,15 @@ interface FollowBaseline {
  */
 export function useFollow(targetUserId: string, baseCount = 0, authorLabel?: string) {
   const { user } = useAuth();
-  const qc = useQueryClient();
+  const queryClient = useQueryClient();
   const { data } = useInteractionState();
+  const userId = user?.id ?? "guest";
+  const key = ["interactions", userId];
+  const baseline = queryClient.getQueryData<InteractionState>(["interactions-baseline", userId]);
   const isSelf = Boolean(user && user.id === targetUserId);
   const following = data?.followedUserIds.includes(targetUserId) ?? false;
-  const [baseline, setBaseline] = useState<FollowBaseline | null>(null);
-  const baselineMatches = Boolean(
-    baseline &&
-    baseline.userId === (user?.id ?? null) &&
-    baseline.targetUserId === targetUserId &&
-    baseline.count === baseCount
-  );
-
-  useEffect(() => {
-    if (user && !data) return;
-    setBaseline((current) => {
-      if (
-        current?.userId === (user?.id ?? null) &&
-        current.targetUserId === targetUserId &&
-        current.count === baseCount
-      ) return current;
-      return { userId: user?.id ?? null, targetUserId, count: baseCount, following };
-    });
-  }, [data, user, targetUserId, baseCount, following]);
+  const baselineFollowing = baseline?.followedUserIds.includes(targetUserId) ?? false;
+  const ready = !user || Boolean(data && baseline);
 
   const mutation = useMutation({
     mutationFn: () => {
@@ -54,33 +32,41 @@ export function useFollow(targetUserId: string, baseCount = 0, authorLabel?: str
       return interactionsService.toggleFollow(user.id, targetUserId);
     },
     onMutate: async () => {
-      const key = ["interactions", user?.id ?? "guest"];
-      await qc.cancelQueries({ queryKey: key });
-      const prev = qc.getQueryData<InteractionState>(key);
-      qc.setQueryData<InteractionState>(key, (old) => {
-        const base = old ?? { likedIds: [], dislikedIds: [], bookmarkedIds: [], blockedUserIds: [], followedUserIds: [] };
-        const has = base.followedUserIds.includes(targetUserId);
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<InteractionState>(key);
+      queryClient.setQueryData<InteractionState>(key, (current) => {
+        const state = current ?? {
+          likedIds: [],
+          dislikedIds: [],
+          bookmarkedIds: [],
+          blockedUserIds: [],
+          followedUserIds: [],
+        };
+        const alreadyFollowing = state.followedUserIds.includes(targetUserId);
         return {
-          ...base,
-          followedUserIds: has
-            ? base.followedUserIds.filter((id) => id !== targetUserId)
-            : [...base.followedUserIds, targetUserId],
+          ...state,
+          followedUserIds: alreadyFollowing
+            ? state.followedUserIds.filter((id) => id !== targetUserId)
+            : [...state.followedUserIds, targetUserId],
         };
       });
-      return { prev };
+      return { previous };
     },
-    onSuccess: (res) => {
+    onSuccess: (result) => {
       if (authorLabel) {
-        toast.success(res.following ? `Vous suivez ${authorLabel}` : `Vous ne suivez plus ${authorLabel}`);
+        toast.success(
+          result.following ? `Vous suivez ${authorLabel}` : `Vous ne suivez plus ${authorLabel}`,
+        );
       }
     },
-    onError: (_error, _variables, ctx) => {
-      if (ctx?.prev) qc.setQueryData(["interactions", user?.id ?? "guest"], ctx.prev);
+    onError: (_error, _variables, context) => {
+      if (context?.previous) queryClient.setQueryData(key, context.previous);
       toast.error("Impossible de mettre à jour le suivi.");
     },
     onSettled: () => {
-      void qc.invalidateQueries({ queryKey: ["authors"] });
-      void qc.invalidateQueries({ queryKey: ["feed"] });
+      void queryClient.invalidateQueries({ queryKey: key });
+      void queryClient.invalidateQueries({ queryKey: ["authors"] });
+      void queryClient.invalidateQueries({ queryKey: ["feed"] });
     },
   });
 
@@ -89,7 +75,7 @@ export function useFollow(targetUserId: string, baseCount = 0, authorLabel?: str
       openAuthPopup();
       return;
     }
-    if (!data || !baselineMatches) {
+    if (!ready) {
       toast.info("Chargement de vos interactions…");
       return;
     }
@@ -99,7 +85,7 @@ export function useFollow(targetUserId: string, baseCount = 0, authorLabel?: str
   return {
     following,
     isSelf,
-    count: baseCount + Number(following) - Number(baselineMatches ? (baseline?.following ?? following) : following),
+    count: baseCount + Number(following) - Number(baselineFollowing),
     toggle,
   };
 }

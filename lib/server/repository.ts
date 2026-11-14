@@ -1691,18 +1691,15 @@ export async function getAuthorByUsername(username: string): Promise<AuthorProfi
 
 export async function deleteAccount(userId: string): Promise<void> {
   const db = getDatabase();
-  // Posts → DELETED ; commentaires → DELETED ; profil auteur retiré ; utilisateur supprimé (cascade sessions, favoris, réactions…).
-  await db.update(posts).set({ status: "DELETED" as const, updatedAt: new Date() }).where(eq(posts.authorId, userId));
-  await db.update(comments).set({ status: "DELETED" as const, updatedAt: new Date() }).where(eq(comments.authorId, userId));
-  await db.delete(authorProfiles).where(eq(authorProfiles.userId, userId));
-  await db.delete(oauthAccounts).where(eq(oauthAccounts.userId, userId));
-  await db.delete(sessions).where(eq(sessions.userId, userId));
-  await db.delete(userFollows).where(eq(userFollows.followedId, userId));
-  await db.delete(userFollows).where(eq(userFollows.followerId, userId));
-  await db.delete(userBlocks).where(eq(userBlocks.blockedId, userId));
-  await db.delete(userBlocks).where(eq(userBlocks.blockerId, userId));
-  await db.delete(notifications).where(eq(notifications.userId, userId));
-  await db.delete(users).where(eq(users.id, userId));
+  // Tout ou rien. Les dépendances privées (profil, OAuth, sessions, suivis, blocages,
+  // réactions, favoris, likes de commentaires, notifications destinataire) sont cascadées
+  // par les FK ; les auteurs sont préservés en snapshot (posts/comments.author_id → set null),
+  // les actes d'audit et signalements sont anonymisés (set null).
+  await db.transaction(async (tx) => {
+    await tx.update(posts).set({ status: "DELETED" as const, updatedAt: new Date() }).where(eq(posts.authorId, userId));
+    await tx.update(comments).set({ status: "DELETED" as const, updatedAt: new Date() }).where(eq(comments.authorId, userId));
+    await tx.delete(users).where(eq(users.id, userId));
+  });
 }
 
 /** Nombre de brouillons d'un auteur (limite produit : 50). */

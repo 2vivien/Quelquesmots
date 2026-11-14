@@ -23,5 +23,6 @@ export interface ThemeItem {
 /** Contrat du service des thèmes. */
 export interface ThemesService {
   listActive(query?: string): Promise<ThemeItem[]>;
+  getById(id: string): Promise<ThemeItem | null>;
   getBySlug(slug: string): Promise<ThemeItem | null>;
 }

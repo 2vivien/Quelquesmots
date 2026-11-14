@@ -8,17 +8,17 @@ import { ThemeHero, themesService } from "@/features/themes";
 export const dynamic = "force-dynamic";
 
 interface ThemePageProps {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ id: string }>;
 }
 
 /** Page dédiée à un thème littéraire (écran 5). */
 export default async function ThemeDetailPage({ params }: ThemePageProps) {
-  const { slug } = await params;
-  const theme = await themesService.getBySlug(slug);
+  const { id } = await params;
+  const theme = await themesService.getById(id);
   if (!theme) notFound();
 
   const [initialPage, authors] = await Promise.all([
-    postsService.listFeed({ themeSlug: slug, sort: "recent", limit: 10, viewerId: null }),
+    postsService.listFeed({ themeSlug: theme.slug, sort: "recent", limit: 10, viewerId: null }),
     authorsService.listDirectory(),
   ]);
 
@@ -26,7 +26,7 @@ export default async function ThemeDetailPage({ params }: ThemePageProps) {
     <div className="mx-auto max-w-[880px] space-y-8">
       <ThemeHero theme={theme} />
       <ThemeDetailView
-        themeSlug={slug}
+        themeSlug={theme.slug}
         relatedTags={theme.relatedTags}
         initialPage={initialPage}
         authors={authors}

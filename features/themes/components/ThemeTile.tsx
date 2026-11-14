@@ -9,8 +9,8 @@ import type { ThemeItem } from "../types/themes.types";
 export function ThemeTile({ theme }: { theme: ThemeItem }) {
   return (
     <Link
-      href={`/themes/${theme.slug}`}
-      className="group flex flex-col justify-between rounded-[14px] border border-bord bg-carte px-4 py-3.5 transition-colors hover:border-encre/40 hover:bg-pilule/40"
+      href={`/themes/${theme.id}`}
+      className="group flex flex-col justify-between rounded-2xl border-[1.5px] border-bord bg-carte px-4 py-4 shadow-[2px_2px_0_0_var(--color-encre)] transition-all duration-150 hover:-translate-y-0.5 hover:bg-pilule hover:shadow-[4px_4px_0_0_var(--color-encre)]"
     >
       <div className="flex items-baseline justify-between gap-2">
         <span className="font-serif text-lg text-encre group-hover:underline">

@@ -10,8 +10,8 @@ import type { ThemeItem } from "../types/themes.types";
 export function ThemeRow({ theme }: { theme: ThemeItem }) {
   return (
     <Link
-      href={`/themes/${theme.slug}`}
-      className="group flex items-center justify-between gap-4 border-b border-bord py-3 transition-colors hover:bg-carte/70"
+      href={`/themes/${theme.id}`}
+      className="group flex items-center justify-between gap-4 rounded-2xl border-[1.5px] border-bord bg-carte px-4 py-3.5 shadow-[2px_2px_0_0_var(--color-encre)] transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_var(--color-encre)]"
     >
       <div className="min-w-0">
         <p className="truncate font-serif text-lg text-encre group-hover:underline">

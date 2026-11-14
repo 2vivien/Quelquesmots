@@ -24,8 +24,8 @@ export function ThemeGrid({ themes }: { themes: ThemeItem[] }) {
         if (group.length === 0) return null;
         return (
           <section key={category} className="space-y-3">
-            <h2 className="font-serif text-xl text-encre">
-              {idx + 1}. {category}
+            <h2 className="font-sans text-lg font-extrabold uppercase tracking-tight text-encre">
+              <span className="mr-2 inline-block rounded-md border-[1.5px] border-bord bg-jaune px-2 py-0.5 text-xs align-middle">{idx + 1}</span>{category}
             </h2>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {group.map((t) => <ThemeTile key={t.id} theme={t} />)}

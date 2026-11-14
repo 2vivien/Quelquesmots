@@ -10,6 +10,12 @@ export const themesReal: ThemesService = {
     const data = (await res.json()) as { themes: ThemeItem[] };
     return data.themes;
   },
+  async getById(id: string): Promise<ThemeItem | null> {
+    const res = await fetch(apiUrl(`/api/themes/${encodeURIComponent(id)}`));
+    if (!res.ok) return null;
+    const data = (await res.json()) as { theme: ThemeItem | null };
+    return data.theme;
+  },
   async getBySlug(slug: string): Promise<ThemeItem | null> {
     const res = await fetch(apiUrl(`/api/themes/${encodeURIComponent(slug)}`));
     if (!res.ok) return null;

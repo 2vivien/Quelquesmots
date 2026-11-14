@@ -31,9 +31,9 @@ export function ThemeDetailView({ themeSlug, relatedTags, initialPage, authors }
     <div className="space-y-6">
       <TagList tags={relatedTags} pill />
       <div className="flex items-center gap-6 border-b border-bord text-sm">
-        <button type="button" onClick={() => setTab("recent")} className={`border-b-2 pb-2.5 ${tab === "recent" ? "border-encre font-medium text-encre" : "border-transparent text-muted"}`}>Récents</button>
-        <button type="button" onClick={() => setTab("top")} className={`border-b-2 pb-2.5 ${tab === "top" ? "border-encre font-medium text-encre" : "border-transparent text-muted"}`}>Plus appréciés</button>
-        <button type="button" onClick={() => setTab("authors")} className={`border-b-2 pb-2.5 ${tab === "authors" ? "border-encre font-medium text-encre" : "border-transparent text-muted"}`}>Auteurs</button>
+        <button type="button" onClick={() => setTab("recent")} className={`rounded-full border-[1.5px] border-bord px-4 py-2 text-xs font-bold transition-all ${tab === "recent" ? "bg-jaune text-encre shadow-[2px_2px_0_0_var(--color-encre)]" : "bg-carte text-muted hover:text-encre"}`}>Récents</button>
+        <button type="button" onClick={() => setTab("top")} className={`rounded-full border-[1.5px] border-bord px-4 py-2 text-xs font-bold transition-all ${tab === "top" ? "bg-jaune text-encre shadow-[2px_2px_0_0_var(--color-encre)]" : "bg-carte text-muted hover:text-encre"}`}>Plus appréciés</button>
+        <button type="button" onClick={() => setTab("authors")} className={`rounded-full border-[1.5px] border-bord px-4 py-2 text-xs font-bold transition-all ${tab === "authors" ? "bg-jaune text-encre shadow-[2px_2px_0_0_var(--color-encre)]" : "bg-carte text-muted hover:text-encre"}`}>Auteurs</button>
       </div>
       {tab === "authors" ? (
         <div>{authors.map((a) => <AuthorRow key={a.userId} author={a} />)}</div>

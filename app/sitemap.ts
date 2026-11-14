@@ -14,7 +14,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/`, changeFrequency: "hourly", priority: 1 },
     { url: `${base}/themes`, changeFrequency: "weekly", priority: 0.8 },
     { url: `${base}/auteurs`, changeFrequency: "weekly", priority: 0.7 },
-    ...themes.map((t) => ({ url: `${base}/themes/${t.slug}`, priority: 0.7 })),
-    ...feed.items.map((p) => ({ url: `${base}/mots/${p.slug}`, priority: 0.8 })),
+    ...themes.map((t) => ({ url: `${base}/themes/${t.id}`, priority: 0.7 })),
+    ...feed.items.map((p) => ({ url: `${base}/mots/${p.id}`, priority: 0.8 })),
   ];
 }

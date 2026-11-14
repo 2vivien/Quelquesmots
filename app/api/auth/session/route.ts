@@ -6,5 +6,5 @@ import { rateLimit, clientIp } from "@/lib/server/http";
 export async function GET(req: NextRequest) {
   const limited = rateLimit(`session:${clientIp(req)}`, 120, 60_000);
   if (limited) return limited;
-  return NextResponse.json({ user: getSessionUser(req) });
+  return NextResponse.json({ user: await getSessionUser(req) });
 }

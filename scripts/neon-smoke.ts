@@ -6,12 +6,13 @@
  *
  *   DATABASE_URL=… tsx scripts/neon-smoke.ts
  */
+import { randomUUID } from "node:crypto";
 import { Pool } from "@neondatabase/serverless";
 import { NextRequest } from "next/server";
 import {
   addComment, adminModerate, countDraftsByAuthor, createReport, deleteAccount,
-  findOrCreateGoogleUser, getPostById, getPostBySlug, getSettings, hideComment, listFeed,
-  listNotifications, listReports, publishPost, recordView,
+  findOrCreateGoogleUser, getPostById, getSettings, hideComment, listFeed,
+  listNotifications, listReports, listTags, listThemes, publishPost, recordView,
   toggleBookmark, toggleBlockUser, toggleDislike, toggleFollow, toggleLike,
   updateSettings, updateUserProfile, upsertDraft, viewerKeyFromIp,
 } from "@/lib/server/repository";
@@ -111,12 +112,19 @@ try {
   assert("deleteSessionsForUser révoque le jeton", (await getSessionUserId(req)) === null);
 
   console.log("\n— Brouillon → publication —");
+  const themes = await listThemes("Resilience");
+  const resilienceTheme = themes.find((t) => t.name === "Résilience");
+  assert("thèmes chargés depuis Neon (Résilience trouvée)", Boolean(resilienceTheme));
+  const themeIds = resilienceTheme ? [resilienceTheme.id] : [];
+  const tags = await listTags();
+  const resilienceTag = tags.find((t) => t.label === "resilience");
+  const tagIds = resilienceTag ? [resilienceTag.id] : [];
   const draft = await upsertDraft({
     authorId: userA,
     title: `Texte de vérification ${MARK}`,
     contentText: `Corps du texte de vérification ${MARK}. Assez long pour dépasser les vingt caractères requis.`,
-    themeSlugs: ["resilience"],
-    tagSlugs: ["resilience"],
+    themeIds,
+    tagIds,
   });
   postIds.push(draft.id);
   assert("brouillon créé en DRAFT", draft.status === "DRAFT");
@@ -124,13 +132,13 @@ try {
   const settings = await getSettings();
   const published = await publishPost(draft.id, userA, settings.dailyPublishLimit);
   assert("publishPost publie (pas de retour 'limit')", typeof published === "object" && published.status === "PUBLISHED");
-  const slug = typeof published === "object" ? (published.slug ?? "") : "";
-  assert("slug généré et unique", slug.length > 0);
-  const fetched = await getPostBySlug(slug, userA);
-  assert("getPostBySlug retrouve le texte publié", fetched?.id === draft.id);
+  const publishedId = typeof published === "object" ? published.id : "";
+  assert("id uuid retourné à la publication", publishedId.length > 0);
+  const fetched = await getPostById(publishedId);
+  assert("getPostById retrouve le texte publié", fetched?.id === draft.id);
 
   console.log("\n— Feed (jointure thème réparée) —");
-  const feedTheme = await listFeed({ limit: 10, viewerId: userB, sort: "recent", themeSlug: "resilience" });
+  const feedTheme = await listFeed({ limit: 10, viewerId: userB, sort: "recent", themeId: resilienceTheme?.id });
   assert("feed filtré par thème contient le texte (régression jointure)", feedTheme.items.some((p) => p.id === draft.id));
   const feedAll = await listFeed({ limit: 10, viewerId: userA, sort: "recent" });
   assert("feed global contient le texte", feedAll.items.some((p) => p.id === draft.id));
@@ -164,7 +172,7 @@ try {
   assert("réponse de A créée", replyA.kind === "created");
   const notifB = await listNotifications(userB);
   assert("B reçoit une notification REPLY de A", notifB.some((n) => n.type === "REPLY"));
-  const badParent = await addComment({ postId: draft.id, author: { ...b.user }, parentId: "com-inexistant", body: "réponse invalide" });
+  const badParent = await addComment({ postId: draft.id, author: { ...b.user }, parentId: randomUUID(), body: "réponse invalide" });
   assert("parent inexistant → invalid-parent", badParent.kind === "invalid-parent");
   const h1 = await hideComment(commentBId, a.user);
   const mid = await getPostById(draft.id);

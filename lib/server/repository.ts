@@ -4,7 +4,7 @@
  */
 import { createHash, randomUUID } from "node:crypto";
 import { newId } from "@/lib/server/safe-id";
-import { and, desc, eq, inArray, isNull, or, sql, asc } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, notInArray, sql } from "drizzle-orm";
 import type { AuthUser } from "@/features/auth";
 import type { AuditEntry, SiteSettings } from "@/features/admin/types/admin.types";
 import type { AuthorProfile } from "@/features/authors/types/authors.types";
@@ -371,11 +371,11 @@ export async function listFeed(query: FeedQuery): Promise<FeedPage> {
   const blockedIds = query.blockedAuthorIds ?? [];
   const conditions = [eq(posts.status, "PUBLISHED")];
   if (query.themeSlug) {
-    // Jointure sur post_themes pour filtrer par thème.
+    // Jointure sur post_themes pour filtrer par thème (id de thème, pas slug).
     const sub = db
       .select({ postId: postThemes.postId })
       .from(postThemes)
-      .innerJoin(themes, eq(themes.slug, postThemes.themeId))
+      .innerJoin(themes, eq(themes.id, postThemes.themeId))
       .where(eq(themes.slug, query.themeSlug));
     conditions.push(inArray(posts.id, sub as unknown as string[]));
   }
@@ -388,7 +388,7 @@ export async function listFeed(query: FeedQuery): Promise<FeedPage> {
     conditions.push(sql`lower(author_username) = ${target}`);
   }
   if (blockedIds.length > 0) {
-    conditions.push(sql`${posts.authorId} NOT IN (${sql.join(blockedIds.map((id) => sql`${id}`), sql`, `)})`);
+    conditions.push(notInArray(posts.authorId, blockedIds));
   }
   const where = conditions.length === 1 ? conditions[0] : and(...conditions);
   const rows = query.sort === "top"

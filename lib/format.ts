@@ -4,7 +4,15 @@
  * @returns Chaîne formatée pour l'affichage.
  */
 export function formatCount(count: number): string {
-  if (count >= 1000) {
+  if (count >= 1_000_000_000) {
+    const md = (count / 1_000_000_000).toFixed(1).replace(".", ",").replace(",0", "");
+    return `${md} Md`;
+  }
+  if (count >= 1_000_000) {
+    const m = (count / 1_000_000).toFixed(1).replace(".", ",").replace(",0", "");
+    return `${m} M`;
+  }
+  if (count >= 1_000) {
     const k = (count / 1000).toFixed(1).replace(".", ",").replace(",0", "");
     return `${k}k`;
   }

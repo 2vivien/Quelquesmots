@@ -8,8 +8,8 @@ import {
   PenLine,
   Settings,
   Shield,
-  Users,
 } from "lucide-react";
+import { IconUserSquare } from "@tabler/icons-react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/features/auth";
 import { UserMenu } from "./UserMenu";
@@ -56,7 +56,7 @@ export function Sidebar() {
       <nav className="flex flex-col gap-2" aria-label="Sections">
         <NavRow href="/" label="Le mur" Icon={Home} active={is("/")} />
         <NavRow href="/themes" label="Thèmes" Icon={Hash} active={is("/themes")} />
-        <NavRow href="/auteurs" label="Auteurs" Icon={Users} active={is("/auteurs")} />
+        <NavRow href="/auteurs" label="Auteurs" Icon={IconUserSquare} active={is("/auteurs")} />
       </nav>
       {user ? (
         <nav className="flex flex-col gap-2" aria-label="Mon compte">

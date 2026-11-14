@@ -12,7 +12,7 @@ export async function GET(
 ) {
   const parsed = paramsSchema.safeParse(await context.params);
   if (!parsed.success) return badRequest("Slug invalide.");
-  const tag = getTagBySlug(parsed.data.slug);
+  const tag = await getTagBySlug(parsed.data.slug);
   if (!tag) return notFound("Tag introuvable.");
   return NextResponse.json({ tag });
 }

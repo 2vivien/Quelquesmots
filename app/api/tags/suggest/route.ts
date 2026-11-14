@@ -9,5 +9,5 @@ export async function POST(req: NextRequest) {
   if (limited) return limited;
   const body = await parseJsonBody(req, tagsSuggestSchema);
   if (!body.ok) return body.response;
-  return NextResponse.json({ suggestions: suggestTagsFromText(body.data.text) });
+  return NextResponse.json({ suggestions: await suggestTagsFromText(body.data.text) });
 }

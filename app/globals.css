@@ -11,6 +11,15 @@
   --color-jaune: #F5B921;
   --color-jaune-fonce: #E8A90F;
   --color-accent: #F5B921;
+  --color-teal: #A9E6BF;
+  --color-teal-fonce: #7BD6A2;
+  --color-lime: #CFFB7F;
+  --color-lime-fonce: #A8E261;
+  --color-beurre: #FFE37E;
+  --color-rose-p: #FFB4CF;
+  --color-ciel: #BDE0FE;
+  --color-corail: #FFB3A0;
+  --color-ink-jar: #1F1B12;
 
   --font-serif: var(--font-newsreader), Georgia, serif;
   --font-sans: var(--font-inter), system-ui, sans-serif;
@@ -78,6 +87,20 @@ body {
   .badge-noir {
     @apply inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-encre px-1.5 text-[10px] font-bold text-jaune;
   }
+}
+
+@keyframes swing {
+  0%, 100% { transform: rotate(-2.5deg); }
+  50% { transform: rotate(2.5deg); }
+}
+
+.swing {
+  transform-origin: top center;
+  animation: swing 3.8s ease-in-out infinite;
+}
+.swing-slow {
+  transform-origin: top center;
+  animation: swing 5.2s ease-in-out infinite;
 }
 
 .no-scrollbar {

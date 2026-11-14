@@ -80,7 +80,7 @@ Certaines routes de lecture acceptaient un identifiant interne et contournaient 
 - Chargement groupé des favoris (jusqu'à 100 textes) et réponse en résumé afin de réduire le nombre d'appels et le volume transféré.
 - Comptage des publications par thème et auteur agrégé en un seul passage.
 - Compteurs de likes/dislikes et de suivis corrigés : ils tiennent compte de l'état initial chargé, attendent le chargement de l'état utilisateur et réconcilient les listes après mutation.
-- Les comptes, publications, commentaires, notifications et signalements de démonstration ne sont plus initialisés en production ; les données de référence thèmes/tags restent statiques tant que leur persistance n'est pas migrée.
+- Aucun compte, publication, commentaire, notification, signalement, thème ou tag de démonstration n'est chargé en production. Les thèmes et tags initiaux devront être créés comme données de référence lors de la migration PostgreSQL.
 - Erreurs HTTP des adaptateurs remontées au lieu de fausses listes vides.
 - Stockage local d'avatars interdit en production ; le stockage objet doit être configuré.
 - Configuration d'URL canonique validée ; `APP_URL` serveur est prioritaire.

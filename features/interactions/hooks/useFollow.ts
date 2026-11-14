@@ -99,7 +99,7 @@ export function useFollow(targetUserId: string, baseCount = 0, authorLabel?: str
   return {
     following,
     isSelf,
-    count: baseCount + Number(following) - Number(baselineMatches ? baseline.following : following),
+    count: baseCount + Number(following) - Number(baselineMatches ? (baseline?.following ?? following) : following),
     toggle,
   };
 }

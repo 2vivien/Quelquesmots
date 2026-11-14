@@ -809,24 +809,37 @@ export function viewerKeyFromIp(ip: string): string {
 
 export async function recordView(postId: string, viewerKey: string): Promise<boolean> {
   const db = getDatabase();
-  const post = await db.select({ id: posts.id }).from(posts).where(and(eq(posts.id, postId), sql`${posts.status} <> 'DELETED'`)).limit(1);
-  if (post.length === 0) return false;
-  const dedupeKey = `${postId}:${viewerKey}`;
-  const now = new Date();
-  const rows = await db
-    .select({ lastViewedAt: postViewDedupe.lastViewedAt })
-    .from(postViewDedupe)
-    .where(and(eq(postViewDedupe.postId, postId), eq(postViewDedupe.viewerHash, viewerKey)))
-    .limit(1);
-  if (rows[0]?.lastViewedAt && now.getTime() - rows[0].lastViewedAt.getTime() < 90_000) {
-    return false;
-  }
-  await db
-    .insert(postViewDedupe)
-    .values({ postId, viewerHash: viewerKey, lastViewedAt: now })
-    .onConflictDoUpdate({ target: [postViewDedupe.postId, postViewDedupe.viewerHash], set: { lastViewedAt: now } });
-  await db.update(posts).set({ viewCount: sql`${posts.viewCount} + 1` }).where(eq(posts.id, postId));
-  return true;
+  return db.transaction(async (tx) => {
+    const post = await tx
+      .select({ id: posts.id })
+      .from(posts)
+      .where(and(eq(posts.id, postId), sql`${posts.status} <> 'DELETED'`))
+      .limit(1);
+    if (post.length === 0) return false;
+
+    const now = new Date();
+    const threshold = new Date(now.getTime() - 90_000);
+    // Insertion protégée par la clé primaire : gagne si la vue n'existait pas ;
+    // sinon mise à jour conditionnelle sur la fenêtre de 90 secondes.
+    const inserted = await tx
+      .insert(postViewDedupe)
+      .values({ postId, viewerHash: viewerKey, lastViewedAt: now })
+      .onConflictDoNothing({ target: [postViewDedupe.postId, postViewDedupe.viewerHash] })
+      .returning({ postId: postViewDedupe.postId });
+    let counted = inserted.length > 0;
+    if (!counted) {
+      const updated = await tx
+        .update(postViewDedupe)
+        .set({ lastViewedAt: now })
+        .where(and(eq(postViewDedupe.postId, postId), eq(postViewDedupe.viewerHash, viewerKey), sql`${postViewDedupe.lastViewedAt} < ${threshold}`))
+        .returning({ postId: postViewDedupe.postId });
+      counted = updated.length > 0;
+    }
+    if (!counted) return false;
+
+    await tx.update(posts).set({ viewCount: sql`${posts.viewCount} + 1` }).where(eq(posts.id, postId));
+    return true;
+  });
 }
 
 export async function toggleBlockUser(blockerId: string, targetUserId: string): Promise<{ blocked: boolean }> {
@@ -857,15 +870,32 @@ export async function toggleFollow(followerId: string, targetUserId: string): Pr
 
 export async function toggleCommentLike(commentId: string, userId: string): Promise<{ liked: boolean; likeCount: number } | null> {
   const db = getDatabase();
-  const existing = await db.select({ userId: commentLikes.userId }).from(commentLikes).where(and(eq(commentLikes.userId, userId), eq(commentLikes.commentId, commentId))).limit(1);
-  const liked = existing.length === 0;
-  if (liked) {
-    await db.insert(commentLikes).values({ userId, commentId }).onConflictDoNothing({ target: [commentLikes.userId, commentLikes.commentId] });
-  } else {
-    await db.delete(commentLikes).where(and(eq(commentLikes.userId, userId), eq(commentLikes.commentId, commentId)));
-  }
-  const countRows = await db.select({ count: sql<number>`count(*)::int` }).from(commentLikes).where(eq(commentLikes.commentId, commentId));
-  return { liked, likeCount: countRows[0]?.count ?? 0 };
+  return db.transaction(async (tx) => {
+    const comment = await tx
+      .select({ id: comments.id })
+      .from(comments)
+      .where(eq(comments.id, commentId))
+      .for("update")
+      .limit(1);
+    if (!comment[0]) return null;
+
+    const existing = await tx
+      .select({ userId: commentLikes.userId })
+      .from(commentLikes)
+      .where(and(eq(commentLikes.userId, userId), eq(commentLikes.commentId, commentId)))
+      .limit(1);
+    const liked = existing.length === 0;
+    if (liked) {
+      await tx.insert(commentLikes).values({ userId, commentId }).onConflictDoNothing({ target: [commentLikes.userId, commentLikes.commentId] });
+    } else {
+      await tx.delete(commentLikes).where(and(eq(commentLikes.userId, userId), eq(commentLikes.commentId, commentId)));
+    }
+    const countRows = await tx
+      .select({ count: sql<number>`count(*)::int` })
+      .from(commentLikes)
+      .where(eq(commentLikes.commentId, commentId));
+    return { liked, likeCount: countRows[0]?.count ?? 0 };
+  });
 }
 
 export async function listComments(postId: string, viewerId?: string | null): Promise<CommentItemData[]> {

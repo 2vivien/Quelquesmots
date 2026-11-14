@@ -6,14 +6,14 @@ import { siteSettingsSchema } from "@/lib/server/schemas";
 
 /** Paramètres globaux du site (lecture administrateur). */
 export async function GET(req: NextRequest) {
-  const auth = requireAdmin(req);
+  const auth = await requireAdmin(req);
   if (!auth.ok) return auth.response;
-  return NextResponse.json(getSettings());
+  return NextResponse.json(await getSettings());
 }
 
 /** Met à jour les paramètres globaux (zod + audit). */
 export async function PUT(req: NextRequest) {
-  const auth = requireAdmin(req);
+  const auth = await requireAdmin(req);
   if (!auth.ok) return auth.response;
   const limited = rateLimit(`admin-settings:${auth.user.id}`, 10, 60_000);
   if (limited) return limited;
@@ -22,7 +22,7 @@ export async function PUT(req: NextRequest) {
   if (body.data.minChars > body.data.maxChars) {
     return badRequest("La longueur minimale ne peut pas dépasser la longueur maximale.");
   }
-  const saved = updateSettings(body.data);
-  pushAudit(auth.user.username, "SETTINGS", "Paramètres du site", "Mise à jour des réglages globaux");
+  const saved = await updateSettings(body.data);
+  await pushAudit(auth.user.username, "SETTINGS", "Paramètres du site", "Mise à jour des réglages globaux");
   return NextResponse.json(saved);
 }

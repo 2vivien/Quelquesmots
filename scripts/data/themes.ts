@@ -1,0 +1,67 @@
+/** Catalogue éditorial de 55 thèmes (id = theme-<slug>; nom, catégorie, tagline, position). */
+export type ThemeCategory =
+  | "Les émotions brutes et l'ombre"
+  | "L'amour, le corps et l'intimité"
+  | "L'esprit et la psychologie"
+  | "La reconstruction et la lumière"
+  | "La vie et le temps";
+
+export type ThemeSeedTuple = [string, string, ThemeCategory, string];
+
+export const THEME_SEEDS: ThemeSeedTuple[] = [
+  ["deuil", "Deuil", "Les émotions brutes et l'ombre", "Ce qui demeure quand une présence s'efface."],
+  ["solitude", "Solitude", "Les émotions brutes et l'ombre", "Habiter le silence et s'écouter sans bruit."],
+  ["anxiete", "Anxiété", "Les émotions brutes et l'ombre", "Dire l'étau intérieur et les nuits trop longues."],
+  ["depression", "Dépression", "Les émotions brutes et l'ombre", "Poser des mots quand la lumière semble lointaine."],
+  ["colere", "Colère", "Les émotions brutes et l'ombre", "L'éclat brut d'un feu qu'on ne retient plus."],
+  ["peur", "Peur", "Les émotions brutes et l'ombre", "Nommer ce qui tremble avant de le traverser."],
+  ["traumatisme", "Traumatisme", "Les émotions brutes et l'ombre", "Ce que le corps garde en mémoire."],
+  ["abandon", "Abandon", "Les émotions brutes et l'ombre", "L'écho d'une porte qui se ferme."],
+  ["melancolie", "Mélancolie", "Les émotions brutes et l'ombre", "La douceur amère des choses révolues."],
+  ["vide", "Vide", "Les émotions brutes et l'ombre", "Ce silence creux entre deux battements."],
+  ["amour", "Amour", "L'amour, le corps et l'intimité", "Des mots pour aimer, aimer encore."],
+  ["sexe", "Sexe", "L'amour, le corps et l'intimité", "La vérité des corps sans détour ni fard."],
+  ["desir", "Désir", "L'amour, le corps et l'intimité", "L'élan silencieux qui attire deux peaux."],
+  ["rupture", "Rupture", "L'amour, le corps et l'intimité", "Apprendre à conjuguer demain au singulier."],
+  ["passion", "Passion", "L'amour, le corps et l'intimité", "Ce qui brûle plus fort que la raison."],
+  ["plaisir", "Plaisir", "L'amour, le corps et l'intimité", "L'instant suspendu où tout s'accorde."],
+  ["trahison", "Trahison", "L'amour, le corps et l'intimité", "La fissure soudaine dans ce qu'on croyait sûr."],
+  ["dependance", "Dépendance", "L'amour, le corps et l'intimité", "Aimer jusqu'à ne plus s'appartenir."],
+  ["jalousie", "Jalousie", "L'amour, le corps et l'intimité", "L'ombre portée d'un manque de confiance."],
+  ["nudite", "Nudité", "L'amour, le corps et l'intimité", "Se livrer sans armure ni masque."],
+  ["silence", "Silence", "L'esprit et la psychologie", "Tout ce qui se comprend sans être prononcé."],
+  ["folie", "Folie", "L'esprit et la psychologie", "Quand les frontières du réel vacillent."],
+  ["memoire", "Mémoire", "L'esprit et la psychologie", "Les fragments que le temps refuse d'effacer."],
+  ["reve", "Rêve", "L'esprit et la psychologie", "Ce que la nuit invente pour nous sauver."],
+  ["cauchemar", "Cauchemar", "L'esprit et la psychologie", "Les ombres qui reviennent avant l'aube."],
+  ["obsession", "Obsession", "L'esprit et la psychologie", "Une pensée qui tourne sans trouver d'issue."],
+  ["doute", "Doute", "L'esprit et la psychologie", "Marcher entre deux certitudes brisées."],
+  ["honte", "Honte", "L'esprit et la psychologie", "Ce qu'on cache trop longtemps par peur du regard."],
+  ["culpabilite", "Culpabilité", "L'esprit et la psychologie", "Le poids des mots qu'on aurait dû dire."],
+  ["illusion", "Illusion", "L'esprit et la psychologie", "Les mirages qu'on choisit de croire."],
+  ["guerison", "Guérison", "La reconstruction et la lumière", "Recoudre doucement ce qui a été déchiré."],
+  ["espoir", "Espoir", "La reconstruction et la lumière", "Une clarté discrète à l'horizon."],
+  ["resilience", "Résilience", "La reconstruction et la lumière", "Tenir debout après l'orage."],
+  ["pardon", "Pardon", "La reconstruction et la lumière", "Déposer le fardeau pour avancer léger."],
+  ["liberte", "Liberté", "La reconstruction et la lumière", "Respirer enfin à sa propre mesure."],
+  ["paix", "Paix", "La reconstruction et la lumière", "Le calme retrouvé après les tempêtes."],
+  ["renaissance", "Renaissance", "La reconstruction et la lumière", "Devenir quelqu'un de neuf sans renier hier."],
+  ["courage", "Courage", "La reconstruction et la lumière", "Avancer malgré les mains qui tremblent."],
+  ["gratitude", "Gratitude", "La reconstruction et la lumière", "Remercier les petits riens qui nous sauvent."],
+  ["acceptation", "Acceptation", "La reconstruction et la lumière", "Faire la paix avec ce qu'on ne change pas."],
+  ["temps", "Temps", "La vie et le temps", "Les saisons qui passent et nous transforment."],
+  ["mort", "Mort", "La vie et le temps", "Regarder la fin en face pour mieux aimer vivre."],
+  ["enfance", "Enfance", "La vie et le temps", "Le jardin intact des premiers émerveillements."],
+  ["famille", "Famille", "La vie et le temps", "Les racines, les liens et les non-dits."],
+  ["amitie", "Amitié", "La vie et le temps", "Les présences fidèles qui éclairent la route."],
+  ["exil", "Exil", "La vie et le temps", "Porter un pays entier dans sa valise."],
+  ["identite", "Identité", "La vie et le temps", "Chercher son visage au milieu du monde."],
+  ["destin", "Destin", "La vie et le temps", "Les détours imprévus qui écrivent une vie."],
+  ["vieillesse", "Vieillesse", "La vie et le temps", "La lente sagesse des années accumulées."],
+  ["vie", "Vie", "La vie et le temps", "Les détours simples qui façonnent nos jours."],
+  ["societe", "Société", "La vie et le temps", "Regards sur nos liens et notre époque."],
+  ["tendresse", "Tendresse", "L'amour, le corps et l'intimité", "La douceur des gestes qui n'exigent rien."],
+  ["fragilite", "Fragilité", "L'esprit et la psychologie", "La force secrète de ce qui peut se briser."],
+  ["regret", "Regret", "Les émotions brutes et l'ombre", "Les lettres restées au fond d'un tiroir."],
+  ["verite", "Vérité", "La reconstruction et la lumière", "Dire les choses telles qu'elles battent en nous."],
+];

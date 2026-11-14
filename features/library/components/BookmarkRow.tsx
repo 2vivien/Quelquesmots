@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { BookmarkButton } from "@/features/interactions";
-import type { PostRecord } from "@/features/posts";
+import type { PostSummary } from "@/features/posts";
 
 interface BookmarkRowProps {
-  post: PostRecord;
+  post: PostSummary;
 }
 
 /**

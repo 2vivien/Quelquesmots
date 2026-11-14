@@ -48,6 +48,9 @@ const today = (): string => new Date().toISOString().slice(0, 10);
 
 type Row<T> = T extends (infer U)[] ? U : never;
 
+/** Handle de transaction Drizzle (équivalent typé de db pour les helpers internes). */
+type DbTx = Parameters<Parameters<ReturnType<typeof getDatabase>["transaction"]>[0]>[0];
+
 const authColumns = {
   id: users.id,
   username: authorProfiles.username,
@@ -658,75 +661,140 @@ export async function getInteractionState(userId: string): Promise<InteractionSt
   };
 }
 
-async function postReactionInsertOrDelete(userId: string, postId: string, reaction: "LIKE" | "DISLIKE", shouldAdd: boolean): Promise<void> {
-  const db = getDatabase();
-  if (shouldAdd) {
-    await db.insert(postReactions).values({ userId, postId, reaction }).onConflictDoNothing({ target: [postReactions.userId, postReactions.postId] });
-    await db.update(posts).set({ [reaction === "LIKE" ? "likeCount" : "dislikeCount"]: sql`${reaction === "LIKE" ? posts.likeCount : posts.dislikeCount} + 1` }).where(eq(posts.id, postId));
-  } else {
-    await db.delete(postReactions).where(and(eq(postReactions.userId, userId), eq(postReactions.postId, postId), eq(postReactions.reaction, reaction)));
-    await db.update(posts).set({ [reaction === "LIKE" ? "likeCount" : "dislikeCount"]: sql`greatest(${reaction === "LIKE" ? posts.likeCount : posts.dislikeCount} - 1, 0)` }).where(eq(posts.id, postId));
-  }
+async function insertReactionAndAdjustCounter(
+  tx: DbTx,
+  userId: string,
+  postId: string,
+  reaction: "LIKE" | "DISLIKE",
+): Promise<boolean> {
+  const inserted = await tx
+    .insert(postReactions)
+    .values({ userId, postId, reaction })
+    .onConflictDoNothing({ target: [postReactions.userId, postReactions.postId] })
+    .returning({ postId: postReactions.postId });
+  if (inserted.length === 0) return false;
+  const column = reaction === "LIKE" ? posts.likeCount : posts.dislikeCount;
+  const field = reaction === "LIKE" ? "likeCount" : "dislikeCount";
+  await tx.update(posts).set({ [field]: sql`${column} + 1` }).where(eq(posts.id, postId));
+  return true;
 }
 
-async function otherReactionDelete(userId: string, postId: string, reaction: "LIKE" | "DISLIKE"): Promise<void> {
-  const db = getDatabase();
-  await db.delete(postReactions).where(and(eq(postReactions.userId, userId), eq(postReactions.postId, postId), eq(postReactions.reaction, reaction)));
-  await db.update(posts).set({ [reaction === "LIKE" ? "likeCount" : "dislikeCount"]: sql`greatest(${reaction === "LIKE" ? posts.likeCount : posts.dislikeCount} - 1, 0)` }).where(eq(posts.id, postId));
+async function deleteReactionAndAdjustCounter(
+  tx: DbTx,
+  userId: string,
+  postId: string,
+  reaction: "LIKE" | "DISLIKE",
+): Promise<void> {
+  const deleted = await tx
+    .delete(postReactions)
+    .where(and(eq(postReactions.userId, userId), eq(postReactions.postId, postId), eq(postReactions.reaction, reaction)))
+    .returning({ postId: postReactions.postId });
+  if (deleted.length === 0) return;
+  const column = reaction === "LIKE" ? posts.likeCount : posts.dislikeCount;
+  const field = reaction === "LIKE" ? "likeCount" : "dislikeCount";
+  await tx.update(posts).set({ [field]: sql`greatest(${column} - 1, 0)` }).where(eq(posts.id, postId));
+}
+
+/** Verrouille un texte (SELECT … FOR UPDATE) pour sérialiser les opérations concurrentes. */
+async function lockPostById(tx: DbTx, postId: string): Promise<{ id: string; authorId: string | null; title: string; slug: string | null } | null> {
+  const rows = await tx
+    .select({ id: posts.id, authorId: posts.authorId, title: posts.title, slug: posts.slug })
+    .from(posts)
+    .where(and(eq(posts.id, postId), sql`${posts.status} <> 'DELETED'`))
+    .for("update")
+    .limit(1);
+  return rows[0] ?? null;
 }
 
 export async function toggleLike(userId: string, postId: string): Promise<{ liked: boolean }> {
   const db = getDatabase();
-  const rows = await db.select(postColumns).from(posts).where(and(eq(posts.id, postId), sql`${posts.status} <> 'DELETED'`)).limit(1);
-  if (rows.length === 0) return { liked: false };
-  const existing = await db.select({ reaction: postReactions.reaction }).from(postReactions).where(and(eq(postReactions.userId, userId), eq(postReactions.postId, postId))).limit(1);
-  const liked = !(existing[0]?.reaction === "LIKE");
-  if (liked && existing[0]?.reaction === "DISLIKE") {
-    // Le « j'aime » déplace la réaction DISLIKE → LIKE
-    await otherReactionDelete(userId, postId, "DISLIKE");
-    await postReactionInsertOrDelete(userId, postId, "LIKE", true);
-  } else if (liked) {
-    await postReactionInsertOrDelete(userId, postId, "LIKE", true);
-  } else {
-    await postReactionInsertOrDelete(userId, postId, "LIKE", false);
-  }
-  if (liked) {
-    const post = rows[0]!;
-    const author = post.authorId ? await findUserById(post.authorId) : null;
-    if (author) {
-      await notify(post.authorId!, "LIKE", author, post);
+  const actor = await findUserById(userId);
+  return db.transaction(async (tx) => {
+    // Le verrou FOR UPDATE sérialise les réactions concurrentes sur ce texte.
+    const post = await lockPostById(tx, postId);
+    if (!post) return { liked: false };
+
+    const existingRows = await tx
+      .select({ reaction: postReactions.reaction })
+      .from(postReactions)
+      .where(and(eq(postReactions.userId, userId), eq(postReactions.postId, postId)))
+      .limit(1);
+    const existing = existingRows[0]?.reaction;
+    const liked = existing !== "LIKE";
+
+    if (liked && existing === "DISLIKE") {
+      await deleteReactionAndAdjustCounter(tx, userId, postId, "DISLIKE");
     }
-  }
-  return { liked };
+    if (liked) {
+      const inserted = await insertReactionAndAdjustCounter(tx, userId, postId, "LIKE");
+      if (inserted && post.authorId && actor && actor.id !== post.authorId) {
+        await notify(post.authorId, "LIKE", { id: actor.id, username: actor.username, avatarUrl: actor.avatarUrl }, { id: post.id, title: post.title, slug: post.slug }, tx);
+      }
+    } else {
+      await deleteReactionAndAdjustCounter(tx, userId, postId, "LIKE");
+    }
+    return { liked };
+  });
 }
 
 export async function toggleDislike(userId: string, postId: string): Promise<{ disliked: boolean }> {
   const db = getDatabase();
-  const existing = await db.select({ reaction: postReactions.reaction }).from(postReactions).where(and(eq(postReactions.userId, userId), eq(postReactions.postId, postId))).limit(1);
-  const disliked = !(existing[0]?.reaction === "DISLIKE");
-  if (disliked && existing[0]?.reaction === "LIKE") {
-    await otherReactionDelete(userId, postId, "LIKE");
-    await postReactionInsertOrDelete(userId, postId, "DISLIKE", true);
-  } else if (disliked) {
-    await postReactionInsertOrDelete(userId, postId, "DISLIKE", true);
-  } else {
-    await postReactionInsertOrDelete(userId, postId, "DISLIKE", false);
-  }
-  return { disliked };
+  return db.transaction(async (tx) => {
+    const post = await lockPostById(tx, postId);
+    if (!post) return { disliked: false };
+
+    const existingRows = await tx
+      .select({ reaction: postReactions.reaction })
+      .from(postReactions)
+      .where(and(eq(postReactions.userId, userId), eq(postReactions.postId, postId)))
+      .limit(1);
+    const existing = existingRows[0]?.reaction;
+    const disliked = existing !== "DISLIKE";
+
+    if (disliked && existing === "LIKE") {
+      await deleteReactionAndAdjustCounter(tx, userId, postId, "LIKE");
+    }
+    if (disliked) {
+      await insertReactionAndAdjustCounter(tx, userId, postId, "DISLIKE");
+    } else {
+      await deleteReactionAndAdjustCounter(tx, userId, postId, "DISLIKE");
+    }
+    return { disliked };
+  });
 }
 
 export async function toggleBookmark(userId: string, postId: string): Promise<{ bookmarked: boolean }> {
   const db = getDatabase();
-  const existing = await db.select({ userId: postBookmarks.userId }).from(postBookmarks).where(and(eq(postBookmarks.userId, userId), eq(postBookmarks.postId, postId))).limit(1);
-  const bookmarked = existing.length === 0;
-  if (bookmarked) {
-    await db.insert(postBookmarks).values({ userId, postId }).onConflictDoNothing({ target: [postBookmarks.userId, postBookmarks.postId] });
-    await db.update(posts).set({ bookmarkCount: sql`${posts.bookmarkCount} + 1` }).where(eq(posts.id, postId));
-  } else {
-    await db.delete(postBookmarks).where(and(eq(postBookmarks.userId, userId), eq(postBookmarks.postId, postId)));
-    await db.update(posts).set({ bookmarkCount: sql`greatest(${posts.bookmarkCount} - 1, 0)` }).where(eq(posts.id, postId));
-  }
-  return { bookmarked };
+  return db.transaction(async (tx) => {
+    const post = await lockPostById(tx, postId);
+    if (!post) return { bookmarked: false };
+
+    const existing = await tx
+      .select({ userId: postBookmarks.userId })
+      .from(postBookmarks)
+      .where(and(eq(postBookmarks.userId, userId), eq(postBookmarks.postId, postId)))
+      .limit(1);
+    const bookmarked = existing.length === 0;
+    if (bookmarked) {
+      const inserted = await tx
+        .insert(postBookmarks)
+        .values({ userId, postId })
+        .onConflictDoNothing({ target: [postBookmarks.userId, postBookmarks.postId] })
+        .returning({ postId: postBookmarks.postId });
+      if (inserted.length > 0) {
+        await tx.update(posts).set({ bookmarkCount: sql`${posts.bookmarkCount} + 1` }).where(eq(posts.id, postId));
+      }
+    } else {
+      const deleted = await tx
+        .delete(postBookmarks)
+        .where(and(eq(postBookmarks.userId, userId), eq(postBookmarks.postId, postId)))
+        .returning({ postId: postBookmarks.postId });
+      if (deleted.length > 0) {
+        await tx.update(posts).set({ bookmarkCount: sql`greatest(${posts.bookmarkCount} - 1, 0)` }).where(eq(posts.id, postId));
+      }
+    }
+    return { bookmarked };
+  });
 }
 
 /** Hash de l'IP (ou du pseudonyme) pour la déduplication des vues. */
@@ -904,10 +972,10 @@ async function insertNotification(entry: {
   postId: string | null;
   postTitle: string;
   postSlug: string;
-}): Promise<void> {
+}, tx?: DbTx): Promise<void> {
   if (entry.actorId && entry.userId === entry.actorId) return; // Pas de notification pour soi-même.
-  const db = getDatabase();
-  await db.insert(notifications).values({
+  const client = tx ?? getDatabase();
+  await client.insert(notifications).values({
     id: newId("notif"),
     userId: entry.userId,
     actorId: entry.actorId,
@@ -922,9 +990,9 @@ async function insertNotification(entry: {
   });
 }
 
-async function notify(userId: string, type: NotificationKind, actor: { id: string; username: string; avatarUrl: string }, post: { id: string; title: string; slug: string | null }): Promise<void> {
+async function notify(userId: string, type: NotificationKind, actor: { id: string; username: string; avatarUrl: string }, post: { id: string; title: string; slug: string | null }, tx?: DbTx): Promise<void> {
   if (userId === actor.id) return;
-  await insertNotification({ userId, type, actorUsername: actor.username, actorAvatarUrl: actor.avatarUrl, actorId: actor.id, postId: post.id, postTitle: post.title, postSlug: post.slug ?? "" });
+  await insertNotification({ userId, type, actorUsername: actor.username, actorAvatarUrl: actor.avatarUrl, actorId: actor.id, postId: post.id, postTitle: post.title, postSlug: post.slug ?? "" }, tx);
 }
 
 /* -------------------------------- Notifications -------------------------------- */

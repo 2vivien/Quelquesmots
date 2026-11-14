@@ -30,6 +30,9 @@ export interface PostRecord {
   updatedAt: string;
 }
 
+/** Résumé léger d'un texte (sans corps) — utilisé pour les listes et le fil. */
+export type PostSummary = Omit<PostRecord, "contentJson" | "contentText">;
+
 /** Critères de requête pour le mur et les listes paginées. */
 export interface FeedQuery {
   themeSlug?: string;
@@ -44,7 +47,7 @@ export interface FeedQuery {
 
 /** Page de résultats paginée par curseur. */
 export interface FeedPage {
-  items: PostRecord[];
+  items: PostSummary[];
   nextCursor: string | null;
 }
 
@@ -53,8 +56,8 @@ export interface PostsService {
   listFeed(query: FeedQuery): Promise<FeedPage>;
   getBySlug(slug: string, viewerId?: string | null): Promise<PostRecord | null>;
   getById(id: string): Promise<PostRecord | null>;
-  listRelated(post: PostRecord, viewerId?: string | null): Promise<PostRecord[]>;
-  listDrafts(authorId: string): Promise<PostRecord[]>;
+  listRelated(post: PostRecord, viewerId?: string | null): Promise<PostSummary[]>;
+  listDrafts(authorId: string): Promise<PostSummary[]>;
   upsertDraft(draft: Partial<PostRecord> & { authorId: string }): Promise<PostRecord>;
   publishPost(id: string, authorId: string): Promise<PostRecord | null>;
   deletePost(id: string, authorId: string): Promise<boolean>;

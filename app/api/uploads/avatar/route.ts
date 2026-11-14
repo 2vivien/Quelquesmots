@@ -8,7 +8,7 @@ const MAX_BYTES = 5 * 1024 * 1024;
 
 /** Upload une photo de profil ; le disque local est réservé au développement. */
 export async function POST(req: NextRequest) {
-  const auth = requireUser(req);
+  const auth = await requireUser(req);
   if (!auth.ok) return auth.response;
   const limited = rateLimit(`upload-avatar:${auth.user.id}`, 20, 600_000);
   if (limited) return limited;

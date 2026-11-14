@@ -6,11 +6,11 @@ import { rateLimit } from "@/lib/server/http";
 
 /** Suppression définitive du compte courant : contenu supprimé, session invalidée. */
 export async function DELETE(req: NextRequest) {
-  const auth = requireUser(req);
+  const auth = await requireUser(req);
   if (!auth.ok) return auth.response;
   const limited = rateLimit(`delete-account:${auth.user.id}`, 3, 3_600_000);
   if (limited) return limited;
-  deleteAccount(auth.user.id);
+  await deleteAccount(auth.user.id);
   const res = NextResponse.json({ ok: true });
   clearSessionCookie(res);
   return res;

@@ -6,7 +6,7 @@ import { profilePatchSchema } from "@/lib/server/schemas";
 
 /** Met à jour le profil de l'utilisateur connecté (pseudonyme unique). */
 export async function PATCH(req: NextRequest) {
-  const auth = requireUser(req);
+  const auth = await requireUser(req);
   if (!auth.ok) return auth.response;
   const limited = rateLimit(`profile:${auth.user.id}`, 10, 60_000);
   if (limited) return limited;
@@ -19,7 +19,7 @@ export async function PATCH(req: NextRequest) {
   ) {
     return jsonError(400, "VALIDATION", "Ce pseudonyme est déjà utilisé.", { username: "Ce pseudonyme est déjà utilisé." });
   }
-  const updated = updateUserProfile(auth.user.id, {
+  const updated = await updateUserProfile(auth.user.id, {
     ...profilePatch,
     ...(onboarded !== undefined ? { onboarded } : {}),
   });

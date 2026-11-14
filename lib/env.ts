@@ -1,18 +1,18 @@
 import { z } from "zod";
 
 const envSchema = z.object({
-  NEXT_PUBLIC_APP_URL: z.string().optional(),
+  APP_URL: z.string().url().optional(),
+  NEXT_PUBLIC_APP_URL: z.string().url().optional(),
 });
 
-const parsed = envSchema.safeParse({
+const values = envSchema.parse({
+  APP_URL: process.env.APP_URL,
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
 });
 
-const values = parsed.success ? parsed.data : {};
-
 /** Configuration d'environnement validée au démarrage. */
 export const env = {
-  APP_URL: values.NEXT_PUBLIC_APP_URL ?? "http://127.0.0.1:3000",
+  APP_URL: values.APP_URL ?? values.NEXT_PUBLIC_APP_URL ?? "http://127.0.0.1:3000",
 } as const;
 
 /**
@@ -21,6 +21,6 @@ export const env = {
  */
 export function apiUrl(path: string): string {
   if (typeof window !== "undefined") return path;
-  const base = env.APP_URL || "http://127.0.0.1:3000";
+  const base = env.APP_URL;
   return `${base.replace(/\/$/, "")}${path}`;
 }

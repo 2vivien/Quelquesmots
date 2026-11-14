@@ -6,12 +6,12 @@ import { moderateSchema } from "@/lib/server/schemas";
 
 /** Applique une décision de modération (masquage, restauration, classement) + audit. */
 export async function POST(req: NextRequest) {
-  const auth = requireAdmin(req);
+  const auth = await requireAdmin(req);
   if (!auth.ok) return auth.response;
   const limited = rateLimit(`moderate:${auth.user.id}`, 30, 60_000);
   if (limited) return limited;
   const body = await parseJsonBody(req, moderateSchema);
   if (!body.ok) return body.response;
-  adminModerate({ actorUsername: auth.user.username, ...body.data });
+  await adminModerate({ actorUsername: auth.user.username, ...body.data });
   return NextResponse.json({ ok: true });
 }

@@ -14,7 +14,7 @@ interface ThemeDetailViewProps {
 
 /**
  * Corps de la page thème avec tags associés et onglets Récents · Plus appréciés · Auteurs.
- * @param props Slug du thème, tags associés, première page de textes et auteurs actifs.
+ * @param props Identifiant du thème, première page de textes et auteurs actifs.
  */
 export function ThemeDetailView({ themeId, initialPage, authors }: ThemeDetailViewProps) {
   const [tab, setTab] = useState<"recent" | "top" | "authors">("recent");

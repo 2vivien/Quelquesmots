@@ -1,6 +1,6 @@
 import { apiUrl } from "@/lib/env";
 import type { PostStatus } from "@/types";
-import type { FeedPage, FeedQuery, PostRecord, PostsService } from "../types/posts.types";
+import type { FeedPage, FeedQuery, PostRecord, PostSummary, PostsService } from "../types/posts.types";
 
 async function readErrorMessage(res: Response, fallback: string): Promise<string> {
   try {
@@ -36,16 +36,16 @@ export const postsReal: PostsService = {
     const data = (await res.json()) as { post: PostRecord | null };
     return data.post;
   },
-  async listRelated(post: PostRecord): Promise<PostRecord[]> {
+  async listRelated(post: PostRecord): Promise<PostSummary[]> {
     const res = await fetch(apiUrl(`/api/posts/${encodeURIComponent(post.id)}/related`));
     if (!res.ok) return [];
-    const data = (await res.json()) as { items: PostRecord[] };
+    const data = (await res.json()) as { items: PostSummary[] };
     return data.items;
   },
-  async listDrafts(): Promise<PostRecord[]> {
+  async listDrafts(): Promise<PostSummary[]> {
     const res = await fetch(apiUrl("/api/studio/drafts"));
     if (!res.ok) return [];
-    const data = (await res.json()) as { drafts: PostRecord[] };
+    const data = (await res.json()) as { drafts: PostSummary[] };
     return data.drafts;
   },
   async upsertDraft(draft: Partial<PostRecord> & { authorId: string }): Promise<PostRecord> {

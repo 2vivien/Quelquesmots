@@ -12,7 +12,7 @@ import type { CommentItemData } from "@/features/comments/types/comments.types";
 import type { InteractionState } from "@/features/interactions/types/interactions.types";
 import type { ReportItem, ReportReason, ReportTargetType } from "@/features/moderation/types/moderation.types";
 import type { NotificationKind, NotificationItem } from "@/features/notifications/types/notifications.types";
-import type { FeedPage, FeedQuery, PostRecord } from "@/features/posts/types/posts.types";
+import type { FeedPage, FeedQuery, PostRecord, PostSummary } from "@/features/posts/types/posts.types";
 import { SEED_POSTS } from "@/lib/server/seed/posts";
 import { canViewPost } from "@/features/posts/utils/visibility";
 import type { TagItem } from "@/features/tags/types/tags.types";
@@ -189,6 +189,14 @@ export function getDb(): Db {
 const newId = (prefix: string): string => `${prefix}-${randomUUID()}`;
 const today = (): string => new Date().toISOString().slice(0, 10);
 
+/** Retire le corps d'un texte pour les listes (excerpt suffit pour un fil). */
+function stripPostContent(post: PostRecord): PostSummary {
+  const summary = { ...post } as Record<string, unknown>;
+  delete summary.contentJson;
+  delete summary.contentText;
+  return summary as unknown as PostSummary;
+}
+
 function getSet(map: Map<string, Set<string>>, key: string): Set<string> {
   const existing = map.get(key);
   if (existing) return existing;
@@ -299,7 +307,7 @@ export function listFeed(query: FeedQuery): FeedPage {
   const slice = sorted.slice(start, start + limit);
   const nextCursor =
     start + limit < sorted.length ? (slice.at(-1)?.id ?? null) : null;
-  return { items: slice, nextCursor };
+  return { items: slice.map(stripPostContent), nextCursor };
 }
 
 export function getPostBySlug(slug: string, viewerId?: string | null): PostRecord | null {
@@ -311,19 +319,21 @@ export function getPostById(id: string): PostRecord | null {
   return getDb().posts.find((p) => p.id === id) ?? null;
 }
 
-export function listRelated(post: PostRecord, viewerId?: string | null): PostRecord[] {
+export function listRelated(post: PostRecord, viewerId?: string | null): PostSummary[] {
   return getDb()
     .posts.filter(
       (p) => p.id !== post.id && p.status === "PUBLISHED" && canViewPost(p, viewerId),
     )
     .filter((p) => p.themeSlugs.some((t) => post.themeSlugs.includes(t)))
-    .slice(0, 3);
+    .slice(0, 3)
+    .map(stripPostContent);
 }
 
-export function listDrafts(authorId: string): PostRecord[] {
+export function listDrafts(authorId: string): PostSummary[] {
   return getDb()
     .posts.filter((p) => p.authorId === authorId && p.status === "DRAFT")
-    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    .map(stripPostContent);
 }
 
 function toSlug(title: string, id: string): string {

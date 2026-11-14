@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - "fix/**"
+      - "feat/**"
 
 permissions:
   contents: read
@@ -16,7 +17,7 @@ concurrency:
 
 jobs:
   quality:
-    name: Typecheck, lint, conventions and build
+    name: Typecheck, lint, conventions, Drizzle generation and build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -27,8 +28,10 @@ jobs:
         with:
           bun-version: latest
 
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
+      # Première génération contrôlée du lockfile. Une fois le lockfile commité,
+      # cette étape repasse à bun install --frozen-lockfile.
+      - name: Install dependencies and write Bun lockfile
+        run: bun install
 
       - name: TypeScript
         run: bun run typecheck
@@ -38,6 +41,20 @@ jobs:
 
       - name: Project conventions
         run: bun run check
+
+      - name: Generate initial Drizzle migration (schema-only, no database connection)
+        run: bun run db:generate -- --name=initial_schema
+        env:
+          DATABASE_MIGRATION_URL: postgresql://ci:ci@127.0.0.1:5432/schema_only
+
+      - name: Upload generated lockfile and SQL migration
+        uses: actions/upload-artifact@v4
+        with:
+          name: drizzle-bootstrap
+          if-no-files-found: error
+          path: |
+            bun.lock
+            db/migrations/**
 
       - name: Production build
         run: bun run build

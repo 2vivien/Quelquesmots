@@ -22,7 +22,7 @@ export async function PUT(req: NextRequest) {
   if (body.data.minChars > body.data.maxChars) {
     return badRequest("La longueur minimale ne peut pas dépasser la longueur maximale.");
   }
-  const saved = await updateSettings(body.data);
+  const saved = await updateSettings(body.data, auth.user.id);
   await pushAudit(auth.user.username, "SETTINGS", "Paramètres du site", "Mise à jour des réglages globaux");
   return NextResponse.json(saved);
 }

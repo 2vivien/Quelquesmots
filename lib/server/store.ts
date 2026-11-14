@@ -541,7 +541,11 @@ export function toggleBookmark(userId: string, postId: string): { bookmarked: bo
 
 /** Clé de déduplication des vues : hachée, jamais l'IP en clair. */
 export function viewerKeyFromIp(ip: string): string {
-  const salt = process.env.VIEW_HASH_SALT ?? "qm-view-salt";
+  const configuredSalt = process.env.VIEW_HASH_SALT;
+  if (process.env.NODE_ENV === "production" && (!configuredSalt || Buffer.byteLength(configuredSalt, "utf8") < 32)) {
+    throw new Error("VIEW_HASH_SALT doit être configuré avec au moins 32 octets en production.");
+  }
+  const salt = configuredSalt ?? "qm-view-salt";
   return createHash("sha256").update(`${salt}:${ip}`).digest("hex").slice(0, 16);
 }
 
@@ -871,12 +875,20 @@ export function suggestTagsFromText(text: string): string[] {
 }
 
 export function listThemes(query?: string): ThemeItem[] {
+  const db = getDb();
   const clean = normalizeSearchText(query ?? "");
-  return getDb()
-    .themes.filter((t) => t.active)
-    .filter((t) => !clean || normalizeSearchText(t.name).includes(clean) || normalizeSearchText(t.tagline).includes(clean))
+  const postCounts = new Map<string, number>();
+  for (const post of db.posts) {
+    if (post.status !== "PUBLISHED") continue;
+    for (const themeSlug of post.themeSlugs) {
+      postCounts.set(themeSlug, (postCounts.get(themeSlug) ?? 0) + 1);
+    }
+  }
+  return db.themes
+    .filter((theme) => theme.active)
+    .filter((theme) => !clean || normalizeSearchText(theme.name).includes(clean) || normalizeSearchText(theme.tagline).includes(clean))
     .sort((a, b) => a.position - b.position)
-    .map(withThemeStats);
+    .map((theme) => ({ ...theme, postCount: postCounts.get(theme.slug) ?? 0 }));
 }
 
 export function getThemeById(id: string): ThemeItem | null {
@@ -890,17 +902,33 @@ export function getThemeBySlug(slug: string): ThemeItem | null {
 }
 
 export function listAuthors(query?: string): AuthorProfile[] {
+  const db = getDb();
   const clean = normalizeSearchText(query ?? "");
-  return getDb()
-    .authors.filter((a) => {
-      if (!a.listedInDirectory || a.status !== "ACTIVE") return false;
+  const postCounts = new Map<string, number>();
+  const followerCounts = new Map<string, number>();
+
+  for (const post of db.posts) {
+    if (post.status === "PUBLISHED") {
+      postCounts.set(post.authorId, (postCounts.get(post.authorId) ?? 0) + 1);
+    }
+  }
+  for (const followedIds of db.follows.values()) {
+    for (const followedId of followedIds) {
+      followerCounts.set(followedId, (followerCounts.get(followedId) ?? 0) + 1);
+    }
+  }
+
+  return db.authors
+    .filter((author) => {
+      if (!author.listedInDirectory || author.status !== "ACTIVE") return false;
       if (!clean) return true;
-      return (
-        normalizeSearchText(a.username).includes(clean) ||
-        normalizeSearchText(a.bio).includes(clean)
-      );
+      return normalizeSearchText(author.username).includes(clean) || normalizeSearchText(author.bio).includes(clean);
     })
-    .map(withAuthorStats)
+    .map((author) => ({
+      ...author,
+      postCount: postCounts.get(author.userId) ?? 0,
+      followersCount: followerCounts.get(author.userId) ?? 0,
+    }))
     .sort((a, b) => (b.followersCount + b.postCount * 2) - (a.followersCount + a.postCount * 2));
 }
 

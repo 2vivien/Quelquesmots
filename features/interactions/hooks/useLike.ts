@@ -50,8 +50,8 @@ export function useLike(postId: string, initialCount: number, initialDislikeCoun
   }, [data, user, postId, initialCount, initialDislikeCount, liked, disliked]);
 
   const isReady = !user || Boolean(data && baselineMatches);
-  const baselineLiked = baselineMatches ? baseline.liked : liked;
-  const baselineDisliked = baselineMatches ? baseline.disliked : disliked;
+  const baselineLiked = baselineMatches ? (baseline?.liked ?? liked) : liked;
+  const baselineDisliked = baselineMatches ? (baseline?.disliked ?? disliked) : disliked;
 
   const likeMut = useMutation({
     mutationFn: () => interactionsService.toggleLike(user!.id, postId),

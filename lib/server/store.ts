@@ -1,7 +1,7 @@
 /**
- * Store serveur en mémoire pour le mode réel sans base de données.
- * Épinglé sur `globalThis` pour survivre aux rechargements de modules (HMR).
- * Les données sont seedées depuis `lib/server/seed/`.
+ * Store mémoire réservé au développement et aux démonstrations locales.
+ * Il survit aux rechargements HMR mais ne fournit aucune persistance multi-instance.
+ * Les données seedées ne sont jamais chargées en production.
  */
 import { createHash, randomUUID } from "node:crypto";
 import type { AuthUser } from "@/features/auth";
@@ -161,8 +161,8 @@ function seedDb(): Db {
   }
   return {
     posts: demoMode ? SEED_POSTS.map((p) => ({ ...p })) : [],
-    themes: SEED_THEMES.map((t) => ({ ...t })),
-    tags: MOCK_TAGS.map((t) => ({ ...t })),
+    themes: demoMode ? SEED_THEMES.map((t) => ({ ...t })) : [],
+    tags: demoMode ? MOCK_TAGS.map((t) => ({ ...t })) : [],
     commentLikes: demoMode
       ? new Map(Object.entries(SEED_COMMENT_LIKES).map(([id, users]) => [id, new Set(users)]))
       : new Map(),
@@ -231,6 +231,9 @@ export function isUsernameAvailable(username: string, exceptUserId?: string): bo
 
 /** Crée un compte de démonstration (mode sans identifiants Google). */
 export function createDemoUser(): AuthUser {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Les comptes de démonstration sont désactivés en production.");
+  }
   const db = getDb();
   const user: AuthUser = {
     id: `user-${randomUUID().slice(0, 8)}`,

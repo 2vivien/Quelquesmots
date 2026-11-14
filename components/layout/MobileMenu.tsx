@@ -11,7 +11,6 @@ import {
   Home,
   Info,
   LifeBuoy,
-  LogIn,
   LogOut,
   Menu,
   PenLine,
@@ -91,7 +90,9 @@ export function MobileMenu() {
             ) : (
               <div className="mt-auto space-y-3 border-t-[1.5px] border-bord pt-4">
                 <p className="px-1 text-center text-sm font-semibold text-muted">Connecte-toi pour publier et commenter.</p>
-                <button type="button" onClick={() => { setOpen(false); openAuthPopup(); }} className="btn-noir w-full"><LogIn size={17} strokeWidth={2.25} aria-hidden="true" />Connexion</button>
+                <button type="button" onClick={() => { setOpen(false); openAuthPopup(); }} className="btn-noir w-full">
+                  <span className="whitespace-nowrap">Connexion</span>
+                </button>
               </div>
             )}
           </div>

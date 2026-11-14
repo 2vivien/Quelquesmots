@@ -28,7 +28,7 @@ export function Header() {
         <Link href="/" className="shrink-0 font-display text-[15px] uppercase leading-none tracking-tight text-encre lg:hidden">
           Quelques mots
         </Link>
-        <form onSubmit={onSubmit} className="relative mx-auto hidden h-full w-full max-w-md items-center md:flex" role="search">
+        <form onSubmit={onSubmit} className="relative mx-auto hidden h-full w-full max-w-2xl items-center md:flex" role="search">
           <Search size={16} strokeWidth={2} className="pointer-events-none absolute left-4 text-encre" aria-hidden="true" />
           <input
             type="search"

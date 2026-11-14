@@ -48,6 +48,7 @@ export function useBookmark(postId: string) {
       toast.error("Impossible de mettre à jour la bibliothèque.");
     },
     onSettled: () => {
+      void qc.invalidateQueries({ queryKey: key });
       void qc.invalidateQueries({ queryKey: ["library", "bookmarks"] });
       void qc.invalidateQueries({ queryKey: ["feed"] });
     },

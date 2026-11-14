@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { clearSessionCookie } from "@/lib/server/session";
 
-/** Déconnexion : supprime le cookie de session. */
-export async function POST() {
+/** Déconnexion : révoque la session PostgreSQL et supprime le cookie. */
+export async function POST(req: NextRequest) {
   const res = NextResponse.json({ ok: true });
-  clearSessionCookie(res);
+  await clearSessionCookie(res, req);
   return res;
 }

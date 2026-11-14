@@ -13,7 +13,6 @@ export interface NotificationItem {
   actorAvatarUrl: string;
   postId: string;
   postTitle: string;
-  postSlug: string;
   read: boolean;
   createdAt: string;
 }

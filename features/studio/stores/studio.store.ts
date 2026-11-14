@@ -10,7 +10,7 @@ interface StudioState {
   title: string;
   contentJson: TiptapDoc;
   contentText: string;
-  themeSlugs: string[];
+  themeIds: string[];
   visibility: Visibility;
   previewOpen: boolean;
   publishOpen: boolean;
@@ -24,7 +24,7 @@ export interface StudioFields {
   title: string;
   contentJson: TiptapDoc;
   contentText: string;
-  themeSlugs: string[];
+  themeIds: string[];
   visibility: Visibility;
   previewOpen: boolean;
   publishOpen: boolean;
@@ -39,7 +39,7 @@ export const useStudioStore = create<StudioState>((set) => ({
   title: "",
   contentJson: EMPTY_DOC,
   contentText: "",
-  themeSlugs: [],
+  themeIds: [],
   visibility: "PUBLIC",
   previewOpen: false,
   publishOpen: false,
@@ -51,7 +51,7 @@ export const useStudioStore = create<StudioState>((set) => ({
       title: initial?.title ?? "",
       contentJson: initial?.contentJson ?? EMPTY_DOC,
       contentText: initial?.contentText ?? "",
-      themeSlugs: initial?.themeSlugs ?? [],
+      themeIds: initial?.themeIds ?? [],
       visibility: initial?.visibility ?? "PUBLIC",
       previewOpen: false,
       publishOpen: false,

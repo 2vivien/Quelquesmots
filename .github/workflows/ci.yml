@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - "fix/**"
+      - "feat/**"
 
 permissions:
   contents: read
@@ -16,7 +17,7 @@ concurrency:
 
 jobs:
   quality:
-    name: Typecheck, lint, conventions and build
+    name: Typecheck, lint, conventions, Drizzle checks and build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -38,6 +39,11 @@ jobs:
 
       - name: Project conventions
         run: bun run check
+
+      - name: Check Drizzle migration journal (no database connection)
+        run: bun run db:check
+        env:
+          DATABASE_MIGRATION_URL: postgresql://ci:ci@127.0.0.1:5432/schema_only
 
       - name: Production build
         run: bun run build

@@ -3,8 +3,7 @@ import "./zod-fr";
 import { z } from "zod";
 import { profileSchema } from "@/features/settings/schemas/profile.schema";
 
-const shortId = z.string().trim().min(1).max(64);
-const slugValue = z.string().trim().min(1).max(64).regex(/^[a-z0-9-]+$/i, "Format invalide.");
+const shortId = z.string().uuid("Identifiant invalide.");
 
 /** Corps de sauvegarde d'un brouillon (les champs d'auteur sont dérivés de la session). */
 export const draftUpsertSchema = z.object({
@@ -15,8 +14,8 @@ export const draftUpsertSchema = z.object({
   contentText: z.string().max(5_000).optional(),
   publishAs: z.enum(["USERNAME", "REAL_NAME", "ANONYMOUS"]).optional(),
   visibility: z.enum(["PUBLIC", "PRIVATE"]).optional(),
-  themeSlugs: z.array(slugValue).max(5).optional(),
-  tagSlugs: z.array(slugValue).max(8).optional(),
+  themeIds: z.array(z.string().uuid()).max(5).optional(),
+  tagIds: z.array(z.string().uuid()).max(8).optional(),
   heroImageUrl: z
     .string()
     .trim()

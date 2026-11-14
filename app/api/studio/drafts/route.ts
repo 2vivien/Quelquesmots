@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/server/auth";
 import {
-  getDb,
   listDrafts,
   upsertDraft,
   findUserById,
-} from "@/lib/server/store";
+  countDraftsByAuthor,
+} from "@/lib/server/repository";
 import { badRequest, notFound, parseJsonBody, rateLimit } from "@/lib/server/http";
 import { draftUpsertSchema } from "@/lib/server/schemas";
 import { extractPlainText, sanitizeTiptapDoc } from "@/lib/sanitize";
@@ -13,32 +13,31 @@ import type { TiptapDoc } from "@/types";
 
 /** Brouillons de l'auteur connecté. */
 export async function GET(req: NextRequest) {
-  const auth = requireUser(req);
+  const auth = await requireUser(req);
   if (!auth.ok) return auth.response;
-  return NextResponse.json({ drafts: listDrafts(auth.user.id) });
+  return NextResponse.json({ drafts: await listDrafts(auth.user.id) });
 }
 
 /** Crée ou met à jour un brouillon (auteur dérivé de la session, contenu assaini). */
 export async function POST(req: NextRequest) {
-  const auth = requireUser(req);
+  const auth = await requireUser(req);
   if (!auth.ok) return auth.response;
-  const limited = rateLimit(`draft:${auth.user.id}`, 30, 60_000);
+  const limited = await rateLimit(`draft:${auth.user.id}`, 30, 60_000);
   if (limited) return limited;
   const body = await parseJsonBody(req, draftUpsertSchema);
   if (!body.ok) return body.response;
-  const db = getDb();
-  const draftCount = db.posts.filter((p) => p.authorId === auth.user.id && p.status === "DRAFT").length;
+  const draftCount = await countDraftsByAuthor(auth.user.id);
   if (!body.data.id && draftCount >= 50) {
     return badRequest("Limite de 50 brouillons atteinte. Supprimez-en un avant de continuer.");
   }
-  const author = findUserById(auth.user.id) ?? auth.user;
+  const author = await findUserById(auth.user.id) ?? auth.user;
   const cleanJson =
     body.data.contentJson && typeof body.data.contentJson === "object"
       ? sanitizeTiptapDoc(body.data.contentJson as TiptapDoc)
       : undefined;
   const contentText =
     body.data.contentText ?? (cleanJson ? extractPlainText(cleanJson) : undefined);
-  const saved = upsertDraft({
+  const saved = await upsertDraft({
     id: body.data.id,
     authorId: auth.user.id,
     authorUsername: author.username,
@@ -51,8 +50,8 @@ export async function POST(req: NextRequest) {
     contentJson: cleanJson,
     contentText,
     visibility: body.data.visibility,
-    themeSlugs: body.data.themeSlugs,
-    tagSlugs: body.data.tagSlugs,
+    themeIds: body.data.themeIds,
+    tagIds: body.data.tagIds,
     heroImageUrl: body.data.heroImageUrl,
     commentsEnabled: body.data.commentsEnabled,
   });

@@ -27,8 +27,8 @@ export function buildDraftPayload(
     excerpt: plain.slice(0, 140),
     contentJson: cleanJson,
     contentText: plain,
-    tagSlugs: state.themeSlugs,
-    themeSlugs: state.themeSlugs,
+    tagIds: state.themeIds,
+    themeIds: state.themeIds,
     visibility: state.visibility,
   };
 }

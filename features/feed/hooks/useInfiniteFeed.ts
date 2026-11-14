@@ -6,9 +6,9 @@ import { useInteractionState } from "@/features/interactions";
 import { postsService, type FeedPage } from "@/features/posts";
 
 interface UseInfiniteFeedParams {
-  themeSlug?: string;
-  tagSlug?: string;
-  authorUsername?: string;
+  themeId?: string;
+  tagId?: string;
+  authorId?: string;
   sort?: "recent" | "top";
   initialPage?: FeedPage;
 }
@@ -26,9 +26,9 @@ export function useInfiniteFeed(params: UseInfiniteFeedParams) {
   const query = useInfiniteQuery({
     queryKey: [
       "feed",
-      params.themeSlug ?? "",
-      params.tagSlug ?? "",
-      params.authorUsername ?? "",
+      params.themeId ?? "",
+      params.tagId ?? "",
+      params.authorId ?? "",
       params.sort ?? "recent",
       user?.id ?? "guest",
       blocked,
@@ -36,9 +36,9 @@ export function useInfiniteFeed(params: UseInfiniteFeedParams) {
     initialPageParam: null as string | null,
     queryFn: ({ pageParam }) =>
       postsService.listFeed({
-        themeSlug: params.themeSlug,
-        tagSlug: params.tagSlug,
-        authorUsername: params.authorUsername,
+        themeId: params.themeId,
+        tagId: params.tagId,
+        authorId: params.authorId,
         sort: params.sort,
         cursor: pageParam,
         limit: 10,

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSessionUser } from "@/lib/server/auth";
-import { search } from "@/lib/server/store";
+import { search } from "@/lib/server/repository";
 import { badRequest, clientIp, rateLimit } from "@/lib/server/http";
 
 const querySchema = z.object({
@@ -11,13 +11,13 @@ const querySchema = z.object({
 
 /** Recherche globale multi-entités (textes, thèmes, auteurs, tags). */
 export async function GET(req: NextRequest) {
-  const limited = rateLimit(`search:${clientIp(req)}`, 60, 60_000);
+  const limited = await rateLimit(`search:${clientIp(req)}`, 60, 60_000);
   if (limited) return limited;
   const parsed = querySchema.safeParse({
     q: req.nextUrl.searchParams.get("q") ?? undefined,
     tab: req.nextUrl.searchParams.get("tab") ?? "all",
   });
   if (!parsed.success) return badRequest("Paramètres de recherche invalides.");
-  const viewer = getSessionUser(req);
-  return NextResponse.json(search(parsed.data.q, parsed.data.tab, viewer?.id ?? null));
+  const viewer = await getSessionUser(req);
+  return NextResponse.json(await search(parsed.data.q, parsed.data.tab, viewer?.id ?? null));
 }

@@ -12,6 +12,7 @@ import { TagList } from "./TagList";
 
 /** Carte éditoriale d'un texte court sur le Mur avec Suivre devant la date et agrandissement à droite. */
 export function PostCard({ post }: { post: PostSummary }) {
+  const tagItems = post.tagIds.map((id, index) => ({ id, label: post.tagLabels[index] ?? id }));
   const author = displayAuthor({
     publishAs: post.publishAs,
     username: post.authorUsername,
@@ -38,7 +39,7 @@ export function PostCard({ post }: { post: PostSummary }) {
         <h2 className="text-[19px] font-extrabold leading-[1.2] tracking-tight text-encre group-hover:underline decoration-2 underline-offset-2 sm:text-[20px]">{post.title}</h2>
         <p className="line-clamp-2 text-[15px] leading-relaxed text-encre/85">{post.excerpt}</p>
       </Link>
-      <TagList tags={post.tagSlugs} />
+      <TagList tags={tagItems} />
       <PostMetrics postId={post.id} title={post.title} likeCount={post.likeCount} dislikeCount={post.dislikeCount} commentCount={post.commentCount} viewCount={post.viewCount} />
     </motion.article>
   );

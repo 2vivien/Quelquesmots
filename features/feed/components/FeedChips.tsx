@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ThemeItem } from "@/features/themes";
 
 /** Liste horizontale défilante des thèmes (un seul défilement, chevrons < >). */
-export function FeedChips({ activeTheme, themes, onSelectTheme }: { activeTheme: string; themes: ThemeItem[]; onSelectTheme: (slug: string) => void }) {
+export function FeedChips({ activeTheme, themes, onSelectTheme }: { activeTheme: string; themes: ThemeItem[]; onSelectTheme: (themeId: string) => void }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(true);
@@ -45,7 +45,7 @@ export function FeedChips({ activeTheme, themes, onSelectTheme }: { activeTheme:
           Tout
         </button>
         {themes.map((t) => (
-          <button key={t.slug} type="button" role="tab" aria-selected={activeTheme === t.slug} onClick={() => onSelectTheme(t.slug)} className={activeTheme === t.slug ? "puce-active" : "puce"}>
+          <button key={t.id} type="button" role="tab" aria-selected={activeTheme === t.id} onClick={() => onSelectTheme(t.id)} className={activeTheme === t.id ? "puce-active" : "puce"}>
             {t.name}
           </button>
         ))}

@@ -18,7 +18,7 @@ export default async function ThemeDetailPage({ params }: ThemePageProps) {
   if (!theme) notFound();
 
   const [initialPage, authors] = await Promise.all([
-    postsService.listFeed({ themeSlug: theme.slug, sort: "recent", limit: 10, viewerId: null }),
+    postsService.listFeed({ themeId: theme.id, sort: "recent", limit: 10, viewerId: null }),
     authorsService.listDirectory(),
   ]);
 
@@ -26,8 +26,7 @@ export default async function ThemeDetailPage({ params }: ThemePageProps) {
     <div className="mx-auto max-w-[880px] space-y-8">
       <ThemeHero theme={theme} />
       <ThemeDetailView
-        themeSlug={theme.slug}
-        relatedTags={theme.relatedTags}
+        themeId={theme.id}
         initialPage={initialPage}
         authors={authors}
       />

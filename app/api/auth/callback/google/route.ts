@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { setSessionCookie } from "@/lib/server/session";
-import { getDb } from "@/lib/server/store";
+import { findOrCreateGoogleUser, setAdminRoleForUser } from "@/lib/server/repository";
 import { env } from "@/lib/env";
 
 const STATE_COOKIE = "qm_oauth_state";
-const globalRef = globalThis as typeof globalThis & { __qmGoogleSubs?: Map<string, string> };
-const googleSubs = (globalRef.__qmGoogleSubs ??= new Map());
 
 const tokenSchema = z.object({ access_token: z.string().min(1) });
 const userinfoSchema = z.object({
@@ -34,7 +32,7 @@ export async function GET(req: NextRequest) {
   if (!clientId || !clientSecret) return fail("google-non-configure");
   const redirectUri = process.env.GOOGLE_REDIRECT_URI ?? `${appUrl}/api/auth/callback/google`;
 
-  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+  const tokenRes = await fetch(process.env.GOOGLE_OAUTH_TOKEN_URL ?? "https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({ code, client_id: clientId, client_secret: clientSecret, redirect_uri: redirectUri, grant_type: "authorization_code" }),
@@ -43,7 +41,7 @@ export async function GET(req: NextRequest) {
   const tokenParsed = tokenSchema.safeParse(await tokenRes.json().catch(() => null));
   if (!tokenParsed.success) return fail("token-invalide");
 
-  const infoRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+  const infoRes = await fetch(process.env.GOOGLE_OAUTH_USERINFO_URL ?? "https://www.googleapis.com/oauth2/v3/userinfo", {
     headers: { Authorization: `Bearer ${tokenParsed.data.access_token}` },
   });
   if (!infoRes.ok) return fail("profil-indisponible");
@@ -51,27 +49,20 @@ export async function GET(req: NextRequest) {
   if (!infoParsed.success) return fail("profil-invalide");
   const info = infoParsed.data;
 
-  const db = getDb();
-  let userId = googleSubs.get(info.sub);
-  let createdNew = false;
-  if (!userId || !db.users.some((user) => user.id === userId)) {
-    const created = {
-      id: `user-${info.sub.slice(0, 16)}`,
-      username: `plume-${info.sub.slice(0, 8)}`,
-      firstName: info.given_name ?? "",
-      lastName: info.family_name ?? "",
-      bio: "",
-      avatarUrl: info.picture ?? "/images/editorial/avatar-emma.jpg",
-      defaultPublishAs: "USERNAME" as const,
-      listedInDirectory: true,
-      showJoinDate: true,
-      role: "user" as const,
-      onboarded: false,
-    };
-    db.users.push(created);
-    googleSubs.set(info.sub, created.id);
-    userId = created.id;
-    createdNew = true;
+  const { user, createdNew } = await findOrCreateGoogleUser({
+    googleSub: info.sub,
+    email: info.email ?? null,
+    givenName: info.given_name ?? null,
+    familyName: info.family_name ?? null,
+    avatarUrl: info.picture ?? null,
+  });
+
+  // Bootstrap : les e-mails listés dans ADMIN_EMAILS sont promus admin au premier passage.
+  if (info.email) {
+    const adminEmails = (process.env.ADMIN_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
+    if (adminEmails.includes(info.email.toLowerCase()) && user.role !== "admin") {
+      await setAdminRoleForUser(user.id);
+    }
   }
 
   const target = popup
@@ -79,8 +70,9 @@ export async function GET(req: NextRequest) {
     : createdNew
       ? `${appUrl}/bienvenue`
       : `${appUrl}/`;
+  const userAgent = req.headers.get("user-agent") ?? null;
   const res = NextResponse.redirect(target, 302);
   res.cookies.delete(STATE_COOKIE);
-  setSessionCookie(res, userId);
+  await setSessionCookie(res, user.id, { userAgent, ipHash: null });
   return res;
 }

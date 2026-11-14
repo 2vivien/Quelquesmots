@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getThemeById, getThemeBySlug } from "@/lib/server/store";
+import { getThemeById } from "@/lib/server/repository";
 import { badRequest, notFound } from "@/lib/server/http";
 
-const paramsSchema = z.object({ id: z.string().trim().min(1).max(64) });
+const paramsSchema = z.object({ id: z.string().uuid("Identifiant invalide.") });
 
-/** Fiche d'un thème par id (ou slug en rétrocompatibilité). */
+/** Fiche d'un thème par identifiant. */
 export async function GET(
   _req: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
   const parsed = paramsSchema.safeParse(await context.params);
   if (!parsed.success) return badRequest("Identifiant invalide.");
-  const key = parsed.data.id;
-  const theme = getThemeById(key) ?? getThemeBySlug(key);
+  const theme = await getThemeById(parsed.data.id);
   if (!theme) return notFound("Thème introuvable.");
   return NextResponse.json({ theme });
 }

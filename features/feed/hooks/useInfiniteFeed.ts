@@ -24,7 +24,15 @@ export function useInfiniteFeed(params: UseInfiniteFeedParams) {
   const blocked = interaction?.blockedUserIds ?? [];
 
   const query = useInfiniteQuery({
-    queryKey: ["feed", params.themeSlug ?? "", params.tagSlug ?? "", params.authorUsername ?? "", params.sort ?? "recent", user?.id ?? "guest"],
+    queryKey: [
+      "feed",
+      params.themeSlug ?? "",
+      params.tagSlug ?? "",
+      params.authorUsername ?? "",
+      params.sort ?? "recent",
+      user?.id ?? "guest",
+      blocked,
+    ],
     initialPageParam: null as string | null,
     queryFn: ({ pageParam }) =>
       postsService.listFeed({
@@ -38,11 +46,13 @@ export function useInfiniteFeed(params: UseInfiniteFeedParams) {
         blockedAuthorIds: blocked,
       }),
     getNextPageParam: (lastPage) => lastPage.nextCursor,
-    initialData: params.initialPage
+    initialData: params.initialPage && !user
       ? { pages: [params.initialPage], pageParams: [null] }
       : undefined,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
   });
 
-  const posts = query.data?.pages.flatMap((p) => p.items) ?? [];
+  const posts = query.data?.pages.flatMap((page) => page.items) ?? [];
   return { ...query, posts };
 }

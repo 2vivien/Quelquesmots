@@ -1192,14 +1192,28 @@ export async function listAudit(): Promise<AuditEntry[]> {
   }));
 }
 
+/** Résout le userId à partir du pseudonyme (l'id interne n'est pas le pseudonyme). */
+async function actorIdByUsername(tx: DbTx, actorUsername: string): Promise<string | null> {
+  const target = normalizeSearchText(actorUsername);
+  if (!target) return null;
+  const rows = await tx
+    .select({ id: users.id })
+    .from(users)
+    .innerJoin(authorProfiles, eq(authorProfiles.userId, users.id))
+    .where(sql`lower(${authorProfiles.usernameNormalized}) = ${target}`)
+    .limit(1);
+  return rows[0]?.id ?? null;
+}
+
 export async function pushAudit(actorUsername: string, action: string, targetLabel: string, reason: string): Promise<AuditEntry> {
   const db = getDatabase();
-  const actorRows = await db.select({ id: users.id }).from(users).where(eq(users.id, actorUsername)).limit(1);
-  const actorId = actorRows[0]?.id ?? null;
   const createdAt = new Date();
   const id = newId("audit");
-  await db.insert(adminAudit).values({ id, actorId, actorUsername, action, targetLabel, reason, createdAt });
-  return { id, actorUsername, action, targetLabel, reason, createdAt: createdAt.toISOString() };
+  return db.transaction(async (tx) => {
+    const actorId = await actorIdByUsername(tx, actorUsername);
+    await tx.insert(adminAudit).values({ id, actorId, actorUsername, action, targetLabel, reason, createdAt });
+    return { id, actorUsername, action, targetLabel, reason, createdAt: createdAt.toISOString() };
+  });
 }
 
 export async function getSettings(): Promise<SiteSettings> {
@@ -1229,23 +1243,27 @@ export async function adminModerate(input: {
   reason: string;
 }): Promise<void> {
   const db = getDatabase();
-  if (input.action === "HIDE") {
-    await setModerationStatus(input.targetId, "HIDDEN", true);
-    await setReportStatus(input.reportId, "RESOLVED");
-  } else if (input.action === "RESTORE") {
-    await setModerationStatus(input.targetId, "PUBLISHED", false);
-    await setReportStatus(input.reportId, "RESOLVED");
-  } else {
-    await setReportStatus(input.reportId, "DISMISSED");
-  }
-  await db.insert(adminAudit).values({
-    id: newId("audit"),
-    actorId: null,
-    actorUsername: input.actorUsername,
-    action: input.action,
-    targetLabel: input.targetLabel,
-    reason: input.reason,
-    createdAt: new Date(),
+  // Masquer/restaurer + clôture du signalement + audit : tout ou rien.
+  await db.transaction(async (tx) => {
+    if (input.action === "HIDE") {
+      await tx.update(posts).set({ status: "HIDDEN", moderationLocked: true, updatedAt: new Date() }).where(eq(posts.id, input.targetId));
+      await tx.update(reports).set({ status: "RESOLVED", reviewedAt: new Date() }).where(eq(reports.id, input.reportId));
+    } else if (input.action === "RESTORE") {
+      await tx.update(posts).set({ status: "PUBLISHED", moderationLocked: false, updatedAt: new Date() }).where(eq(posts.id, input.targetId));
+      await tx.update(reports).set({ status: "RESOLVED", reviewedAt: new Date() }).where(eq(reports.id, input.reportId));
+    } else {
+      await tx.update(reports).set({ status: "DISMISSED", reviewedAt: new Date() }).where(eq(reports.id, input.reportId));
+    }
+    const actorId = await actorIdByUsername(tx, input.actorUsername);
+    await tx.insert(adminAudit).values({
+      id: newId("audit"),
+      actorId,
+      actorUsername: input.actorUsername,
+      action: input.action,
+      targetLabel: input.targetLabel,
+      reason: input.reason,
+      createdAt: new Date(),
+    });
   });
 }
 

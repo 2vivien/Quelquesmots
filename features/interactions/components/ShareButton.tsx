@@ -5,16 +5,16 @@ import { useShare } from "../hooks/useShare";
 
 interface ShareButtonProps {
   title: string;
-  slug: string;
+  postId: string;
   showLabel?: boolean;
 }
 
 /**
  * Bouton de partage d'un texte (Web Share API ou copie du lien).
- * @param props Titre, slug et affichage optionnel du libellé « Partager ».
+ * @param props Titre, identifiant et affichage optionnel du libellé « Partager ».
  */
-export function ShareButton({ title, slug, showLabel = false }: ShareButtonProps) {
-  const { share } = useShare(title, slug);
+export function ShareButton({ title, postId, showLabel = false }: ShareButtonProps) {
+  const { share } = useShare(title, postId);
   return (
     <button
       type="button"

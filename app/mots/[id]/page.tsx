@@ -17,17 +17,18 @@ import {
 export const dynamic = "force-dynamic";
 
 interface PostPageProps {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ id: string }>;
 }
 
 /** Métadonnées SEO et indexation conditionnelle (noindex pour PRIVATE). */
 export async function generateMetadata({ params }: PostPageProps): Promise<Metadata> {
-  const { slug } = await params;
-  const post = await postsService.getBySlug(slug, "user-emma");
+  const { id } = await params;
+  const post = await postsService.getById(id);
   if (!post) return { title: "Texte introuvable — Quelques mots" };
   const author = displayAuthor({
     publishAs: post.publishAs,
     username: post.authorUsername,
+    userId: post.authorId,
     firstName: post.authorFirstName,
     lastName: post.authorLastName,
   });
@@ -41,8 +42,8 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
 
 /** Page de lecture éditoriale d'un texte court (écran 6). */
 export default async function PostReaderPage({ params }: PostPageProps) {
-  const { slug } = await params;
-  const post = await postsService.getBySlug(slug, "user-emma");
+  const { id } = await params;
+  const post = await postsService.getById(id);
   if (!post) notFound();
 
   const related = await postsService.listRelated(post, null);

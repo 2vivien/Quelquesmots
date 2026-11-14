@@ -37,7 +37,7 @@ export const postsReal: PostsService = {
     return data.post;
   },
   async listRelated(post: PostRecord): Promise<PostRecord[]> {
-    const res = await fetch(apiUrl(`/api/posts/${encodeURIComponent(post.slug)}/related`));
+    const res = await fetch(apiUrl(`/api/posts/${encodeURIComponent(post.id)}/related`));
     if (!res.ok) return [];
     const data = (await res.json()) as { items: PostRecord[] };
     return data.items;

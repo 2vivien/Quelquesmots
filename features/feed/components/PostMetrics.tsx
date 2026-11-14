@@ -5,7 +5,6 @@ import { formatCount } from "@/lib/format";
 
 interface PostMetricsProps {
   postId: string;
-  slug: string;
   title: string;
   likeCount: number;
   dislikeCount: number;
@@ -33,7 +32,7 @@ export function PostMetrics(props: PostMetricsProps) {
       </div>
       <div className="flex items-center gap-1">
         <BookmarkButton postId={props.postId} />
-        <ShareButton title={props.title} slug={props.slug} />
+        <ShareButton title={props.title} postId={props.postId} />
       </div>
     </div>
   );

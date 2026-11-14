@@ -15,6 +15,7 @@ export function PostCard({ post }: { post: PostRecord }) {
   const author = displayAuthor({
     publishAs: post.publishAs,
     username: post.authorUsername,
+    userId: post.authorId,
     firstName: post.authorFirstName,
     lastName: post.authorLastName,
   });
@@ -29,16 +30,16 @@ export function PostCard({ post }: { post: PostRecord }) {
           {post.publishAs !== "ANONYMOUS" ? <FollowButton targetUserId={post.authorId} authorLabel={author.label} variant="inline" /> : null}
           {post.publishedAt ? <RelativeTime isoDate={post.publishedAt} /> : <span className="shrink-0">brouillon</span>}
         </div>
-        <Link href={`/mots/${post.slug}`} title="Agrandir ce texte" aria-label={`Agrandir ${post.title}`} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-bord bg-carte text-encre transition-colors hover:bg-pilule">
+        <Link href={`/mots/${post.id}`} title="Agrandir ce texte" aria-label={`Agrandir ${post.title}`} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-bord bg-carte text-encre transition-colors hover:bg-pilule">
           <Maximize2 size={16} strokeWidth={1.75} aria-hidden="true" />
         </Link>
       </div>
-      <Link href={`/mots/${post.slug}`} className="group block space-y-2">
+      <Link href={`/mots/${post.id}`} className="group block space-y-2">
         <h2 className="text-[19px] font-extrabold leading-[1.2] tracking-tight text-encre group-hover:underline decoration-2 underline-offset-2 sm:text-[20px]">{post.title}</h2>
         <p className="line-clamp-2 text-[15px] leading-relaxed text-encre/85">{post.excerpt}</p>
       </Link>
       <TagList tags={post.tagSlugs} />
-      <PostMetrics postId={post.id} slug={post.slug} title={post.title} likeCount={post.likeCount} dislikeCount={post.dislikeCount} commentCount={post.commentCount} viewCount={post.viewCount} />
+      <PostMetrics postId={post.id} title={post.title} likeCount={post.likeCount} dislikeCount={post.dislikeCount} commentCount={post.commentCount} viewCount={post.viewCount} />
     </motion.article>
   );
 }

@@ -8,12 +8,12 @@ import { interactionsService } from "../services/interactions.service";
 /**
  * Hook de partage utilisant Web Share API ou copie du lien dans le presse-papier.
  * @param title Titre du texte partagé.
- * @param slug Slug du texte.
+ * @param postId Identifiant du texte.
  * @returns Fonction déclenchant le partage.
  */
-export function useShare(title: string, slug: string) {
+export function useShare(title: string, postId: string) {
   const share = async (): Promise<void> => {
-    const url = `${window.location.origin}/mots/${slug}`;
+    const url = `${window.location.origin}/mots/${postId}`;
     if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
       try {
         await navigator.share({ title, url });

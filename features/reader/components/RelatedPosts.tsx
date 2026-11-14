@@ -16,7 +16,7 @@ export function RelatedPosts({ posts }: RelatedPostsProps) {
       <h2 className="font-serif text-2xl text-encre">Textes similaires</h2>
       <div className="divide-y divide-bord">
         {posts.map((p) => (
-          <Link key={p.id} href={`/mots/${p.slug}`} className="block py-3.5 group">
+          <Link key={p.id} href={`/mots/${p.id}`} className="block py-3.5 group">
             <p className="font-serif text-lg text-encre group-hover:underline">{p.title}</p>
             <p className="mt-1 line-clamp-1 text-sm text-muted">{p.excerpt}</p>
           </Link>

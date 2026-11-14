@@ -11,6 +11,7 @@ export function ReaderHeader({ post, extraAction }: { post: PostRecord; extraAct
   const author = displayAuthor({
     publishAs: post.publishAs,
     username: post.authorUsername,
+    userId: post.authorId,
     firstName: post.authorFirstName,
     lastName: post.authorLastName,
   });

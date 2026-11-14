@@ -8,16 +8,17 @@ export const contentType = "image/png";
 
 /** Carte typographique Open Graph ivoire générée pour chaque texte public. */
 export default async function OpenGraphImage(props: {
-  params?: Promise<{ slug?: string }>;
+  params?: Promise<{ id?: string }>;
 }) {
   const resolved = props.params ? await props.params : undefined;
-  const slug = resolved?.slug ?? "";
-  const post = slug ? await postsService.getBySlug(slug, null) : null;
+  const id = resolved?.id ?? "";
+  const post = id ? await postsService.getById(id) : null;
   const title = post?.title ?? "Quelques mots";
   const author = post
     ? displayAuthor({
         publishAs: post.publishAs,
         username: post.authorUsername,
+        userId: post.authorId,
         firstName: post.authorFirstName,
         lastName: post.authorLastName,
       }).label

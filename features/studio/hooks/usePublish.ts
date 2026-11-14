@@ -43,7 +43,7 @@ export function usePublish(saveNow: () => Promise<string | null>) {
       if (!published) throw new Error("Publication impossible.");
       store.setField("publishOpen", false);
       toast.success("Votre texte est publié");
-      router.push(`/mots/${published.slug}`);
+      router.push(`/mots/${published.id}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erreur de publication.");
     } finally {

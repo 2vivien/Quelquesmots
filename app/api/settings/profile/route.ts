@@ -15,7 +15,7 @@ export async function PATCH(req: NextRequest) {
   const { onboarded, ...profilePatch } = body.data;
   if (
     profilePatch.username !== undefined &&
-    !isUsernameAvailable(profilePatch.username, auth.user.id)
+    !(await isUsernameAvailable(profilePatch.username, auth.user.id))
   ) {
     return jsonError(400, "VALIDATION", "Ce pseudonyme est déjà utilisé.", { username: "Ce pseudonyme est déjà utilisé." });
   }

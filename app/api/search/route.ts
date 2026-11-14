@@ -19,5 +19,5 @@ export async function GET(req: NextRequest) {
   });
   if (!parsed.success) return badRequest("Paramètres de recherche invalides.");
   const viewer = await getSessionUser(req);
-  return NextResponse.json(search(parsed.data.q, parsed.data.tab, viewer?.id ?? null));
+  return NextResponse.json(await search(parsed.data.q, parsed.data.tab, viewer?.id ?? null));
 }

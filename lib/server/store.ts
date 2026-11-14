@@ -153,7 +153,7 @@ function seedDb(): Db {
     notifications: SEED_NOTIFICATIONS.map((n) => ({ ...n })),
     reports: SEED_REPORTS.map((r) => ({ ...r })),
     audit: [],
-    settings: { maxChars: 1500, minChars: 20, maxTags: 5, dailyPublishLimit: 10 },
+    settings: { maxChars: 50000, minChars: 20, maxTags: 5, dailyPublishLimit: 10 },
     users: seedUsers(),
     authors: SEED_AUTHORS.map((a) => ({ ...a })),
     likes: new Map(),

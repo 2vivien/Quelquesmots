@@ -5,7 +5,7 @@ export const STUDIO_LIMITS = {
   TITLE_MIN: 3,
   TITLE_MAX: 120,
   BODY_MIN: 20,
-  BODY_MAX: 1500,
+  BODY_MAX: 50000,
   THEMES_MIN: 1,
   THEMES_MAX: 5,
 } as const;
@@ -21,7 +21,7 @@ export const publishSchema = z.object({
     .string()
     .trim()
     .min(STUDIO_LIMITS.BODY_MIN, "Votre texte doit contenir au moins 20 caractères.")
-    .max(STUDIO_LIMITS.BODY_MAX, "Votre texte dépasse la limite de 1 500 caractères."),
+    .max(STUDIO_LIMITS.BODY_MAX, "Votre texte dépasse la limite de 50 000 caractères."),
   themeSlugs: z
     .array(z.string())
     .min(STUDIO_LIMITS.THEMES_MIN, "Choisissez au moins 1 thème.")

@@ -9,7 +9,7 @@ import { useEffect } from "react";
 import type { TiptapDoc } from "@/types";
 import { STUDIO_LIMITS } from "../schemas/publish.schema";
 
-/** Surface d'écriture Tiptap avec barre discrète et limite à 1 500 caractères. */
+/** Surface d'écriture Tiptap avec barre discrète et limite à 50 000 caractères. */
 export function EditorSurface({ content, onUpdate }: { content: TiptapDoc; onUpdate: (doc: TiptapDoc) => void }) {
   const editor = useEditor({
     extensions: [

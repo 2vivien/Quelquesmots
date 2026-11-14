@@ -19,7 +19,7 @@ export function AuthorsDirectoryView({ initialAuthors }: { initialAuthors: Autho
       {authors.length === 0 ? (
         <p className="py-12 text-center font-serif italic text-muted">Rien ici pour l&apos;instant.</p>
       ) : (
-        <div>{authors.map((a) => <AuthorRow key={a.userId} author={a} />)}</div>
+        <div className="space-y-3">{authors.map((a) => <AuthorRow key={a.userId} author={a} />)}</div>
       )}
     </div>
   );

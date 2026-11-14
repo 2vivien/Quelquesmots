@@ -7,6 +7,7 @@ import { Bell, Plus, Search } from "lucide-react";
 import { useAuth } from "@/features/auth";
 import { useNotifications } from "@/features/notifications";
 import { openAuthPopup } from "@/lib/open-auth";
+import { MobileMenu } from "./MobileMenu";
 import { UserMenu } from "./UserMenu";
 
 /** Barre supérieure : logo (mobile), recherche centrée, actions à droite (cloche, Écrire, avatar) ; invités : À propos + Connexion. */
@@ -28,7 +29,7 @@ export function Header() {
         <Link href="/" className="shrink-0 font-display text-[15px] uppercase leading-none tracking-tight text-encre lg:hidden">
           Quelques mots
         </Link>
-        <form onSubmit={onSubmit} className="relative mx-auto hidden h-full w-full max-w-2xl items-center md:flex" role="search">
+        <form onSubmit={onSubmit} className="relative mx-auto hidden h-full w-full max-w-2xl items-center lg:flex" role="search">
           <Search size={16} strokeWidth={2} className="pointer-events-none absolute left-4 text-encre" aria-hidden="true" />
           <input
             type="search"
@@ -40,28 +41,31 @@ export function Header() {
           />
         </form>
         <div className="ml-auto flex items-center gap-1.5">
-          {user ? (
-            <>
-              <Link href="/studio" className="btn-jaune hidden !min-h-[38px] !px-4 !py-0 !text-[13px] sm:inline-flex">
-                <Plus size={16} strokeWidth={2.5} aria-hidden="true" />
-                Écrire
-              </Link>
-              <Link href="/notifications" aria-label="Notifications" className="relative flex h-10 w-10 items-center justify-center rounded-full border-[1.5px] border-bord bg-carte text-encre shadow-[2px_2px_0_0_var(--color-encre)] transition-colors hover:bg-pilule">
-                <Bell size={18} strokeWidth={2} aria-hidden="true" />
-                {unreadCount > 0 ? <span className="badge-noir absolute -right-1 -top-1">{unreadCount}</span> : null}
-              </Link>
-              <UserMenu />
-            </>
-          ) : (
-            <>
-              <Link href="/a-propos" className="btn-fantome hidden !min-h-[38px] !px-4 !py-0 !text-[13px] sm:inline-flex">
-                À propos
-              </Link>
-              <button type="button" onClick={openAuthPopup} className="btn-noir !min-h-[38px] !px-5 !py-0 !text-[13px]">
-                Connexion
-              </button>
-            </>
-          )}
+          <div className="hidden items-center gap-1.5 lg:flex">
+            {user ? (
+              <>
+                <Link href="/studio" className="btn-jaune inline-flex !min-h-[38px] !px-4 !py-0 !text-[13px]">
+                  <Plus size={16} strokeWidth={2.5} aria-hidden="true" />
+                  Écrire
+                </Link>
+                <Link href="/notifications" aria-label="Notifications" className="relative flex h-10 w-10 items-center justify-center rounded-full border-[1.5px] border-bord bg-carte text-encre shadow-[2px_2px_0_0_var(--color-encre)] transition-colors hover:bg-pilule">
+                  <Bell size={18} strokeWidth={2} aria-hidden="true" />
+                  {unreadCount > 0 ? <span className="badge-noir absolute -right-1 -top-1">{unreadCount}</span> : null}
+                </Link>
+                <UserMenu />
+              </>
+            ) : (
+              <>
+                <Link href="/a-propos" className="btn-fantome !min-h-[38px] !px-4 !py-0 !text-[13px]">
+                  À propos
+                </Link>
+                <button type="button" onClick={openAuthPopup} className="btn-noir !min-h-[38px] !px-5 !py-0 !text-[13px]">
+                  Connexion
+                </button>
+              </>
+            )}
+          </div>
+          <MobileMenu />
         </div>
       </div>
     </header>

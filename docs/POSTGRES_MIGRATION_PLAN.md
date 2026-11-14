@@ -3,6 +3,8 @@
 **Date :** 14 novembre 2026  
 **Statut :** cadrage et fondation technique ; aucun parcours métier n'est encore persistant.
 
+**Artefacts de fondation versionnés :** `db/migrations/0000_initial_schema.sql`, `db/migrations/meta/0000_snapshot.json`, `db/migrations/meta/_journal.json` et `bun.lock`. La migration initiale décrit 20 tables, 29 clés étrangères, 35 index et les contraintes/enums définis ci-dessous. Elle a été générée par Drizzle Kit en mode schema-only ; elle n'a pas été appliquée à une base.
+
 ## 1. État du dépôt et décision d'architecture
 
 ### État Git revalidé
@@ -319,7 +321,7 @@ Ne pas exécuter drizzle-kit migrate dans le build, dans le démarrage Next.js o
 ### Phase 0 — Fondation (cette PR)
 Dépendances, lockfile, schéma Drizzle, config, client paresseux, documentation, migration SQL initiale générée et vérifiée sans base réelle.
 
-Acceptation : installation figée, typecheck, lint, conventions, build et génération de migration passent ; aucune route métier n'utilise encore PostgreSQL.
+Acceptation : installation figée, typecheck, lint, conventions, vérification du journal Drizzle et build passent ; la migration SQL initiale est versionnée ; aucune route métier n'utilise encore PostgreSQL.
 
 ### Phase 1 — Auth persistante
 Décider OAuth personnalisé vs Better Auth ; repositories users/profiles/oauth/sessions ; persister le subject Google et les sessions ; tests expiration, révocation, suppression, multi-instance.

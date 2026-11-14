@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const auth = await requireUser(req);
   if (!auth.ok) return auth.response;
-  const limited = rateLimit(`draft:${auth.user.id}`, 30, 60_000);
+  const limited = await rateLimit(`draft:${auth.user.id}`, 30, 60_000);
   if (limited) return limited;
   const body = await parseJsonBody(req, draftUpsertSchema);
   if (!body.ok) return body.response;

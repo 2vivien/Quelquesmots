@@ -8,7 +8,7 @@ import { moderateSchema } from "@/lib/server/schemas";
 export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (!auth.ok) return auth.response;
-  const limited = rateLimit(`moderate:${auth.user.id}`, 30, 60_000);
+  const limited = await rateLimit(`moderate:${auth.user.id}`, 30, 60_000);
   if (limited) return limited;
   const body = await parseJsonBody(req, moderateSchema);
   if (!body.ok) return body.response;

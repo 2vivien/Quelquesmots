@@ -8,7 +8,7 @@ import { notificationsReadSchema } from "@/lib/server/schemas";
 export async function POST(req: NextRequest) {
   const auth = await requireUser(req);
   if (!auth.ok) return auth.response;
-  const limited = rateLimit(`notif-read:${auth.user.id}`, 60, 60_000);
+  const limited = await rateLimit(`notif-read:${auth.user.id}`, 60, 60_000);
   if (limited) return limited;
   const body = await parseJsonBody(req, notificationsReadSchema);
   if (!body.ok) return body.response;

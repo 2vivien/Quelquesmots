@@ -8,7 +8,7 @@ import { profilePatchSchema } from "@/lib/server/schemas";
 export async function PATCH(req: NextRequest) {
   const auth = await requireUser(req);
   if (!auth.ok) return auth.response;
-  const limited = rateLimit(`profile:${auth.user.id}`, 10, 60_000);
+  const limited = await rateLimit(`profile:${auth.user.id}`, 10, 60_000);
   if (limited) return limited;
   const body = await parseJsonBody(req, profilePatchSchema);
   if (!body.ok) return body.response;

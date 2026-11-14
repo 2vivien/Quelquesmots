@@ -9,7 +9,7 @@ const querySchema = z.object({
 
 /** Disponibilité d'un pseudonyme (onboarding). */
 export async function GET(req: NextRequest) {
-  const limited = rateLimit(`username-check:${clientIp(req)}`, 60, 60_000);
+  const limited = await rateLimit(`username-check:${clientIp(req)}`, 60, 60_000);
   if (limited) return limited;
   const parsed = querySchema.safeParse({
     username: req.nextUrl.searchParams.get("username") ?? "",

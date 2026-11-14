@@ -15,7 +15,7 @@ const querySchema = z.object({
 
 /** Retourne une page de textes filtrée et paginée par curseur. */
 export async function GET(req: NextRequest) {
-  const limited = rateLimit(`feed:${clientIp(req)}`, 120, 60_000);
+  const limited = await rateLimit(`feed:${clientIp(req)}`, 120, 60_000);
   if (limited) return limited;
 
   const parsed = querySchema.safeParse({

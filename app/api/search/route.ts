@@ -11,7 +11,7 @@ const querySchema = z.object({
 
 /** Recherche globale multi-entités (textes, thèmes, auteurs, tags). */
 export async function GET(req: NextRequest) {
-  const limited = rateLimit(`search:${clientIp(req)}`, 60, 60_000);
+  const limited = await rateLimit(`search:${clientIp(req)}`, 60, 60_000);
   if (limited) return limited;
   const parsed = querySchema.safeParse({
     q: req.nextUrl.searchParams.get("q") ?? undefined,

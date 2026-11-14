@@ -10,7 +10,7 @@ const querySchema = z.object({
 
 /** Charge jusqu'à 100 textes visibles en une requête, notamment pour la bibliothèque. */
 export async function GET(req: NextRequest) {
-  const limited = rateLimit(`posts-by-id:${clientIp(req)}`, 60, 60_000);
+  const limited = await rateLimit(`posts-by-id:${clientIp(req)}`, 60, 60_000);
   if (limited) return limited;
 
   const parsed = querySchema.safeParse({

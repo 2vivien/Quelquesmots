@@ -28,7 +28,7 @@ export async function POST(
   if (!post) return notFound("Texte introuvable.");
 
   const viewerKey = viewer ? `u:${viewer.id}` : `ip:${viewerKeyFromIp(clientIp(req))}`;
-  const limited = rateLimit(`view:${viewerKey}`, 60, 60_000);
+  const limited = await rateLimit(`view:${viewerKey}`, 60, 60_000);
   if (limited) return NextResponse.json({ counted: false });
 
   const counted = await recordView(post.id, viewerKey);

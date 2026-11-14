@@ -13,7 +13,7 @@ export async function DELETE(
 ) {
   const auth = await requireUser(req);
   if (!auth.ok) return auth.response;
-  const limited = rateLimit(`delete-post:${auth.user.id}`, 30, 60_000);
+  const limited = await rateLimit(`delete-post:${auth.user.id}`, 30, 60_000);
   if (limited) return limited;
   const parsed = paramsSchema.safeParse(await context.params);
   if (!parsed.success) return badRequest("Identifiant invalide.");

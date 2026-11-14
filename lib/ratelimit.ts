@@ -1,42 +1,54 @@
-const buckets = new Map<string, number[]>();
-const MAX_BUCKETS = 1000;
+import { sql } from "drizzle-orm";
+import { getDatabase } from "@/db";
 
-/** Retire les entrées complètement expirées ou vides pour éviter la croissance mémoire. */
-function sweep(now: number): void {
-  for (const [key, stamps] of buckets) {
-    const active = stamps.filter((ts) => now - ts < 86_400_000);
-    if (active.length === 0) buckets.delete(key);
-    else buckets.set(key, active);
-  }
-  if (buckets.size <= MAX_BUCKETS) return;
-  const oldest = [...buckets.entries()]
-    .map(([key, stamps]) => [key, stamps[0] ?? 0] as const)
-    .sort((a, b) => a[1] - b[1])
-    .slice(0, buckets.size - MAX_BUCKETS);
-  for (const [key] of oldest) buckets.delete(key);
+/** Supprime les fenêtres expirées (nettoie au fil de l'eau, pas de démon dédié). */
+async function sweepExpired(): Promise<void> {
+  const db = getDatabase();
+  await db.execute(sql`delete from rate_limits where now() - window_start > interval '1 day'`);
 }
 
 /**
- * Vérifie la limitation de débit par fenêtre glissante en mémoire.
- * @param key Identifiant unique (utilisateur ou action).
+ * Limitation de débit partagée entre instances (PostgreSQL, incrément atomique par clé).
+ * Fenêtre fixe de `windowMs` millisecondes à partir de la première requête de la fenêtre.
+ * Fail-open : si la base est injoignable, la requête est autorisée (l'échec surfacera sur la cible réelle).
+ * @param key Identifiant unique (utilisateur, route, action).
  * @param limit Nombre maximum d'appels autorisés dans la fenêtre.
  * @param windowMs Durée de la fenêtre en millisecondes.
  * @returns `true` si la requête est autorisée, `false` si la limite est dépassée.
  */
-export function checkRateLimit(
+export async function checkRateLimit(
   key: string,
   limit: number,
   windowMs: number,
-): boolean {
-  const now = Date.now();
-  if (buckets.size > MAX_BUCKETS) sweep(now);
-  const prev = buckets.get(key) ?? [];
-  const active = prev.filter((ts) => now - ts < windowMs);
-  if (active.length >= limit) {
-    buckets.set(key, active);
-    return false;
+): Promise<boolean> {
+  try {
+    const db = getDatabase();
+    // Incrément atomique : une seule requête, pas de SELECT puis UPDATE non atomiques.
+    const result = await db.execute(sql`
+      insert into rate_limits (key, window_start, count)
+      values (${key}, now(), 1)
+      on conflict (key) do update
+        set count = case
+                      when now() - rate_limits.window_start > make_interval(secs => ${windowMs} / 1000.0)
+                      then 1
+                      else rate_limits.count + 1
+                    end,
+            window_start = case
+                      when now() - rate_limits.window_start > make_interval(secs => ${windowMs} / 1000.0)
+                      then now()
+                      else rate_limits.window_start
+                    end
+      returning count
+    `);
+    const raw = (result.rows[0] as { count?: unknown } | undefined)?.count;
+    const count = typeof raw === "number" ? raw : Number(raw ?? 1);
+    if (Number.isNaN(count) || count <= 1) {
+      // Première requête de la fenêtre (count <= 1) : occasionnellement on purge les vieilles clés.
+      if (Math.random() < 0.01) sweepExpired().catch(() => undefined);
+    }
+    return count <= limit;
+  } catch (error) {
+    console.error("Limitation de débit indisponible (fail-open) :", error);
+    return true;
   }
-  active.push(now);
-  buckets.set(key, active);
-  return true;
 }

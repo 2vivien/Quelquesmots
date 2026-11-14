@@ -10,7 +10,7 @@ const MAX_BYTES = 5 * 1024 * 1024;
 export async function POST(req: NextRequest) {
   const auth = await requireUser(req);
   if (!auth.ok) return auth.response;
-  const limited = rateLimit(`upload-avatar:${auth.user.id}`, 20, 600_000);
+  const limited = await rateLimit(`upload-avatar:${auth.user.id}`, 20, 600_000);
   if (limited) return limited;
 
   let form: FormData;

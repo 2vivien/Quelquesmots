@@ -27,12 +27,12 @@ export const notFound = (message = "Ressource introuvable.") =>
   jsonError(404, "NOT_FOUND", message);
 
 /** Applique la limitation de débit ; renvoie une 429 si dépassée, sinon `null`. */
-export function rateLimit(
+export async function rateLimit(
   key: string,
   limit: number,
   windowMs: number,
-): NextResponse | null {
-  return checkRateLimit(key, limit, windowMs)
+): Promise<NextResponse | null> {
+  return (await checkRateLimit(key, limit, windowMs))
     ? null
     : jsonError(429, "RATE_LIMITED", "Trop de requêtes. Réessayez dans un instant.");
 }

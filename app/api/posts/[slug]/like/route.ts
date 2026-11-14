@@ -14,7 +14,7 @@ export async function POST(
 ) {
   const auth = await requireUser(req);
   if (!auth.ok) return auth.response;
-  const limited = rateLimit(`like:${auth.user.id}`, 60, 60_000);
+  const limited = await rateLimit(`like:${auth.user.id}`, 60, 60_000);
   if (limited) return limited;
   const parsed = paramsSchema.safeParse(await context.params);
   if (!parsed.success) return badRequest("Identifiant invalide.");

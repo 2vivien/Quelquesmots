@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (!auth.ok) return auth.response;
-  const limited = rateLimit(`admin-settings:${auth.user.id}`, 10, 60_000);
+  const limited = await rateLimit(`admin-settings:${auth.user.id}`, 10, 60_000);
   if (limited) return limited;
   const body = await parseJsonBody(req, siteSettingsSchema);
   if (!body.ok) return body.response;

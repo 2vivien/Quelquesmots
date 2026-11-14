@@ -14,7 +14,7 @@ export async function PATCH(
 ) {
   const auth = await requireAdmin(req);
   if (!auth.ok) return auth.response;
-  const limited = rateLimit(`admin-post:${auth.user.id}`, 30, 60_000);
+  const limited = await rateLimit(`admin-post:${auth.user.id}`, 30, 60_000);
   if (limited) return limited;
   const parsed = paramsSchema.safeParse(await context.params);
   if (!parsed.success) return badRequest("Identifiant invalide.");

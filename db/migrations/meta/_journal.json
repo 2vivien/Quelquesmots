@@ -15,6 +15,13 @@
       "when": 1794685694740,
       "tag": "0001_fts_french",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794685920434,
+      "tag": "0002_rate_limits",
+      "breakpoints": true
     }
   ]
 }

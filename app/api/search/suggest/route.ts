@@ -5,7 +5,7 @@ import { badRequest, clientIp, rateLimit } from "@/lib/server/http";
 
 /** Jusqu'à 5 suggestions mixtes dès 2 caractères. */
 export async function GET(req: NextRequest) {
-  const limited = rateLimit(`suggest:${clientIp(req)}`, 120, 60_000);
+  const limited = await rateLimit(`suggest:${clientIp(req)}`, 120, 60_000);
   if (limited) return limited;
   const q = (req.nextUrl.searchParams.get("q") ?? "").trim();
   if (q.length < 2) return NextResponse.json({ items: [] });

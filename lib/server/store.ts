@@ -319,6 +319,20 @@ export function getPostById(id: string): PostRecord | null {
   return getDb().posts.find((p) => p.id === id) ?? null;
 }
 
+/** Charge plusieurs publications visibles en une seule lecture logique. */
+export function getPostsByIds(ids: string[], viewerId?: string | null): PostRecord[] {
+  const requested = new Set(ids);
+  const found = new Map(
+    getDb().posts
+      .filter((post) => requested.has(post.id) && canViewPost(post, viewerId))
+      .map((post) => [post.id, post] as const),
+  );
+  return ids.flatMap((id) => {
+    const post = found.get(id);
+    return post ? [post] : [];
+  });
+}
+
 export function listRelated(post: PostRecord, viewerId?: string | null): PostSummary[] {
   return getDb()
     .posts.filter(

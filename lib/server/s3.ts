@@ -1,20 +1,23 @@
 /**
- * Client S3 compatible (MinIO, AWS, Cloudflare R2…) pour stocker les photos de profil.
- * Configuration par variables d'environnement :
- *   S3_ENDPOINT   (ex. http://localhost:9000)
- *   S3_REGION     (défaut us-east-1)
- *   S3_BUCKET     (défaut « assets »)
- *   S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY
- *   S3_PREFIX     (défaut « uploads »)
- * Si S3 n'est pas configuré, l'upload bascule sur le stockage fichier local (`.uploads/`).
+ * Client S3 compatible (Neon Object Storage, MinIO, AWS, Cloudflare R2…) pour les photos de profil.
+ * Configuration par variables d'environnement (format AWS standard) :
+ *   AWS_ENDPOINT_URL_S3        (ex. https://<project>.storage.aws.neon.tech)
+ *   AWS_REGION                 (ex. us-east-2 ; défaut us-east-2)
+ *   AWS_ACCESS_KEY_ID
+ *   AWS_SECRET_ACCESS_KEY
+ *   S3_BUCKET                  (défaut « assets »)
+ *   S3_PREFIX                  (défaut « uploads »)
+ * Repli rétrocompatible : S3_ENDPOINT, S3_REGION, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY.
+ * Si rien n'est configuré, l'upload bascule sur le stockage fichier local (`.uploads/`).
  */
-import "dotenv/config";
 import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-const endpoint = process.env.S3_ENDPOINT;
+const endpoint = process.env.AWS_ENDPOINT_URL_S3 ?? process.env.S3_ENDPOINT;
 const bucket = process.env.S3_BUCKET ?? "assets";
-const region = process.env.S3_REGION ?? "us-east-1";
+const region = process.env.AWS_REGION ?? process.env.S3_REGION ?? "us-east-2";
+const accessKeyId = process.env.AWS_ACCESS_KEY_ID ?? process.env.S3_ACCESS_KEY_ID ?? "";
+const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY ?? process.env.S3_SECRET_ACCESS_KEY ?? "";
 const prefix = (process.env.S3_PREFIX ?? "uploads").replace(/\/+$/, "");
 
 const client = endpoint
@@ -23,8 +26,8 @@ const client = endpoint
       endpoint,
       region,
       credentials: {
-        accessKeyId: process.env.S3_ACCESS_KEY_ID ?? "",
-        secretAccessKey: process.env.S3_SECRET_ACCESS_KEY ?? "",
+        accessKeyId,
+        secretAccessKey,
       },
     })
   : null;

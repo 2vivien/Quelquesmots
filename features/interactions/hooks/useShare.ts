@@ -29,7 +29,7 @@ export function useShare(title: string, postId: string) {
 }
 
 /**
- * Enregistre une vue unique après 5 secondes de lecture effective.
+ * Enregistre une vue après 5 secondes de lecture réelle (chaque visite compte, comme sur YouTube).
  * @param postId Identifiant du texte.
  * @param authorId Identifiant de l'auteur (exclu du comptage).
  */

@@ -117,7 +117,7 @@ interface Db {
   bookmarks: Map<string, Set<string>>;
   follows: Map<string, Set<string>>;
   blocks: Map<string, Set<string>>;
-  views: Set<string>;
+  recentViews: Map<string, number>;
   publishedToday: Map<string, { date: string; count: number }>;
 }
 
@@ -161,7 +161,7 @@ function seedDb(): Db {
     bookmarks,
     follows,
     blocks: new Map(),
-    views: new Set(),
+    recentViews: new Map(),
     publishedToday: new Map(),
   };
 }
@@ -523,13 +523,24 @@ export function viewerKeyFromIp(ip: string): string {
   return createHash("sha256").update(`${salt}:${ip}`).digest("hex").slice(0, 16);
 }
 
+const VIEW_DEDUPE_MS = 90_000;
+
 export function recordView(postId: string, viewerKey: string): boolean {
   const db = getDb();
   const post = db.posts.find((p) => p.id === postId && p.status !== "DELETED");
   if (!post) return false;
-  const key = `${postId}:${viewerKey}:${today()}`;
-  if (db.views.has(key) || db.views.size > 50_000) return false;
-  db.views.add(key);
+  const now = Date.now();
+  const key = `${postId}:${viewerKey}`;
+  const last = db.recentViews.get(key) ?? 0;
+  // YouTube-like : toute visite légitime compte, même plusieurs fois par jour.
+  // On déduplique uniquement dans une fenêtre de 90 s (anti-doublon refresh/navigation interne).
+  if (now - last < VIEW_DEDUPE_MS) return false;
+  if (db.recentViews.size > 50_000) {
+    for (const [k, ts] of db.recentViews) {
+      if (now - ts > 3_600_000) db.recentViews.delete(k);
+    }
+  }
+  db.recentViews.set(key, now);
   adjustCounter(postId, "viewCount", 1);
   return true;
 }

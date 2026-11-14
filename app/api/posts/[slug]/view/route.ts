@@ -6,7 +6,7 @@ import { badRequest, clientIp, notFound, rateLimit } from "@/lib/server/http";
 
 const paramsSchema = z.object({ slug: z.string().trim().min(1).max(120) });
 
-/** Comptabilise une vue unique par jour (les robots sont ignorés). */
+/** Comptabilise une vue de lecture (façon YouTube : chaque visite compte ; dédoublonnage 90 s ; robots ignorés). */
 export async function POST(
   req: NextRequest,
   context: { params: Promise<{ slug: string }> },

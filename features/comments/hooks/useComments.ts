@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useAuth } from "@/features/auth";
 import { commentSchema } from "../schemas/comment.schema";
+import type { CommentItemData } from "../types/comments.types";
 import { commentsService } from "../services/comments.service";
 
 /**
@@ -45,5 +46,15 @@ export function useComments(postId: string) {
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["comments", postId] }),
   });
 
-  return { comments: query.data ?? [], isLoading: query.isLoading, addMutation, hideMutation };
+  const likeMutation = useMutation({
+    mutationFn: (commentId: string) => commentsService.likeComment(commentId),
+    onSuccess: (result, commentId) => {
+      qc.setQueryData<CommentItemData[]>(["comments", postId], (old) =>
+        old?.map((c) => (c.id === commentId ? { ...c, likeCount: result.likeCount, likedByMe: result.liked } : c)),
+      );
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  return { comments: query.data ?? [], isLoading: query.isLoading, addMutation, hideMutation, likeMutation };
 }

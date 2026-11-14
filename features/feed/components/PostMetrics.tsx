@@ -1,5 +1,6 @@
 import { Eye } from "lucide-react";
 import { IconMessageChatbot } from "@tabler/icons-react";
+import Link from "next/link";
 import { BookmarkButton, LikeButton, ShareButton } from "@/features/interactions";
 import { formatCount } from "@/lib/format";
 
@@ -21,10 +22,10 @@ export function PostMetrics(props: PostMetricsProps) {
     <div className="flex items-center justify-between pt-1">
       <div className="flex items-center gap-4 text-[13px] tabular-nums text-muted">
         <LikeButton postId={props.postId} initialCount={props.likeCount} initialDislikeCount={props.dislikeCount} />
-        <span className="inline-flex items-center gap-1.5" aria-label={`${props.commentCount} commentaires`}>
+        <Link href={`/mots/${props.postId}#commentaires`} aria-label={`${props.commentCount} commentaires — rejoindre la discussion`} className="inline-flex items-center gap-1.5 rounded-full px-2 py-1 transition-colors hover:bg-pilule hover:text-encre">
           <IconMessageChatbot size={16} strokeWidth={1.75} aria-hidden="true" />
           <span>{formatCount(props.commentCount)}</span>
-        </span>
+        </Link>
         <span className="inline-flex items-center gap-1.5" aria-label={`${props.viewCount} vues`}>
           <Eye size={16} strokeWidth={1.5} aria-hidden="true" />
           <span>{formatCount(props.viewCount)}</span>

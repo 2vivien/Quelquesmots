@@ -37,4 +37,11 @@ export const commentsReal: CommentsService = {
       throw new Error(await readErrorMessage(res, "Impossible de masquer le commentaire."));
     }
   },
+  async likeComment(commentId: string): Promise<{ liked: boolean; likeCount: number }> {
+    const res = await fetch(apiUrl(`/api/comments/${encodeURIComponent(commentId)}/like`), { method: "POST" });
+    if (!res.ok) {
+      throw new Error(await readErrorMessage(res, "Impossible d'enregistrer votre réaction."));
+    }
+    return (await res.json()) as { liked: boolean; likeCount: number };
+  },
 };

@@ -12,6 +12,8 @@ export interface CommentItemData {
   body: string;
   status: CommentStatus;
   createdAt: string;
+  likeCount: number;
+  likedByMe: boolean;
 }
 
 /** Contrat du service de commentaires. */
@@ -26,4 +28,5 @@ export interface CommentsService {
     body: string;
   }): Promise<CommentItemData>;
   hideComment(commentId: string): Promise<void>;
+  likeComment(commentId: string): Promise<{ liked: boolean; likeCount: number }>;
 }

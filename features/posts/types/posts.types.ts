@@ -63,5 +63,4 @@ export interface PostsService {
   publishPost(id: string, authorId: string): Promise<PostRecord | null>;
   deletePost(id: string, authorId: string): Promise<boolean>;
   setModerationStatus(id: string, status: PostStatus, locked: boolean): Promise<void>;
-  adjustCounter(id: string, field: "likeCount" | "dislikeCount" | "commentCount" | "bookmarkCount" | "viewCount", delta: number): Promise<void>;
 }

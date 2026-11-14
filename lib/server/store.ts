@@ -289,7 +289,7 @@ export function listFeed(query: FeedQuery): FeedPage {
     );
   const sorted = [...filtered].sort((a, b) =>
     query.sort === "top"
-      ? b.likeCount - a.likeCount
+      ? popularityScore(b) - popularityScore(a)
       : (b.publishedAt ?? "").localeCompare(a.publishedAt ?? ""),
   );
   const start = query.cursor
@@ -768,6 +768,51 @@ export function adminModerate(input: {
   pushAudit(input.actorUsername, input.action, input.targetLabel, input.reason);
 }
 
+
+/* ----------------------------- Compteurs dynamiques ----------------------------- */
+
+/** Score d'engagement utilisé pour le tri "Populaires" (j'aime ×3, commentaires ×5, vues ×0.5). */
+export function popularityScore(post: PostRecord): number {
+  return post.likeCount * 3 + post.commentCount * 5 + Math.round(post.viewCount * 0.5);
+}
+
+/** Nombre de textes publiés d'un auteur. */
+export function countPublishedPostsByAuthor(authorId: string): number {
+  return getDb().posts.filter(
+    (p) => p.authorId === authorId && p.status === "PUBLISHED",
+  ).length;
+}
+
+/** Nombre de textes publiés d'un thème. */
+export function countPublishedPostsByTheme(themeSlug: string): number {
+  return getDb().posts.filter(
+    (p) => p.status === "PUBLISHED" && p.themeSlugs.includes(themeSlug),
+  ).length;
+}
+
+/** Nombre d'abonnés d'un auteur. */
+export function countFollowers(userId: string): number {
+  let total = 0;
+  for (const set of getDb().follows.values()) {
+    if (set.has(userId)) total += 1;
+  }
+  return total;
+}
+
+/** Enrichit les statistiques d'un auteur à partir du store réel. */
+function withAuthorStats(a: AuthorProfile): AuthorProfile {
+  return {
+    ...a,
+    postCount: countPublishedPostsByAuthor(a.userId),
+    followersCount: countFollowers(a.userId),
+  };
+}
+
+/** Enrichit les statistiques d'un thème à partir du store réel. */
+function withThemeStats(t: ThemeItem): ThemeItem {
+  return { ...t, postCount: countPublishedPostsByTheme(t.slug) };
+}
+
 /* ----------------------------------- Recherche ----------------------------------- */
 
 export function search(query: string, tab: SearchTab, viewerId?: string | null): SearchResponse {
@@ -820,45 +865,49 @@ export function listThemes(query?: string): ThemeItem[] {
   return getDb()
     .themes.filter((t) => t.active)
     .filter((t) => !clean || normalizeSearchText(t.name).includes(clean) || normalizeSearchText(t.tagline).includes(clean))
-    .sort((a, b) => a.position - b.position);
+    .sort((a, b) => a.position - b.position)
+    .map(withThemeStats);
 }
 
 export function getThemeById(id: string): ThemeItem | null {
-  return getDb().themes.find((t) => t.id === id && t.active) ?? null;
+  const found = getDb().themes.find((t) => t.id === id && t.active);
+  return found ? withThemeStats(found) : null;
 }
 
 export function getThemeBySlug(slug: string): ThemeItem | null {
-  return getDb().themes.find((t) => t.slug === slug && t.active) ?? null;
+  const found = getDb().themes.find((t) => t.slug === slug && t.active);
+  return found ? withThemeStats(found) : null;
 }
 
 export function listAuthors(query?: string): AuthorProfile[] {
   const clean = normalizeSearchText(query ?? "");
-  return getDb().authors.filter((a) => {
-    if (!a.listedInDirectory || a.status !== "ACTIVE") return false;
-    if (!clean) return true;
-    return (
-      normalizeSearchText(a.username).includes(clean) ||
-      normalizeSearchText(a.bio).includes(clean)
-    );
-  });
+  return getDb()
+    .authors.filter((a) => {
+      if (!a.listedInDirectory || a.status !== "ACTIVE") return false;
+      if (!clean) return true;
+      return (
+        normalizeSearchText(a.username).includes(clean) ||
+        normalizeSearchText(a.bio).includes(clean)
+      );
+    })
+    .map(withAuthorStats)
+    .sort((a, b) => (b.followersCount + b.postCount * 2) - (a.followersCount + a.postCount * 2));
 }
 
 export function getAuthorById(id: string): AuthorProfile | null {
   const target = id;
-  return (
-    getDb().authors.find(
-      (a) => a.userId === target && a.status === "ACTIVE",
-    ) ?? null
+  const found = getDb().authors.find(
+    (a) => a.userId === target && a.status === "ACTIVE",
   );
+  return found ? withAuthorStats(found) : null;
 }
 
 export function getAuthorByUsername(username: string): AuthorProfile | null {
   const target = normalizeSearchText(username);
-  return (
-    getDb().authors.find(
-      (a) => normalizeSearchText(a.username) === target && a.status === "ACTIVE",
-    ) ?? null
+  const found = getDb().authors.find(
+    (a) => normalizeSearchText(a.username) === target && a.status === "ACTIVE",
   );
+  return found ? withAuthorStats(found) : null;
 }
 
 /* ------------------------------- Suppression de compte ------------------------------ */

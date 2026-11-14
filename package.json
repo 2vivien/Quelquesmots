@@ -11,7 +11,7 @@
     "check": "tsx scripts/check-conventions.ts",
     "smoke:neon": "tsx scripts/neon-smoke.ts",
     "test:e2e": "playwright test",
-    "clean": "next clean",
+    "clean": "node -e \"require('node:fs').rmSync('.next', { recursive: true, force: true })\"",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:check": "drizzle-kit check"

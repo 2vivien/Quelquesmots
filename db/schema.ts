@@ -12,6 +12,7 @@ import {
   smallint,
   text,
   timestamp,
+  uuid,
   uniqueIndex,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -38,7 +39,7 @@ export const reportStatusEnum = pgEnum("report_status", ["OPEN", "RESOLVED", "DI
  * dans authorProfiles ; aucun e-mail n'est destiné aux réponses publiques.
  */
 export const users = pgTable("users", {
-  id: text("id").primaryKey(),
+  id: uuid("id").primaryKey().defaultRandom(),
   email: varchar("email", { length: 320 }),
   emailVerifiedAt: timestampColumn("email_verified_at"),
   role: userRoleEnum("role").notNull().default("user"),
@@ -54,7 +55,7 @@ export const users = pgTable("users", {
 
 /** Identité publique/pseudonyme, distincte de l'adresse e-mail d'authentification. */
 export const authorProfiles = pgTable("author_profiles", {
-  userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  userId: uuid("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
   username: varchar("username", { length: 32 }).notNull(),
   usernameNormalized: varchar("username_normalized", { length: 32 }).notNull(),
   firstName: varchar("first_name", { length: 80 }).notNull().default(""),
@@ -74,8 +75,8 @@ export const authorProfiles = pgTable("author_profiles", {
 
 /** Liaison durable entre un fournisseur OAuth et un compte interne. */
 export const oauthAccounts = pgTable("oauth_accounts", {
-  id: text("id").primaryKey(),
-  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   provider: varchar("provider", { length: 40 }).notNull(),
   providerAccountId: varchar("provider_account_id", { length: 255 }).notNull(),
   providerEmail: varchar("provider_email", { length: 320 }),
@@ -88,8 +89,8 @@ export const oauthAccounts = pgTable("oauth_accounts", {
 
 /** Session opaque : seul le hash du jeton remis dans le cookie sera stocké. */
 export const sessions = pgTable("sessions", {
-  id: text("id").primaryKey(),
-  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   tokenHash: varchar("token_hash", { length: 64 }).notNull(),
   expiresAt: timestampColumn("expires_at").notNull(),
   lastUsedAt: timestampColumn("last_used_at").notNull().defaultNow(),
@@ -103,8 +104,7 @@ export const sessions = pgTable("sessions", {
 ]);
 
 export const themes = pgTable("themes", {
-  id: text("id").primaryKey(),
-  slug: varchar("slug", { length: 64 }).notNull(),
+  id: uuid("id").primaryKey().defaultRandom(),
   name: varchar("name", { length: 80 }).notNull(),
   category: varchar("category", { length: 100 }).notNull(),
   tagline: varchar("tagline", { length: 240 }).notNull().default(""),
@@ -113,15 +113,14 @@ export const themes = pgTable("themes", {
   createdAt: timestampColumn("created_at").notNull().defaultNow(),
   updatedAt: timestampColumn("updated_at").notNull().defaultNow(),
 }, (table) => [
-  uniqueIndex("themes_slug_unique").on(table.slug),
   index("themes_active_position_idx").on(table.active, table.position),
 ]);
 
 export const tags = pgTable("tags", {
-  slug: varchar("slug", { length: 32 }).primaryKey(),
+  id: uuid("id").primaryKey().defaultRandom(),
   label: varchar("label", { length: 64 }).notNull(),
   status: tagStatusEnum("status").notNull().default("PENDING"),
-  createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
   createdAt: timestampColumn("created_at").notNull().defaultNow(),
   updatedAt: timestampColumn("updated_at").notNull().defaultNow(),
 }, (table) => [
@@ -134,13 +133,12 @@ export const tags = pgTable("tags", {
  * les tables de réactions/commentaires/favoris restent la source de vérité.
  */
 export const posts = pgTable("posts", {
-  id: text("id").primaryKey(),
-  slug: varchar("slug", { length: 128 }),
+  id: uuid("id").primaryKey().defaultRandom(),
   title: varchar("title", { length: 120 }).notNull().default("Sans titre"),
   excerpt: varchar("excerpt", { length: 280 }).notNull().default(""),
   contentJson: jsonb("content_json").$type<TiptapDoc>().notNull(),
   contentText: text("content_text").notNull().default(""),
-  authorId: text("author_id").references(() => users.id, { onDelete: "set null" }),
+  authorId: uuid("author_id").references(() => users.id, { onDelete: "set null" }),
   authorUsername: varchar("author_username", { length: 32 }).notNull(),
   authorFirstName: varchar("author_first_name", { length: 80 }),
   authorLastName: varchar("author_last_name", { length: 80 }),
@@ -160,7 +158,6 @@ export const posts = pgTable("posts", {
   createdAt: timestampColumn("created_at").notNull().defaultNow(),
   updatedAt: timestampColumn("updated_at").notNull().defaultNow(),
 }, (table) => [
-  uniqueIndex("posts_slug_unique").on(table.slug).where(sql`${table.slug} IS NOT NULL`),
   index("posts_feed_idx").on(table.status, table.visibility, table.publishedAt, table.id),
   index("posts_author_status_updated_idx").on(table.authorId, table.status, table.updatedAt),
   index("posts_published_at_idx").on(table.publishedAt),
@@ -168,8 +165,8 @@ export const posts = pgTable("posts", {
 ]);
 
 export const postThemes = pgTable("post_themes", {
-  postId: text("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
-  themeId: text("theme_id").notNull().references(() => themes.id, { onDelete: "restrict" }),
+  postId: uuid("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
+  themeId: uuid("theme_id").notNull().references(() => themes.id, { onDelete: "restrict" }),
   createdAt: timestampColumn("created_at").notNull().defaultNow(),
 }, (table) => [
   primaryKey({ columns: [table.postId, table.themeId] }),
@@ -177,21 +174,21 @@ export const postThemes = pgTable("post_themes", {
 ]);
 
 export const postTags = pgTable("post_tags", {
-  postId: text("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
-  tagSlug: varchar("tag_slug", { length: 32 }).notNull().references(() => tags.slug, { onDelete: "restrict" }),
+  postId: uuid("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
+  tagId: uuid("tag_id").notNull().references(() => tags.id, { onDelete: "restrict" }),
   createdAt: timestampColumn("created_at").notNull().defaultNow(),
 }, (table) => [
-  primaryKey({ columns: [table.postId, table.tagSlug] }),
-  index("post_tags_tag_post_idx").on(table.tagSlug, table.postId),
+  primaryKey({ columns: [table.postId, table.tagId] }),
+  index("post_tags_tag_post_idx").on(table.tagId, table.postId),
 ]);
 
 export const comments = pgTable("comments", {
-  id: text("id").primaryKey(),
-  postId: text("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
-  authorId: text("author_id").references(() => users.id, { onDelete: "set null" }),
+  id: uuid("id").primaryKey().defaultRandom(),
+  postId: uuid("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
+  authorId: uuid("author_id").references(() => users.id, { onDelete: "set null" }),
   authorUsername: varchar("author_username", { length: 32 }).notNull(),
   authorAvatarUrl: varchar("author_avatar_url", { length: 512 }).notNull().default(""),
-  parentId: text("parent_id").references((): AnyPgColumn => comments.id, { onDelete: "cascade" }),
+  parentId: uuid("parent_id").references((): AnyPgColumn => comments.id, { onDelete: "cascade" }),
   body: varchar("body", { length: 500 }).notNull(),
   status: commentStatusEnum("status").notNull().default("VISIBLE"),
   createdAt: timestampColumn("created_at").notNull().defaultNow(),
@@ -204,8 +201,8 @@ export const comments = pgTable("comments", {
 
 /** Une seule réaction par utilisateur et publication ; LIKE/DISLIKE sont exclusifs. */
 export const postReactions = pgTable("post_reactions", {
-  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  postId: text("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  postId: uuid("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
   reaction: reactionTypeEnum("reaction").notNull(),
   createdAt: timestampColumn("created_at").notNull().defaultNow(),
   updatedAt: timestampColumn("updated_at").notNull().defaultNow(),
@@ -216,8 +213,8 @@ export const postReactions = pgTable("post_reactions", {
 ]);
 
 export const postBookmarks = pgTable("post_bookmarks", {
-  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  postId: text("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  postId: uuid("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
   createdAt: timestampColumn("created_at").notNull().defaultNow(),
 }, (table) => [
   primaryKey({ columns: [table.userId, table.postId] }),
@@ -225,8 +222,8 @@ export const postBookmarks = pgTable("post_bookmarks", {
 ]);
 
 export const commentLikes = pgTable("comment_likes", {
-  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  commentId: text("comment_id").notNull().references(() => comments.id, { onDelete: "cascade" }),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  commentId: uuid("comment_id").notNull().references(() => comments.id, { onDelete: "cascade" }),
   createdAt: timestampColumn("created_at").notNull().defaultNow(),
 }, (table) => [
   primaryKey({ columns: [table.userId, table.commentId] }),
@@ -234,8 +231,8 @@ export const commentLikes = pgTable("comment_likes", {
 ]);
 
 export const userFollows = pgTable("user_follows", {
-  followerId: text("follower_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  followedId: text("followed_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  followerId: uuid("follower_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  followedId: uuid("followed_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   createdAt: timestampColumn("created_at").notNull().defaultNow(),
 }, (table) => [
   primaryKey({ columns: [table.followerId, table.followedId] }),
@@ -244,8 +241,8 @@ export const userFollows = pgTable("user_follows", {
 ]);
 
 export const userBlocks = pgTable("user_blocks", {
-  blockerId: text("blocker_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  blockedId: text("blocked_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  blockerId: uuid("blocker_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  blockedId: uuid("blocked_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   createdAt: timestampColumn("created_at").notNull().defaultNow(),
 }, (table) => [
   primaryKey({ columns: [table.blockerId, table.blockedId] }),
@@ -254,7 +251,7 @@ export const userBlocks = pgTable("user_blocks", {
 
 /** Une ligne par couple publication/lecteur pour la déduplication de 90 secondes. */
 export const postViewDedupe = pgTable("post_view_dedupe", {
-  postId: text("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
+  postId: uuid("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
   viewerHash: varchar("viewer_hash", { length: 64 }).notNull(),
   lastViewedAt: timestampColumn("last_viewed_at").notNull(),
 }, (table) => [
@@ -263,15 +260,14 @@ export const postViewDedupe = pgTable("post_view_dedupe", {
 ]);
 
 export const notifications = pgTable("notifications", {
-  id: text("id").primaryKey(),
-  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  actorId: text("actor_id").references(() => users.id, { onDelete: "set null" }),
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  actorId: uuid("actor_id").references(() => users.id, { onDelete: "set null" }),
   type: notificationTypeEnum("type").notNull(),
   actorUsername: varchar("actor_username", { length: 32 }).notNull(),
   actorAvatarUrl: varchar("actor_avatar_url", { length: 512 }).notNull().default(""),
-  postId: text("post_id").references(() => posts.id, { onDelete: "set null" }),
+  postId: uuid("post_id").references(() => posts.id, { onDelete: "set null" }),
   postTitle: varchar("post_title", { length: 120 }).notNull().default(""),
-  postSlug: varchar("post_slug", { length: 128 }).notNull().default(""),
   readAt: timestampColumn("read_at"),
   createdAt: timestampColumn("created_at").notNull().defaultNow(),
 }, (table) => [
@@ -280,10 +276,10 @@ export const notifications = pgTable("notifications", {
 ]);
 
 export const reports = pgTable("reports", {
-  id: text("id").primaryKey(),
-  reporterId: text("reporter_id").references(() => users.id, { onDelete: "set null" }),
+  id: uuid("id").primaryKey().defaultRandom(),
+  reporterId: uuid("reporter_id").references(() => users.id, { onDelete: "set null" }),
   targetType: reportTargetTypeEnum("target_type").notNull(),
-  targetId: text("target_id").notNull(),
+  targetId: uuid("target_id").notNull(),
   targetLabel: varchar("target_label", { length: 200 }).notNull(),
   reason: reportReasonEnum("reason").notNull(),
   details: varchar("details", { length: 1000 }).notNull().default(""),
@@ -298,12 +294,12 @@ export const reports = pgTable("reports", {
 ]);
 
 export const adminAudit = pgTable("admin_audit", {
-  id: text("id").primaryKey(),
-  actorId: text("actor_id").references(() => users.id, { onDelete: "set null" }),
+  id: uuid("id").primaryKey().defaultRandom(),
+  actorId: uuid("actor_id").references(() => users.id, { onDelete: "set null" }),
   actorUsername: varchar("actor_username", { length: 32 }).notNull(),
   action: varchar("action", { length: 40 }).notNull(),
   targetType: varchar("target_type", { length: 32 }),
-  targetId: text("target_id"),
+  targetId: uuid("target_id"),
   targetLabel: varchar("target_label", { length: 200 }).notNull(),
   reason: varchar("reason", { length: 500 }).notNull().default(""),
   createdAt: timestampColumn("created_at").notNull().defaultNow(),
@@ -319,9 +315,16 @@ export const siteSettings = pgTable("site_settings", {
   minChars: integer("min_chars").notNull().default(20),
   maxTags: integer("max_tags").notNull().default(5),
   dailyPublishLimit: integer("daily_publish_limit").notNull().default(10),
-  updatedBy: text("updated_by").references(() => users.id, { onDelete: "set null" }),
+  updatedBy: uuid("updated_by").references(() => users.id, { onDelete: "set null" }),
   updatedAt: timestampColumn("updated_at").notNull().defaultNow(),
 }, (table) => [
   check("site_settings_singleton", sql`${table.id} = 1`),
   check("site_settings_valid_limits", sql`${table.minChars} >= 1 AND ${table.maxChars} >= ${table.minChars} AND ${table.maxTags} >= 1 AND ${table.dailyPublishLimit} >= 1`),
 ]);
+
+/** Limitation de débit partagée (fenêtre fixe par clé), incrément atomique. */
+export const rateLimits = pgTable("rate_limits", {
+  key: text("key").primaryKey(),
+  windowStart: timestampColumn("window_start").notNull().defaultNow(),
+  count: integer("count").notNull().default(1),
+});

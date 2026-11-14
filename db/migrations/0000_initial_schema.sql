@@ -11,19 +11,19 @@ CREATE TYPE "public"."tag_status" AS ENUM('PENDING', 'APPROVED', 'BLOCKED');--> 
 CREATE TYPE "public"."user_role" AS ENUM('user', 'moderator', 'admin');--> statement-breakpoint
 CREATE TYPE "public"."post_visibility" AS ENUM('PUBLIC', 'PRIVATE');--> statement-breakpoint
 CREATE TABLE "admin_audit" (
-	"id" text PRIMARY KEY NOT NULL,
-	"actor_id" text,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"actor_id" uuid,
 	"actor_username" varchar(32) NOT NULL,
 	"action" varchar(40) NOT NULL,
 	"target_type" varchar(32),
-	"target_id" text,
+	"target_id" uuid,
 	"target_label" varchar(200) NOT NULL,
 	"reason" varchar(500) DEFAULT '' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "author_profiles" (
-	"user_id" text PRIMARY KEY NOT NULL,
+	"user_id" uuid PRIMARY KEY NOT NULL,
 	"username" varchar(32) NOT NULL,
 	"username_normalized" varchar(32) NOT NULL,
 	"first_name" varchar(80) DEFAULT '' NOT NULL,
@@ -39,19 +39,19 @@ CREATE TABLE "author_profiles" (
 );
 --> statement-breakpoint
 CREATE TABLE "comment_likes" (
-	"user_id" text NOT NULL,
-	"comment_id" text NOT NULL,
+	"user_id" uuid NOT NULL,
+	"comment_id" uuid NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "comment_likes_user_id_comment_id_pk" PRIMARY KEY("user_id","comment_id")
 );
 --> statement-breakpoint
 CREATE TABLE "comments" (
-	"id" text PRIMARY KEY NOT NULL,
-	"post_id" text NOT NULL,
-	"author_id" text,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"post_id" uuid NOT NULL,
+	"author_id" uuid,
 	"author_username" varchar(32) NOT NULL,
 	"author_avatar_url" varchar(512) DEFAULT '' NOT NULL,
-	"parent_id" text,
+	"parent_id" uuid,
 	"body" varchar(500) NOT NULL,
 	"status" "comment_status" DEFAULT 'VISIBLE' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
@@ -59,22 +59,21 @@ CREATE TABLE "comments" (
 );
 --> statement-breakpoint
 CREATE TABLE "notifications" (
-	"id" text PRIMARY KEY NOT NULL,
-	"user_id" text NOT NULL,
-	"actor_id" text,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_id" uuid NOT NULL,
+	"actor_id" uuid,
 	"type" "notification_type" NOT NULL,
 	"actor_username" varchar(32) NOT NULL,
 	"actor_avatar_url" varchar(512) DEFAULT '' NOT NULL,
-	"post_id" text,
+	"post_id" uuid,
 	"post_title" varchar(120) DEFAULT '' NOT NULL,
-	"post_slug" varchar(128) DEFAULT '' NOT NULL,
 	"read_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "oauth_accounts" (
-	"id" text PRIMARY KEY NOT NULL,
-	"user_id" text NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_id" uuid NOT NULL,
 	"provider" varchar(40) NOT NULL,
 	"provider_account_id" varchar(255) NOT NULL,
 	"provider_email" varchar(320),
@@ -83,15 +82,15 @@ CREATE TABLE "oauth_accounts" (
 );
 --> statement-breakpoint
 CREATE TABLE "post_bookmarks" (
-	"user_id" text NOT NULL,
-	"post_id" text NOT NULL,
+	"user_id" uuid NOT NULL,
+	"post_id" uuid NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "post_bookmarks_user_id_post_id_pk" PRIMARY KEY("user_id","post_id")
 );
 --> statement-breakpoint
 CREATE TABLE "post_reactions" (
-	"user_id" text NOT NULL,
-	"post_id" text NOT NULL,
+	"user_id" uuid NOT NULL,
+	"post_id" uuid NOT NULL,
 	"reaction" "reaction_type" NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
@@ -99,34 +98,33 @@ CREATE TABLE "post_reactions" (
 );
 --> statement-breakpoint
 CREATE TABLE "post_tags" (
-	"post_id" text NOT NULL,
-	"tag_slug" varchar(32) NOT NULL,
+	"post_id" uuid NOT NULL,
+	"tag_id" uuid NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "post_tags_post_id_tag_slug_pk" PRIMARY KEY("post_id","tag_slug")
+	CONSTRAINT "post_tags_post_id_tag_id_pk" PRIMARY KEY("post_id","tag_id")
 );
 --> statement-breakpoint
 CREATE TABLE "post_themes" (
-	"post_id" text NOT NULL,
-	"theme_id" text NOT NULL,
+	"post_id" uuid NOT NULL,
+	"theme_id" uuid NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "post_themes_post_id_theme_id_pk" PRIMARY KEY("post_id","theme_id")
 );
 --> statement-breakpoint
 CREATE TABLE "post_view_dedupe" (
-	"post_id" text NOT NULL,
+	"post_id" uuid NOT NULL,
 	"viewer_hash" varchar(64) NOT NULL,
 	"last_viewed_at" timestamp with time zone NOT NULL,
 	CONSTRAINT "post_view_dedupe_post_id_viewer_hash_pk" PRIMARY KEY("post_id","viewer_hash")
 );
 --> statement-breakpoint
 CREATE TABLE "posts" (
-	"id" text PRIMARY KEY NOT NULL,
-	"slug" varchar(128),
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"title" varchar(120) DEFAULT 'Sans titre' NOT NULL,
 	"excerpt" varchar(280) DEFAULT '' NOT NULL,
 	"content_json" jsonb NOT NULL,
 	"content_text" text DEFAULT '' NOT NULL,
-	"author_id" text,
+	"author_id" uuid,
 	"author_username" varchar(32) NOT NULL,
 	"author_first_name" varchar(80),
 	"author_last_name" varchar(80),
@@ -148,11 +146,17 @@ CREATE TABLE "posts" (
 	CONSTRAINT "posts_counters_non_negative" CHECK ("posts"."view_count" >= 0 AND "posts"."like_count" >= 0 AND "posts"."dislike_count" >= 0 AND "posts"."comment_count" >= 0 AND "posts"."bookmark_count" >= 0)
 );
 --> statement-breakpoint
+CREATE TABLE "rate_limits" (
+	"key" text PRIMARY KEY NOT NULL,
+	"window_start" timestamp with time zone DEFAULT now() NOT NULL,
+	"count" integer DEFAULT 1 NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "reports" (
-	"id" text PRIMARY KEY NOT NULL,
-	"reporter_id" text,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"reporter_id" uuid,
 	"target_type" "report_target_type" NOT NULL,
-	"target_id" text NOT NULL,
+	"target_id" uuid NOT NULL,
 	"target_label" varchar(200) NOT NULL,
 	"reason" "report_reason" NOT NULL,
 	"details" varchar(1000) DEFAULT '' NOT NULL,
@@ -163,8 +167,8 @@ CREATE TABLE "reports" (
 );
 --> statement-breakpoint
 CREATE TABLE "sessions" (
-	"id" text PRIMARY KEY NOT NULL,
-	"user_id" text NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_id" uuid NOT NULL,
 	"token_hash" varchar(64) NOT NULL,
 	"expires_at" timestamp with time zone NOT NULL,
 	"last_used_at" timestamp with time zone DEFAULT now() NOT NULL,
@@ -179,24 +183,23 @@ CREATE TABLE "site_settings" (
 	"min_chars" integer DEFAULT 20 NOT NULL,
 	"max_tags" integer DEFAULT 5 NOT NULL,
 	"daily_publish_limit" integer DEFAULT 10 NOT NULL,
-	"updated_by" text,
+	"updated_by" uuid,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "site_settings_singleton" CHECK ("site_settings"."id" = 1),
 	CONSTRAINT "site_settings_valid_limits" CHECK ("site_settings"."min_chars" >= 1 AND "site_settings"."max_chars" >= "site_settings"."min_chars" AND "site_settings"."max_tags" >= 1 AND "site_settings"."daily_publish_limit" >= 1)
 );
 --> statement-breakpoint
 CREATE TABLE "tags" (
-	"slug" varchar(32) PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"label" varchar(64) NOT NULL,
 	"status" "tag_status" DEFAULT 'PENDING' NOT NULL,
-	"created_by" text,
+	"created_by" uuid,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "themes" (
-	"id" text PRIMARY KEY NOT NULL,
-	"slug" varchar(64) NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" varchar(80) NOT NULL,
 	"category" varchar(100) NOT NULL,
 	"tagline" varchar(240) DEFAULT '' NOT NULL,
@@ -207,23 +210,23 @@ CREATE TABLE "themes" (
 );
 --> statement-breakpoint
 CREATE TABLE "user_blocks" (
-	"blocker_id" text NOT NULL,
-	"blocked_id" text NOT NULL,
+	"blocker_id" uuid NOT NULL,
+	"blocked_id" uuid NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "user_blocks_blocker_id_blocked_id_pk" PRIMARY KEY("blocker_id","blocked_id"),
 	CONSTRAINT "user_blocks_no_self" CHECK ("user_blocks"."blocker_id" <> "user_blocks"."blocked_id")
 );
 --> statement-breakpoint
 CREATE TABLE "user_follows" (
-	"follower_id" text NOT NULL,
-	"followed_id" text NOT NULL,
+	"follower_id" uuid NOT NULL,
+	"followed_id" uuid NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "user_follows_follower_id_followed_id_pk" PRIMARY KEY("follower_id","followed_id"),
 	CONSTRAINT "user_follows_no_self" CHECK ("user_follows"."follower_id" <> "user_follows"."followed_id")
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
-	"id" text PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"email" varchar(320),
 	"email_verified_at" timestamp with time zone,
 	"role" "user_role" DEFAULT 'user' NOT NULL,
@@ -250,7 +253,7 @@ ALTER TABLE "post_bookmarks" ADD CONSTRAINT "post_bookmarks_post_id_posts_id_fk"
 ALTER TABLE "post_reactions" ADD CONSTRAINT "post_reactions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "post_reactions" ADD CONSTRAINT "post_reactions_post_id_posts_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."posts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "post_tags" ADD CONSTRAINT "post_tags_post_id_posts_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."posts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "post_tags" ADD CONSTRAINT "post_tags_tag_slug_tags_slug_fk" FOREIGN KEY ("tag_slug") REFERENCES "public"."tags"("slug") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "post_tags" ADD CONSTRAINT "post_tags_tag_id_tags_id_fk" FOREIGN KEY ("tag_id") REFERENCES "public"."tags"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "post_themes" ADD CONSTRAINT "post_themes_post_id_posts_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."posts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "post_themes" ADD CONSTRAINT "post_themes_theme_id_themes_id_fk" FOREIGN KEY ("theme_id") REFERENCES "public"."themes"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "post_view_dedupe" ADD CONSTRAINT "post_view_dedupe_post_id_posts_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."posts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -278,10 +281,9 @@ CREATE INDEX "oauth_accounts_user_idx" ON "oauth_accounts" USING btree ("user_id
 CREATE INDEX "post_bookmarks_post_idx" ON "post_bookmarks" USING btree ("post_id");--> statement-breakpoint
 CREATE INDEX "post_reactions_post_type_idx" ON "post_reactions" USING btree ("post_id","reaction");--> statement-breakpoint
 CREATE INDEX "post_reactions_user_created_idx" ON "post_reactions" USING btree ("user_id","created_at");--> statement-breakpoint
-CREATE INDEX "post_tags_tag_post_idx" ON "post_tags" USING btree ("tag_slug","post_id");--> statement-breakpoint
+CREATE INDEX "post_tags_tag_post_idx" ON "post_tags" USING btree ("tag_id","post_id");--> statement-breakpoint
 CREATE INDEX "post_themes_theme_post_idx" ON "post_themes" USING btree ("theme_id","post_id");--> statement-breakpoint
 CREATE INDEX "post_view_dedupe_last_viewed_idx" ON "post_view_dedupe" USING btree ("last_viewed_at");--> statement-breakpoint
-CREATE UNIQUE INDEX "posts_slug_unique" ON "posts" USING btree ("slug") WHERE "posts"."slug" IS NOT NULL;--> statement-breakpoint
 CREATE INDEX "posts_feed_idx" ON "posts" USING btree ("status","visibility","published_at","id");--> statement-breakpoint
 CREATE INDEX "posts_author_status_updated_idx" ON "posts" USING btree ("author_id","status","updated_at");--> statement-breakpoint
 CREATE INDEX "posts_published_at_idx" ON "posts" USING btree ("published_at");--> statement-breakpoint
@@ -293,7 +295,6 @@ CREATE INDEX "sessions_user_expires_idx" ON "sessions" USING btree ("user_id","e
 CREATE INDEX "sessions_expires_idx" ON "sessions" USING btree ("expires_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "tags_label_normalized_unique" ON "tags" USING btree (lower("label"));--> statement-breakpoint
 CREATE INDEX "tags_status_created_idx" ON "tags" USING btree ("status","created_at");--> statement-breakpoint
-CREATE UNIQUE INDEX "themes_slug_unique" ON "themes" USING btree ("slug");--> statement-breakpoint
 CREATE INDEX "themes_active_position_idx" ON "themes" USING btree ("active","position");--> statement-breakpoint
 CREATE INDEX "user_follows_followed_idx" ON "user_follows" USING btree ("followed_id","created_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "users_email_unique" ON "users" USING btree ("email") WHERE "users"."email" IS NOT NULL;--> statement-breakpoint

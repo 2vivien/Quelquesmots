@@ -5,22 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1794674270945,
+      "when": 1794690400812,
       "tag": "0000_initial_schema",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1794685694740,
+      "when": 1794690406071,
       "tag": "0001_fts_french",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1794685920434,
-      "tag": "0002_rate_limits",
       "breakpoints": true
     }
   ]

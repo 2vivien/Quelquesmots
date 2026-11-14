@@ -1,6 +1,6 @@
 {
-  "id": "e9742dc4-8c01-41f4-a1cd-1fb7ba3469f2",
-  "prevId": "0f18bbe2-26d0-4b91-a4c6-5513e0b57c1e",
+  "id": "2b40c7b3-ecbd-44d6-8a4a-954da451c3bc",
+  "prevId": "c6d2612a-b03c-4981-ab4e-6b8d2db7abea",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -10,13 +10,14 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "actor_id": {
           "name": "actor_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -40,7 +41,7 @@
         },
         "target_id": {
           "name": "target_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -130,7 +131,7 @@
       "columns": {
         "user_id": {
           "name": "user_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": true,
           "notNull": true
         },
@@ -290,13 +291,13 @@
       "columns": {
         "user_id": {
           "name": "user_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
         "comment_id": {
           "name": "comment_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -373,19 +374,20 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "post_id": {
           "name": "post_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
         "author_id": {
           "name": "author_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -404,7 +406,7 @@
         },
         "parent_id": {
           "name": "parent_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -555,19 +557,20 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "user_id": {
           "name": "user_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
         "actor_id": {
           "name": "actor_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -593,20 +596,13 @@
         },
         "post_id": {
           "name": "post_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
         "post_title": {
           "name": "post_title",
           "type": "varchar(120)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "''"
-        },
-        "post_slug": {
-          "name": "post_slug",
-          "type": "varchar(128)",
           "primaryKey": false,
           "notNull": true,
           "default": "''"
@@ -723,13 +719,14 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "user_id": {
           "name": "user_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -831,13 +828,13 @@
       "columns": {
         "user_id": {
           "name": "user_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
         "post_id": {
           "name": "post_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -914,13 +911,13 @@
       "columns": {
         "user_id": {
           "name": "user_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
         "post_id": {
           "name": "post_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -1038,13 +1035,13 @@
       "columns": {
         "post_id": {
           "name": "post_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
-        "tag_slug": {
-          "name": "tag_slug",
-          "type": "varchar(32)",
+        "tag_id": {
+          "name": "tag_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -1061,7 +1058,7 @@
           "name": "post_tags_tag_post_idx",
           "columns": [
             {
-              "expression": "tag_slug",
+              "expression": "tag_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1093,26 +1090,26 @@
           "onUpdate": "no action",
           "onDelete": "cascade"
         },
-        "post_tags_tag_slug_tags_slug_fk": {
-          "name": "post_tags_tag_slug_tags_slug_fk",
+        "post_tags_tag_id_tags_id_fk": {
+          "name": "post_tags_tag_id_tags_id_fk",
           "tableFrom": "post_tags",
           "columnsFrom": [
-            "tag_slug"
+            "tag_id"
           ],
           "tableTo": "tags",
           "columnsTo": [
-            "slug"
+            "id"
           ],
           "onUpdate": "no action",
           "onDelete": "restrict"
         }
       },
       "compositePrimaryKeys": {
-        "post_tags_post_id_tag_slug_pk": {
-          "name": "post_tags_post_id_tag_slug_pk",
+        "post_tags_post_id_tag_id_pk": {
+          "name": "post_tags_post_id_tag_id_pk",
           "columns": [
             "post_id",
-            "tag_slug"
+            "tag_id"
           ]
         }
       },
@@ -1127,13 +1124,13 @@
       "columns": {
         "post_id": {
           "name": "post_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
         "theme_id": {
           "name": "theme_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -1216,7 +1213,7 @@
       "columns": {
         "post_id": {
           "name": "post_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -1285,15 +1282,10 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
-        },
-        "slug": {
-          "name": "slug",
-          "type": "varchar(128)",
-          "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "title": {
           "name": "title",
@@ -1324,7 +1316,7 @@
         },
         "author_id": {
           "name": "author_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -1455,22 +1447,6 @@
         }
       },
       "indexes": {
-        "posts_slug_unique": {
-          "name": "posts_slug_unique",
-          "columns": [
-            {
-              "expression": "slug",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "with": {},
-          "method": "btree",
-          "where": "\"posts\".\"slug\" IS NOT NULL",
-          "concurrently": false
-        },
         "posts_feed_idx": {
           "name": "posts_feed_idx",
           "columns": [
@@ -1573,19 +1549,53 @@
       },
       "isRLSEnabled": false
     },
+    "public.rate_limits": {
+      "name": "rate_limits",
+      "schema": "",
+      "columns": {
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "window_start": {
+          "name": "window_start",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "count": {
+          "name": "count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.reports": {
       "name": "reports",
       "schema": "",
       "columns": {
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "reporter_id": {
           "name": "reporter_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -1598,7 +1608,7 @@
         },
         "target_id": {
           "name": "target_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -1755,13 +1765,14 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "user_id": {
           "name": "user_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -1919,7 +1930,7 @@
         },
         "updated_by": {
           "name": "updated_by",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -1966,11 +1977,12 @@
       "name": "tags",
       "schema": "",
       "columns": {
-        "slug": {
-          "name": "slug",
-          "type": "varchar(32)",
+        "id": {
+          "name": "id",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "label": {
           "name": "label",
@@ -1988,7 +2000,7 @@
         },
         "created_by": {
           "name": "created_by",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -2072,15 +2084,10 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
-        },
-        "slug": {
-          "name": "slug",
-          "type": "varchar(64)",
-          "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "name": {
           "name": "name",
@@ -2131,21 +2138,6 @@
         }
       },
       "indexes": {
-        "themes_slug_unique": {
-          "name": "themes_slug_unique",
-          "columns": [
-            {
-              "expression": "slug",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "with": {},
-          "method": "btree",
-          "concurrently": false
-        },
         "themes_active_position_idx": {
           "name": "themes_active_position_idx",
           "columns": [
@@ -2181,13 +2173,13 @@
       "columns": {
         "blocker_id": {
           "name": "blocker_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
         "blocked_id": {
           "name": "blocked_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -2253,13 +2245,13 @@
       "columns": {
         "follower_id": {
           "name": "follower_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
         "followed_id": {
           "name": "followed_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -2347,9 +2339,10 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "email": {
           "name": "email",

@@ -4,7 +4,7 @@
  */
 import { createHash, randomUUID } from "node:crypto";
 import { newId } from "@/lib/server/safe-id";
-import { and, asc, desc, eq, inArray, isNull, notInArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, notInArray, or, sql } from "drizzle-orm";
 import type { AuthUser } from "@/features/auth";
 import type { AuditEntry, SiteSettings } from "@/features/admin/types/admin.types";
 import type { AuthorProfile } from "@/features/authors/types/authors.types";
@@ -330,10 +330,38 @@ export async function updateUserProfile(
 
 /* ----------------------------------- Textes ----------------------------------- */
 
+/** Curseur keyset opaque pour la pagination du flux : `base64url({ pa: published_at, id })`. */
+function encodeFeedCursor(publishedAt: Date, id: string): string {
+  return Buffer.from(JSON.stringify({ pa: publishedAt.toISOString(), id })).toString("base64url");
+}
+
+function decodeFeedCursor(raw: string): { pa: Date; id: string } | null {
+  try {
+    const parsed = JSON.parse(Buffer.from(raw, "base64url").toString("utf8")) as { pa?: unknown; id?: unknown };
+    if (typeof parsed.pa !== "string" || typeof parsed.id !== "string") return null;
+    const pa = new Date(parsed.pa);
+    if (Number.isNaN(pa.getTime()) || parsed.id.length === 0) return null;
+    return { pa, id: parsed.id };
+  } catch {
+    return null;
+  }
+}
+
+/** Erreur de curseur (le client echobe un curseur non produit par le serveur). */
+export class InvalidFeedCursorError extends Error {}
+
 export async function listFeed(query: FeedQuery): Promise<FeedPage> {
   const db = getDatabase();
   const blockedIds = query.blockedAuthorIds ?? [];
+  const limit = Math.min(Math.max(query.limit ?? 20, 1), 50);
   const conditions = [eq(posts.status, "PUBLISHED")];
+  const viewerId = query.viewerId ?? null;
+  // Visibilité appliquée en SQL : public pour tous, privé uniquement pour le propriétaire.
+  if (viewerId) {
+    conditions.push(or(eq(posts.visibility, "PUBLIC"), eq(posts.authorId, viewerId))!);
+  } else {
+    conditions.push(eq(posts.visibility, "PUBLIC"));
+  }
   if (query.themeSlug) {
     // Jointure sur post_themes pour filtrer par thème (id de thème, pas slug).
     const sub = db
@@ -354,19 +382,39 @@ export async function listFeed(query: FeedQuery): Promise<FeedPage> {
   if (blockedIds.length > 0) {
     conditions.push(notInArray(posts.authorId, blockedIds));
   }
+
+  if (query.sort === "top") {
+    // Tri populaire : fenêtre bornée (le score évolue, pas de keyset stable). nextCursor = null.
+    const where = conditions.length === 1 ? conditions[0] : and(...conditions);
+    const rows = await db
+      .select(postColumns)
+      .from(posts)
+      .where(where)
+      .orderBy(desc(sql`${posts.likeCount} * 3 + ${posts.commentCount} * 5 + ${posts.viewCount} * 0.5`), desc(posts.id))
+      .limit(limit);
+    const items = (await mapSummaries(rows));
+    return { items, nextCursor: null };
+  }
+
+  // Pagination keyset (published_at, id) : stable même si des textes sont publiés entre deux pages.
+  const cursor = query.cursor ? decodeFeedCursor(query.cursor) : null;
+  if (query.cursor && !cursor) throw new InvalidFeedCursorError("invalid-feed-cursor");
+  if (cursor) {
+    conditions.push(sql`(${posts.publishedAt}, ${posts.id}) < (${cursor.pa}, ${cursor.id})`);
+  }
   const where = conditions.length === 1 ? conditions[0] : and(...conditions);
-  const rows = query.sort === "top"
-    ? await db.select(postColumns).from(posts).where(where).orderBy(desc(sql`${posts.likeCount} * 3 + ${posts.commentCount} * 5 + ${posts.viewCount} * 0.5`))
-    : await db.select(postColumns).from(posts).where(where).orderBy(desc(posts.publishedAt));
-  let filtered = await mapPostRowIds(rows);
-  filtered = filtered.filter((p) => canViewPost(p, query.viewerId));
-  const limit = Math.min(Math.max(query.limit ?? 20, 1), 50);
-  const start = query.cursor
-    ? Math.max(0, filtered.findIndex((p) => p.id === query.cursor) + 1)
-    : 0;
-  const slice = filtered.slice(start, start + limit);
-  const nextCursor = start + limit < filtered.length && slice.length > 0 ? (slice[slice.length - 1]?.id ?? null) : null;
-  return { items: slice.map(stripPostContent), nextCursor };
+  const rows = await db
+    .select(postColumns)
+    .from(posts)
+    .where(where)
+    .orderBy(sql`${posts.publishedAt} desc nulls last`, desc(posts.id))
+    .limit(limit + 1);
+  const hasMore = rows.length > limit;
+  const page = rows.slice(0, limit);
+  const items = await mapSummaries(page);
+  const last = page.at(-1);
+  const nextCursor = hasMore && last?.publishedAt ? encodeFeedCursor(last.publishedAt, last.id) : null;
+  return { items, nextCursor };
 }
 
 export async function getPostById(id: string): Promise<PostRecord | null> {

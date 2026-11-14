@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSessionUser } from "@/lib/server/auth";
-import { getInteractionState, listFeed } from "@/lib/server/repository";
+import { getInteractionState, listFeed, InvalidFeedCursorError } from "@/lib/server/repository";
 import { badRequest, rateLimit, clientIp } from "@/lib/server/http";
 
 const querySchema = z.object({
@@ -9,7 +9,7 @@ const querySchema = z.object({
   tag: z.string().trim().max(64).optional(),
   author: z.string().trim().max(64).optional(),
   sort: z.enum(["recent", "top"]).default("recent"),
-  cursor: z.string().trim().max(64).nullish(),
+  cursor: z.string().trim().max(128).nullish(),
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });
 
@@ -30,15 +30,20 @@ export async function GET(req: NextRequest) {
 
   const viewer = await getSessionUser(req);
   const blockedAuthorIds = viewer ? (await getInteractionState(viewer.id)).blockedUserIds : [];
-  const page = await listFeed({
-    themeSlug: parsed.data.theme,
-    tagSlug: parsed.data.tag,
-    authorUsername: parsed.data.author,
-    sort: parsed.data.sort,
-    cursor: parsed.data.cursor ?? null,
-    limit: parsed.data.limit,
-    viewerId: viewer?.id ?? null,
-    blockedAuthorIds,
-  });
-  return NextResponse.json(page);
+  try {
+    const page = await listFeed({
+      themeSlug: parsed.data.theme,
+      tagSlug: parsed.data.tag,
+      authorUsername: parsed.data.author,
+      sort: parsed.data.sort,
+      cursor: parsed.data.cursor ?? null,
+      limit: parsed.data.limit,
+      viewerId: viewer?.id ?? null,
+      blockedAuthorIds,
+    });
+    return NextResponse.json(page);
+  } catch (err) {
+    if (err instanceof InvalidFeedCursorError) return badRequest("Curseur invalide.");
+    throw err;
+  }
 }

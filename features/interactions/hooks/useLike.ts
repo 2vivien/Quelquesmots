@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { openAuthPopup } from "@/lib/open-auth";
 import { toast } from "sonner";
@@ -9,110 +8,98 @@ import { interactionsService } from "../services/interactions.service";
 import type { InteractionState } from "../types/interactions.types";
 import { useInteractionState } from "./useInteractionState";
 
-const EMPTY_STATE: InteractionState = { likedIds: [], dislikedIds: [], bookmarkedIds: [], blockedUserIds: [], followedUserIds: [] };
-
-interface LikeBaseline {
-  postId: string;
-  userId: string | null;
-  initialCount: number;
-  initialDislikeCount: number;
-  liked: boolean;
-  disliked: boolean;
-}
+const EMPTY_STATE: InteractionState = {
+  likedIds: [],
+  dislikedIds: [],
+  bookmarkedIds: [],
+  blockedUserIds: [],
+  followedUserIds: [],
+};
 
 /** Hook optimiste gérant les likes, dislikes et leurs compteurs. */
 export function useLike(postId: string, initialCount: number, initialDislikeCount = 0) {
   const { user } = useAuth();
-  const qc = useQueryClient();
+  const queryClient = useQueryClient();
   const { data } = useInteractionState();
+  const userId = user?.id ?? "guest";
+  const key = ["interactions", userId];
+  const baseline = queryClient.getQueryData<InteractionState>(["interactions-baseline", userId]);
   const liked = data?.likedIds.includes(postId) ?? false;
   const disliked = data?.dislikedIds.includes(postId) ?? false;
-  const key = ["interactions", user?.id ?? "guest"];
-  const [baseline, setBaseline] = useState<LikeBaseline | null>(null);
-  const baselineMatches = Boolean(
-    baseline && baseline.postId === postId &&
-    baseline.userId === (user?.id ?? null) &&
-    baseline.initialCount === initialCount &&
-    baseline.initialDislikeCount === initialDislikeCount
-  );
+  const baselineLiked = baseline?.likedIds.includes(postId) ?? false;
+  const baselineDisliked = baseline?.dislikedIds.includes(postId) ?? false;
+  const ready = !user || Boolean(data && baseline);
 
-  useEffect(() => {
-    if (user && !data) return;
-    setBaseline((current) => {
-      if (
-        current?.postId === postId &&
-        current.userId === (user?.id ?? null) &&
-        current.initialCount === initialCount &&
-        current.initialDislikeCount === initialDislikeCount
-      ) return current;
-      return { postId, userId: user?.id ?? null, initialCount, initialDislikeCount, liked, disliked };
-    });
-  }, [data, user, postId, initialCount, initialDislikeCount, liked, disliked]);
-
-  const isReady = !user || Boolean(data && baselineMatches);
-  const baselineLiked = baselineMatches ? (baseline?.liked ?? liked) : liked;
-  const baselineDisliked = baselineMatches ? (baseline?.disliked ?? disliked) : disliked;
-
-  const likeMut = useMutation({
+  const likeMutation = useMutation({
     mutationFn: () => interactionsService.toggleLike(user!.id, postId),
     onMutate: async () => {
-      await qc.cancelQueries({ queryKey: key });
-      const prev = qc.getQueryData<InteractionState>(key);
-      qc.setQueryData<InteractionState>(key, (old) => {
-        const base = old ?? EMPTY_STATE;
-        const has = base.likedIds.includes(postId);
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<InteractionState>(key);
+      queryClient.setQueryData<InteractionState>(key, (current) => {
+        const state = current ?? EMPTY_STATE;
+        const alreadyLiked = state.likedIds.includes(postId);
         return {
-          ...base,
-          likedIds: has ? base.likedIds.filter((id) => id !== postId) : [...base.likedIds, postId],
-          dislikedIds: has ? base.dislikedIds : base.dislikedIds.filter((id) => id !== postId),
+          ...state,
+          likedIds: alreadyLiked
+            ? state.likedIds.filter((id) => id !== postId)
+            : [...state.likedIds, postId],
+          dislikedIds: alreadyLiked
+            ? state.dislikedIds
+            : state.dislikedIds.filter((id) => id !== postId),
         };
       });
-      return { prev };
+      return { previous };
     },
-    onError: (_error, _variables, ctx) => {
-      if (ctx?.prev) qc.setQueryData(key, ctx.prev);
+    onError: (_error, _variables, context) => {
+      if (context?.previous) queryClient.setQueryData(key, context.previous);
       toast.error("Impossible d'enregistrer votre réaction.");
     },
     onSettled: () => {
-      void qc.invalidateQueries({ queryKey: ["feed"] });
+      void queryClient.invalidateQueries({ queryKey: key });
+      void queryClient.invalidateQueries({ queryKey: ["feed"] });
     },
   });
 
-  const dislikeMut = useMutation({
+  const dislikeMutation = useMutation({
     mutationFn: () => interactionsService.toggleDislike(user!.id, postId),
     onMutate: async () => {
-      await qc.cancelQueries({ queryKey: key });
-      const prev = qc.getQueryData<InteractionState>(key);
-      qc.setQueryData<InteractionState>(key, (old) => {
-        const base = old ?? EMPTY_STATE;
-        const has = base.dislikedIds.includes(postId);
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<InteractionState>(key);
+      queryClient.setQueryData<InteractionState>(key, (current) => {
+        const state = current ?? EMPTY_STATE;
+        const alreadyDisliked = state.dislikedIds.includes(postId);
         return {
-          ...base,
-          dislikedIds: has ? base.dislikedIds.filter((id) => id !== postId) : [...base.dislikedIds, postId],
-          likedIds: has ? base.likedIds : base.likedIds.filter((id) => id !== postId),
+          ...state,
+          dislikedIds: alreadyDisliked
+            ? state.dislikedIds.filter((id) => id !== postId)
+            : [...state.dislikedIds, postId],
+          likedIds: alreadyDisliked
+            ? state.likedIds
+            : state.likedIds.filter((id) => id !== postId),
         };
       });
-      return { prev };
+      return { previous };
     },
-    onError: (_error, _variables, ctx) => {
-      if (ctx?.prev) qc.setQueryData(key, ctx.prev);
+    onError: (_error, _variables, context) => {
+      if (context?.previous) queryClient.setQueryData(key, context.previous);
       toast.error("Impossible d'enregistrer votre réaction.");
     },
     onSettled: () => {
-      void qc.invalidateQueries({ queryKey: ["feed"] });
+      void queryClient.invalidateQueries({ queryKey: key });
+      void queryClient.invalidateQueries({ queryKey: ["feed"] });
     },
   });
 
-  const guard = (fn: () => void) => {
+  const guard = (action: () => void) => {
     if (!user) {
       openAuthPopup();
       return;
     }
-    if (!isReady) {
+    if (!ready) {
       toast.info("Chargement de vos interactions…");
       return;
     }
-    fn();
+    action();
   };
 
   return {
@@ -120,7 +107,7 @@ export function useLike(postId: string, initialCount: number, initialDislikeCoun
     disliked,
     count: initialCount + Number(liked) - Number(baselineLiked),
     dislikeCount: initialDislikeCount + Number(disliked) - Number(baselineDisliked),
-    toggle: () => guard(() => !likeMut.isPending && likeMut.mutate()),
-    toggleDislike: () => guard(() => !dislikeMut.isPending && dislikeMut.mutate()),
+    toggle: () => guard(() => !likeMutation.isPending && likeMutation.mutate()),
+    toggleDislike: () => guard(() => !dislikeMutation.isPending && dislikeMutation.mutate()),
   };
 }

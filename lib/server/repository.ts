@@ -926,57 +926,85 @@ export async function listComments(postId: string, viewerId?: string | null): Pr
   }));
 }
 
+export type AddCommentResult =
+  | { kind: "created"; comment: CommentItemData }
+  | { kind: "disabled" }
+  | { kind: "invalid-parent" };
+
 export async function addComment(input: {
   postId: string;
   author: AuthUser;
   parentId: string | null;
   body: string;
-}): Promise<CommentItemData | null> {
+}): Promise<AddCommentResult> {
   const db = getDatabase();
-  const postRows = await db.select({ id: posts.id, authorId: posts.authorId, commentsEnabled: posts.commentsEnabled }).from(posts).where(and(eq(posts.id, input.postId), eq(posts.status, "PUBLISHED"))).limit(1);
-  if (postRows.length === 0) return null;
-  const target = postRows[0]!;
-  if (!target.commentsEnabled) return null;
-  const id = newId("com");
-  const now = new Date();
-  await db.insert(comments).values({
-    id,
-    postId: input.postId,
-    authorId: input.author.id,
-    authorUsername: input.author.username,
-    authorAvatarUrl: input.author.avatarUrl,
-    parentId: input.parentId,
-    body: input.body,
-    status: "VISIBLE",
-    createdAt: now,
-    updatedAt: now,
-  });
-  await adjustCounter(input.postId, "commentCount", 1);
-  if (target.authorId && target.authorId !== input.author.id) {
-    await insertNotification({
-      userId: target.authorId,
-      type: "COMMENT",
-      actorUsername: input.author.username,
-      actorAvatarUrl: input.author.avatarUrl,
-      actorId: input.author.id,
+  return db.transaction(async (tx) => {
+    const locked = await tx
+      .select({ id: posts.id, authorId: posts.authorId, title: posts.title, slug: posts.slug, commentsEnabled: posts.commentsEnabled })
+      .from(posts)
+      .where(and(eq(posts.id, input.postId), eq(posts.status, "PUBLISHED")))
+      .for("update")
+      .limit(1);
+    const target = locked[0];
+    if (!target) return { kind: "disabled" };
+    if (!target.commentsEnabled) return { kind: "disabled" };
+
+    let parent: { id: string; authorId: string | null } | null = null;
+    if (input.parentId) {
+      // Une réponse doit appartenir à la même publication et rester visible.
+      const parentRows = await tx
+        .select({ id: comments.id, authorId: comments.authorId })
+        .from(comments)
+        .where(and(eq(comments.id, input.parentId), eq(comments.postId, input.postId), eq(comments.status, "VISIBLE")))
+        .limit(1);
+      parent = parentRows[0] ?? null;
+      if (!parent) return { kind: "invalid-parent" };
+    }
+
+    const id = newId("com");
+    const now = new Date();
+    await tx.insert(comments).values({
+      id,
       postId: input.postId,
-      postTitle: "",
-      postSlug: "",
+      authorId: input.author.id,
+      authorUsername: input.author.username,
+      authorAvatarUrl: input.author.avatarUrl,
+      parentId: input.parentId,
+      body: input.body,
+      status: "VISIBLE",
+      createdAt: now,
+      updatedAt: now,
     });
-  }
-  return {
-    id,
-    postId: input.postId,
-    authorId: input.author.id,
-    authorUsername: input.author.username,
-    authorAvatarUrl: input.author.avatarUrl,
-    parentId: input.parentId,
-    body: input.body,
-    status: "VISIBLE",
-    createdAt: now.toISOString(),
-    likeCount: 0,
-    likedByMe: false,
-  };
+    await tx.update(posts).set({ commentCount: sql`${posts.commentCount} + 1` }).where(eq(posts.id, input.postId));
+
+    const actor = { id: input.author.id, username: input.author.username, avatarUrl: input.author.avatarUrl };
+    const postSnapshot = { id: target.id, title: target.title, slug: target.slug };
+    if (parent) {
+      // Réponse : notification REPLY à l'auteur du parent (jamais à soi-même).
+      if (parent.authorId && parent.authorId !== input.author.id) {
+        await notify(parent.authorId, "REPLY", actor, postSnapshot, tx);
+      }
+    } else if (target.authorId && target.authorId !== input.author.id) {
+      await notify(target.authorId, "COMMENT", actor, postSnapshot, tx);
+    }
+
+    return {
+      kind: "created",
+      comment: {
+        id,
+        postId: input.postId,
+        authorId: input.author.id,
+        authorUsername: input.author.username,
+        authorAvatarUrl: input.author.avatarUrl,
+        parentId: input.parentId,
+        body: input.body,
+        status: "VISIBLE",
+        createdAt: now.toISOString(),
+        likeCount: 0,
+        likedByMe: false,
+      },
+    };
+  });
 }
 
 export async function hideComment(commentId: string, actor: AuthUser): Promise<"ok" | "not-found" | "forbidden"> {

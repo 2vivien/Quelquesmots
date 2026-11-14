@@ -45,6 +45,7 @@ export async function POST(
     : await getPostBySlug(key, auth.user.id);
   if (!post) return notFound("Texte introuvable.");
   const created = await addComment({ postId: post.id, author: auth.user, parentId: body.data.parentId ?? null, body: body.data.body });
-  if (!created) return badRequest("Les commentaires sont désactivés pour ce texte.");
-  return NextResponse.json({ comment: created }, { status: 201 });
+  if (created.kind === "disabled") return badRequest("Les commentaires sont désactivés pour ce texte.");
+  if (created.kind === "invalid-parent") return badRequest("La réponse cible un commentaire introuvable ou masqué.");
+  return NextResponse.json({ comment: created.comment }, { status: 201 });
 }

@@ -4,12 +4,11 @@
  * consiste à supprimer la ligne. Aucune clé de signature n'est nécessaire car
  * le jeton opaque est impossible à deviner.
  */
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { and, gt, lte, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/db";
 import { sessions, users } from "@/db/schema";
-import { newId } from "@/lib/server/safe-id";
 
 export const SESSION_COOKIE = "qm_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 90; // 90 jours
@@ -38,7 +37,7 @@ export async function createSession(
   const expiresAt = new Date(now.getTime() + SESSION_TTL_SECONDS * 1000);
   const db = getDatabase();
   await db.insert(sessions).values({
-    id: newId("sess"),
+    id: randomUUID(),
     userId,
     tokenHash,
     expiresAt,

@@ -3,7 +3,6 @@
  * Chaque fonction lit/écrit la base Neon ; aucun état n'est gardé en mémoire.
  */
 import { createHash, randomUUID } from "node:crypto";
-import { newId } from "@/lib/server/safe-id";
 import { and, asc, desc, eq, inArray, isNull, notInArray, or, sql } from "drizzle-orm";
 import type { AuthUser } from "@/features/auth";
 import type { AuditEntry, SiteSettings } from "@/features/admin/types/admin.types";
@@ -75,7 +74,6 @@ async function selectAuthUserById(id: string): Promise<AuthUser | null> {
 
 const postColumns = {
   id: posts.id,
-  slug: posts.slug,
   title: posts.title,
   excerpt: posts.excerpt,
   contentJson: posts.contentJson,
@@ -103,10 +101,9 @@ const postColumns = {
 
 type PostRow = typeof posts.$inferSelect;
 
-function mapPostRow(row: PostRow & { themeSlugs?: string[]; tagSlugs?: string[] }): PostRecord {
+function mapPostRow(row: PostRow & { themeIds?: string[]; tagIds?: string[]; tagLabels?: string[] }): PostRecord {
   return {
     id: row.id,
-    slug: row.slug ?? "",
     title: row.title,
     excerpt: row.excerpt,
     contentJson: row.contentJson as PostRecord["contentJson"],
@@ -119,8 +116,9 @@ function mapPostRow(row: PostRow & { themeSlugs?: string[]; tagSlugs?: string[] 
     publishAs: row.publishAs as PublishAs,
     visibility: row.visibility as Visibility,
     status: row.status as PostStatus,
-    themeSlugs: row.themeSlugs ?? [],
-    tagSlugs: row.tagSlugs ?? [],
+    themeIds: row.themeIds ?? [],
+    tagIds: row.tagIds ?? [],
+    tagLabels: row.tagLabels ?? [],
     heroImageUrl: row.heroImageUrl,
     commentsEnabled: row.commentsEnabled,
     moderationLocked: row.moderationLocked,
@@ -141,29 +139,34 @@ function stripPostContent(post: PostRecord): PostSummary {
   return summary as unknown as PostSummary;
 }
 
-async function loadPostThemesTags(postId: string): Promise<{ themeSlugs: string[]; tagSlugs: string[] }> {
+async function loadPostThemesTags(postId: string): Promise<{ themeIds: string[]; tagIds: string[]; tagLabels: string[] }> {
   const db = getDatabase();
   const [themesRows, tagsRows] = await Promise.all([
-    db.select({ slug: themes.slug }).from(postThemes).innerJoin(themes, eq(themes.id, postThemes.themeId)).where(eq(postThemes.postId, postId)),
-    db.select({ slug: postTags.tagSlug }).from(postTags).where(eq(postTags.postId, postId)),
+    db.select({ themeId: postThemes.themeId }).from(postThemes).where(eq(postThemes.postId, postId)),
+    db.select({ tagId: tags.id, label: tags.label }).from(postTags).innerJoin(tags, eq(tags.id, postTags.tagId)).where(eq(postTags.postId, postId)),
   ]);
   return {
-    themeSlugs: themesRows.map((r) => r.slug),
-    tagSlugs: tagsRows.map((r) => r.slug),
+    themeIds: themesRows.map((r) => r.themeId),
+    tagIds: tagsRows.map((r) => r.tagId),
+    tagLabels: tagsRows.map((r) => r.label),
   };
 }
 
-async function loadPostsThemesTags(postIds: string[]): Promise<Map<string, { themeSlugs: string[]; tagSlugs: string[] }>> {
+async function loadPostsThemesTags(postIds: string[]): Promise<Map<string, { themeIds: string[]; tagIds: string[]; tagLabels: string[] }>> {
   if (postIds.length === 0) return new Map();
   const db = getDatabase();
   const [themeRows, tagRows] = await Promise.all([
-    db.select({ postId: postThemes.postId, slug: themes.slug }).from(postThemes).innerJoin(themes, eq(themes.id, postThemes.themeId)).where(inArray(postThemes.postId, postIds)),
-    db.select({ postId: postTags.postId, slug: postTags.tagSlug }).from(postTags).where(inArray(postTags.postId, postIds)),
+    db.select({ postId: postThemes.postId, themeId: postThemes.themeId }).from(postThemes).where(inArray(postThemes.postId, postIds)),
+    db.select({ postId: postTags.postId, tagId: tags.id, label: tags.label }).from(postTags).innerJoin(tags, eq(tags.id, postTags.tagId)).where(inArray(postTags.postId, postIds)),
   ]);
-  const map = new Map<string, { themeSlugs: string[]; tagSlugs: string[] }>();
-  for (const id of postIds) map.set(id, { themeSlugs: [], tagSlugs: [] });
-  for (const row of themeRows) map.get(row.postId)?.themeSlugs.push(row.slug);
-  for (const row of tagRows) map.get(row.postId)?.tagSlugs.push(row.slug);
+  const map = new Map<string, { themeIds: string[]; tagIds: string[]; tagLabels: string[] }>();
+  for (const id of postIds) map.set(id, { themeIds: [], tagIds: [], tagLabels: [] });
+  for (const row of themeRows) map.get(row.postId)?.themeIds.push(row.themeId);
+  for (const row of tagRows) {
+    const entry = map.get(row.postId);
+    entry?.tagIds.push(row.tagId);
+    entry?.tagLabels.push(row.label);
+  }
   return map;
 }
 
@@ -177,18 +180,6 @@ async function mapPostRowIds(rows: PostRow[]): Promise<PostRecord[]> {
 async function mapSummaries(rows: PostRow[]): Promise<PostSummary[]> {
   const full = await mapPostRowIds(rows);
   return full.map(stripPostContent);
-}
-
-/** Génère un identifiant utilisateur vérifiant l'unicité en base. */
-async function generateUserId(): Promise<string> {
-  const db = getDatabase();
-  // Boucle rare : collision presque impossible, avec retry préventif.
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    const id = `user-${randomUUID().slice(0, 8)}`;
-    const existing = await db.select({ id: users.id }).from(users).where(eq(users.id, id)).limit(1);
-    if (existing.length === 0) return id;
-  }
-  return `user-${randomUUID()}`;
 }
 
 /* ---------------------------------- Utilisateurs ---------------------------------- */
@@ -248,7 +239,7 @@ export async function linkOauthAccount(input: {
   const db = getDatabase();
   await db
     .insert(oauthAccounts)
-    .values({ id: newId("oauth"), userId: input.userId, provider: input.provider, providerAccountId: input.providerAccountId, providerEmail: input.providerEmail })
+    .values({ id: randomUUID(), userId: input.userId, provider: input.provider, providerAccountId: input.providerAccountId, providerEmail: input.providerEmail })
     .onConflictDoNothing({ target: [oauthAccounts.provider, oauthAccounts.providerAccountId] });
 }
 
@@ -265,7 +256,7 @@ export async function findOrCreateGoogleUser(input: {
     const row = await selectAuthUserById(existing);
     if (row) return { user: row, createdNew: false };
   }
-  const id = await generateUserId();
+  const id = randomUUID();
   const username = `plume-${randomUUID().replace(/-/g, "").slice(0, 8)}`;
   await db.transaction(async (tx) => {
     await tx.insert(users).values({ id, email: input.email, role: "user", status: "ACTIVE", onboarded: false });
@@ -282,7 +273,7 @@ export async function findOrCreateGoogleUser(input: {
       showJoinDate: true,
       status: "ACTIVE",
     });
-    await tx.insert(oauthAccounts).values({ id: newId("oauth"), userId: id, provider: "google", providerAccountId: input.googleSub, providerEmail: input.email });
+    await tx.insert(oauthAccounts).values({ id: randomUUID(), userId: id, provider: "google", providerAccountId: input.googleSub, providerEmail: input.email });
   });
   const row = await selectAuthUserById(id);
   if (!row) throw new Error("Création utilisateur Google impossible");
@@ -362,22 +353,20 @@ export async function listFeed(query: FeedQuery): Promise<FeedPage> {
   } else {
     conditions.push(eq(posts.visibility, "PUBLIC"));
   }
-  if (query.themeSlug) {
-    // Jointure sur post_themes pour filtrer par thème (id de thème, pas slug).
+  if (query.themeId) {
+    // Sous-requête directe sur post_themes (id de thème).
     const sub = db
       .select({ postId: postThemes.postId })
       .from(postThemes)
-      .innerJoin(themes, eq(themes.id, postThemes.themeId))
-      .where(eq(themes.slug, query.themeSlug));
+      .where(eq(postThemes.themeId, query.themeId));
     conditions.push(inArray(posts.id, sub as unknown as string[]));
   }
-  if (query.tagSlug) {
-    const sub = db.select({ postId: postTags.postId }).from(postTags).where(eq(postTags.tagSlug, query.tagSlug));
+  if (query.tagId) {
+    const sub = db.select({ postId: postTags.postId }).from(postTags).where(eq(postTags.tagId, query.tagId));
     conditions.push(inArray(posts.id, sub as unknown as string[]));
   }
-  if (query.authorUsername) {
-    const target = normalizeSearchText(query.authorUsername);
-    conditions.push(sql`lower(author_username) = ${target}`);
+  if (query.authorId) {
+    conditions.push(eq(posts.authorId, query.authorId));
   }
   if (blockedIds.length > 0) {
     conditions.push(notInArray(posts.authorId, blockedIds));
@@ -425,15 +414,6 @@ export async function getPostById(id: string): Promise<PostRecord | null> {
   return mapped ?? null;
 }
 
-export async function getPostBySlug(slug: string, viewerId?: string | null): Promise<PostRecord | null> {
-  const db = getDatabase();
-  const rows = await db.select(postColumns).from(posts).where(eq(posts.slug, slug)).limit(1);
-  if (rows.length === 0) return null;
-  const [mapped] = await mapPostRowIds(rows);
-  if (!mapped) return null;
-  return canViewPost(mapped, viewerId) ? mapped : null;
-}
-
 export async function getPostsByIds(ids: string[], viewerId?: string | null): Promise<PostSummary[]> {
   if (ids.length === 0) return [];
   const db = getDatabase();
@@ -447,17 +427,16 @@ export async function getPostsByIds(ids: string[], viewerId?: string | null): Pr
 }
 
 export async function listRelated(post: PostRecord, viewerId?: string | null): Promise<PostSummary[]> {
-  if (post.themeSlugs.length === 0) return [];
+  if (post.themeIds.length === 0) return [];
   const db = getDatabase();
   const rows = await db
     .selectDistinctOn([posts.id], postColumns)
     .from(posts)
     .innerJoin(postThemes, eq(postThemes.postId, posts.id))
-    .innerJoin(themes, eq(themes.id, postThemes.themeId))
     .where(and(
       eq(posts.status, "PUBLISHED"),
       sql`${posts.id} <> ${post.id}`,
-      inArray(themes.slug, post.themeSlugs),
+      inArray(postThemes.themeId, post.themeIds),
     ))
     .limit(6);
   const mapped = await mapPostRowIds(rows);
@@ -475,14 +454,6 @@ export async function listDrafts(authorId: string): Promise<PostSummary[]> {
 }
 
 const DEFAULT_EMPTY_CONTENT = { type: "doc", content: [{ type: "paragraph" }] } as const;
-
-function toSlug(title: string, id: string): string {
-  const base = normalizeSearchText(title)
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 48);
-  return `${base || "texte"}-${id.slice(-4)}`;
-}
 
 export async function upsertDraft(draft: Partial<PostRecord> & { authorId: string }): Promise<PostRecord> {
   const db = getDatabase();
@@ -511,13 +482,13 @@ export async function upsertDraft(draft: Partial<PostRecord> & { authorId: strin
         commentsEnabled: draft.commentsEnabled ?? existing.commentsEnabled,
         updatedAt: now,
       }).where(eq(posts.id, existing.id));
-      if (draft.themeSlugs !== undefined) {
+      if (draft.themeIds !== undefined) {
         await tx.delete(postThemes).where(eq(postThemes.postId, existing.id));
-        await replacePostThemes(tx, existing.id, draft.themeSlugs);
+        await replacePostThemes(tx, existing.id, draft.themeIds);
       }
-      if (draft.tagSlugs !== undefined) {
+      if (draft.tagIds !== undefined) {
         await tx.delete(postTags).where(eq(postTags.postId, existing.id));
-        await replacePostTags(tx, existing.id, draft.tagSlugs);
+        await replacePostTags(tx, existing.id, draft.tagIds);
       }
     });
     const updated = await getPostById(existing.id);
@@ -526,11 +497,10 @@ export async function upsertDraft(draft: Partial<PostRecord> & { authorId: strin
   }
 
   // Création
-  const id = newId("draft");
+  const id = randomUUID();
   await db.transaction(async (tx) => {
     await tx.insert(posts).values({
       id,
-      slug: null,
       title: draft.title?.trim() || "Sans titre",
       excerpt: draft.excerpt ?? "",
       contentJson: (draft.contentJson ?? DEFAULT_EMPTY_CONTENT) as typeof posts.$inferSelect.contentJson,
@@ -548,48 +518,44 @@ export async function upsertDraft(draft: Partial<PostRecord> & { authorId: strin
       moderationLocked: false,
       updatedAt: now,
     });
-    if (draft.themeSlugs) await replacePostThemes(tx, id, draft.themeSlugs);
-    if (draft.tagSlugs) await replacePostTags(tx, id, draft.tagSlugs);
+    if (draft.themeIds) await replacePostThemes(tx, id, draft.themeIds);
+    if (draft.tagIds) await replacePostTags(tx, id, draft.tagIds);
   });
   const created = await getPostById(id);
   if (!created) throw new Error("Création du brouillon impossible.");
   return created;
 }
 
-async function replacePostThemes(tx: unknown, postId: string, themeSlugs: string[]): Promise<void> {
+async function replacePostThemes(tx: unknown, postId: string, themeIds: string[]): Promise<void> {
   const typedTx = tx as ReturnType<typeof getDatabase>;
   await typedTx.delete(postThemes).where(eq(postThemes.postId, postId));
-  if (themeSlugs.length === 0) return;
+  if (themeIds.length === 0) return;
   const themeRows = await typedTx
-    .select({ id: themes.id, slug: themes.slug })
+    .select({ id: themes.id })
     .from(themes)
-    .where(inArray(themes.slug, themeSlugs));
-  const bySlug = new Map<string, string>(themeRows.map((r) => [r.slug, r.id]));
-  const valid = themeSlugs.flatMap((slug) => {
-    const id = bySlug.get(slug);
-    return id ? [{ postId, themeId: id }] : [];
-  });
-  if (valid.length === 0) return;
-  await typedTx.insert(postThemes).values(valid);
+    .where(inArray(themes.id, themeIds));
+  const valid = new Set(themeRows.map((r) => r.id));
+  const values = themeIds.filter((id) => valid.has(id)).map((themeId) => ({ postId, themeId }));
+  if (values.length === 0) return;
+  await typedTx.insert(postThemes).values(values).onConflictDoNothing({ target: [postThemes.postId, postThemes.themeId] });
 }
 
-async function replacePostTags(tx: unknown, postId: string, tagSlugs: string[]): Promise<void> {
+async function replacePostTags(tx: unknown, postId: string, tagIds: string[]): Promise<void> {
   const typedTx = tx as ReturnType<typeof getDatabase>;
   await typedTx.delete(postTags).where(eq(postTags.postId, postId));
-  if (tagSlugs.length === 0) return;
-  const existing = await typedTx.select({ slug: tags.slug }).from(tags).where(inArray(tags.slug, tagSlugs));
-  const existingSet = new Set(existing.map((r) => r.slug));
-  const newTags = tagSlugs.filter((slug) => !existingSet.has(slug));
-  if (newTags.length > 0) {
-    await typedTx
-      .insert(tags)
-      .values(newTags.map((slug) => ({ slug, label: slug, status: "APPROVED" as const, createdBy: null })))
-      .onConflictDoNothing({ target: tags.slug });
-  }
+  if (tagIds.length === 0) return;
+  // Seuls des tags APPROVED existants peuvent être liés (les ids sont fournis par le client).
+  const existing = await typedTx
+    .select({ id: tags.id })
+    .from(tags)
+    .where(and(inArray(tags.id, tagIds), eq(tags.status, "APPROVED")));
+  const existingSet = new Set(existing.map((r) => r.id));
+  const valid = tagIds.filter((id) => existingSet.has(id));
+  if (valid.length === 0) return;
   await typedTx
     .insert(postTags)
-    .values(tagSlugs.map((slug) => ({ postId, tagSlug: slug })))
-    .onConflictDoNothing({ target: [postTags.postId, postTags.tagSlug] });
+    .values(valid.map((tagId) => ({ postId, tagId })))
+    .onConflictDoNothing({ target: [postTags.postId, postTags.tagId] });
 }
 
 export type PublishPostResult = "not-found" | "limit" | PostRecord;
@@ -614,12 +580,10 @@ export async function publishPost(id: string, authorId: string, dailyLimit: numb
       .where(and(eq(posts.authorId, authorId), eq(posts.status, "PUBLISHED"), sql`${posts.publishedAt} >= ${start}`));
     if ((publishedToday[0]?.count ?? 0) >= dailyLimit) return "limit";
 
-    const slug = target.slug ?? toSlug(target.title, target.id);
     const now = new Date();
     const nextStatus = target.moderationLocked ? "UNDER_REVIEW" : "PUBLISHED";
     await tx.update(posts).set({
       status: nextStatus,
-      slug,
       publishedAt: target.publishedAt ?? now,
       updatedAt: now,
     }).where(eq(posts.id, id));
@@ -698,9 +662,9 @@ async function deleteReactionAndAdjustCounter(
 }
 
 /** Verrouille un texte (SELECT … FOR UPDATE) pour sérialiser les opérations concurrentes. */
-async function lockPostById(tx: DbTx, postId: string): Promise<{ id: string; authorId: string | null; title: string; slug: string | null } | null> {
+async function lockPostById(tx: DbTx, postId: string): Promise<{ id: string; authorId: string | null; title: string } | null> {
   const rows = await tx
-    .select({ id: posts.id, authorId: posts.authorId, title: posts.title, slug: posts.slug })
+    .select({ id: posts.id, authorId: posts.authorId, title: posts.title })
     .from(posts)
     .where(and(eq(posts.id, postId), sql`${posts.status} <> 'DELETED'`))
     .for("update")
@@ -730,7 +694,7 @@ export async function toggleLike(userId: string, postId: string): Promise<{ like
     if (liked) {
       const inserted = await insertReactionAndAdjustCounter(tx, userId, postId, "LIKE");
       if (inserted && post.authorId && actor && actor.id !== post.authorId) {
-        await notify(post.authorId, "LIKE", { id: actor.id, username: actor.username, avatarUrl: actor.avatarUrl }, { id: post.id, title: post.title, slug: post.slug }, tx);
+        await notify(post.authorId, "LIKE", { id: actor.id, username: actor.username, avatarUrl: actor.avatarUrl }, { id: post.id, title: post.title }, tx);
       }
     } else {
       await deleteReactionAndAdjustCounter(tx, userId, postId, "LIKE");
@@ -942,7 +906,7 @@ export async function addComment(input: {
   const db = getDatabase();
   return db.transaction(async (tx) => {
     const locked = await tx
-      .select({ id: posts.id, authorId: posts.authorId, title: posts.title, slug: posts.slug, commentsEnabled: posts.commentsEnabled })
+      .select({ id: posts.id, authorId: posts.authorId, title: posts.title, commentsEnabled: posts.commentsEnabled })
       .from(posts)
       .where(and(eq(posts.id, input.postId), eq(posts.status, "PUBLISHED")))
       .for("update")
@@ -963,7 +927,7 @@ export async function addComment(input: {
       if (!parent) return { kind: "invalid-parent" };
     }
 
-    const id = newId("com");
+    const id = randomUUID();
     const now = new Date();
     await tx.insert(comments).values({
       id,
@@ -980,7 +944,7 @@ export async function addComment(input: {
     await tx.update(posts).set({ commentCount: sql`${posts.commentCount} + 1` }).where(eq(posts.id, input.postId));
 
     const actor = { id: input.author.id, username: input.author.username, avatarUrl: input.author.avatarUrl };
-    const postSnapshot = { id: target.id, title: target.title, slug: target.slug };
+    const postSnapshot = { id: target.id, title: target.title };
     if (parent) {
       // Réponse : notification REPLY à l'auteur du parent (jamais à soi-même).
       if (parent.authorId && parent.authorId !== input.author.id) {
@@ -1050,12 +1014,11 @@ async function insertNotification(entry: {
   actorId: string | null;
   postId: string | null;
   postTitle: string;
-  postSlug: string;
 }, tx?: DbTx): Promise<void> {
   if (entry.actorId && entry.userId === entry.actorId) return; // Pas de notification pour soi-même.
   const client = tx ?? getDatabase();
   await client.insert(notifications).values({
-    id: newId("notif"),
+    id: randomUUID(),
     userId: entry.userId,
     actorId: entry.actorId,
     type: entry.type,
@@ -1063,15 +1026,14 @@ async function insertNotification(entry: {
     actorAvatarUrl: entry.actorAvatarUrl,
     postId: entry.postId,
     postTitle: entry.postTitle,
-    postSlug: entry.postSlug,
     readAt: null,
     createdAt: new Date(),
   });
 }
 
-async function notify(userId: string, type: NotificationKind, actor: { id: string; username: string; avatarUrl: string }, post: { id: string; title: string; slug: string | null }, tx?: DbTx): Promise<void> {
+async function notify(userId: string, type: NotificationKind, actor: { id: string; username: string; avatarUrl: string }, post: { id: string; title: string }, tx?: DbTx): Promise<void> {
   if (userId === actor.id) return;
-  await insertNotification({ userId, type, actorUsername: actor.username, actorAvatarUrl: actor.avatarUrl, actorId: actor.id, postId: post.id, postTitle: post.title, postSlug: post.slug ?? "" }, tx);
+  await insertNotification({ userId, type, actorUsername: actor.username, actorAvatarUrl: actor.avatarUrl, actorId: actor.id, postId: post.id, postTitle: post.title }, tx);
 }
 
 /* -------------------------------- Notifications -------------------------------- */
@@ -1092,7 +1054,6 @@ export async function listNotifications(userId: string): Promise<NotificationIte
     actorAvatarUrl: row.actorAvatarUrl,
     postTitle: row.postTitle,
     postId: row.postId ?? "",
-    postSlug: row.postSlug,
     read: Boolean(row.readAt),
     createdAt: row.createdAt.toISOString(),
   }));
@@ -1139,7 +1100,7 @@ export async function createReport(input: {
   const db = getDatabase();
   const existing = await db.select({ id: reports.id }).from(reports).where(and(eq(reports.reporterId, input.reporterId), eq(reports.targetType, input.targetType), eq(reports.targetId, input.targetId))).limit(1);
   if (existing.length > 0) return "duplicate";
-  const id = newId("rep");
+  const id = randomUUID();
   const insertedRows = await db
     .insert(reports)
     .values({
@@ -1210,7 +1171,7 @@ async function actorIdByUsername(tx: DbTx, actorUsername: string): Promise<strin
 export async function pushAudit(actorUsername: string, action: string, targetLabel: string, reason: string): Promise<AuditEntry> {
   const db = getDatabase();
   const createdAt = new Date();
-  const id = newId("audit");
+  const id = randomUUID();
   return db.transaction(async (tx) => {
     const actorId = await actorIdByUsername(tx, actorUsername);
     await tx.insert(adminAudit).values({ id, actorId, actorUsername, action, targetLabel, reason, createdAt });
@@ -1258,7 +1219,7 @@ export async function adminModerate(input: {
     }
     const actorId = await actorIdByUsername(tx, input.actorUsername);
     await tx.insert(adminAudit).values({
-      id: newId("audit"),
+      id: randomUUID(),
       actorId,
       actorUsername: input.actorUsername,
       action: input.action,
@@ -1285,14 +1246,13 @@ export async function countPublishedPostsByAuthor(authorId: string): Promise<num
   return rows[0]?.count ?? 0;
 }
 
-export async function countPublishedPostsByTheme(themeSlug: string): Promise<number> {
+export async function countPublishedPostsByTheme(themeId: string): Promise<number> {
   const db = getDatabase();
   const rows = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(postThemes)
-    .innerJoin(themes, eq(themes.id, postThemes.themeId))
     .innerJoin(posts, eq(posts.id, postThemes.postId))
-    .where(and(eq(themes.slug, themeSlug), eq(posts.status, "PUBLISHED")));
+    .where(and(eq(postThemes.themeId, themeId), eq(posts.status, "PUBLISHED")));
   return rows[0]?.count ?? 0;
 }
 
@@ -1421,7 +1381,7 @@ export async function search(query: string, tab: SearchTab, viewerId?: string | 
     const rows = await db.select().from(tags).where(eq(tags.status, "APPROVED")).limit(100);
     for (const g of rows) {
       if (isFuzzyMatch(g.label, clean)) {
-        items.push({ id: g.slug, kind: "tag", title: `#${g.label}`, subtitle: "", href: `/tags/${g.slug}` });
+        items.push({ id: g.id, kind: "tag", title: `#${g.label}`, subtitle: "", href: `/tags/${g.id}` });
       }
     }
   }
@@ -1464,46 +1424,45 @@ export async function listTags(): Promise<TagItem[]> {
   const db = getDatabase();
   const rows = await db
     .select({
-      slug: tags.slug,
+      id: tags.id,
       label: tags.label,
       status: tags.status,
       useCount: sql<number>`count(${postTags.postId})::int`,
     })
     .from(tags)
-    .leftJoin(postTags, eq(postTags.tagSlug, tags.slug))
+    .leftJoin(postTags, eq(postTags.tagId, tags.id))
     .where(eq(tags.status, "APPROVED"))
-    .groupBy(tags.slug, tags.label, tags.status)
+    .groupBy(tags.id, tags.label, tags.status)
     .orderBy(desc(sql`count(${postTags.postId})`));
-  return rows.map((row) => ({ slug: row.slug, label: row.label, useCount: row.useCount, status: row.status as TagItem["status"] }));
+  return rows.map((row) => ({ id: row.id, label: row.label, useCount: row.useCount, status: row.status as TagItem["status"] }));
 }
 
-export async function getTagBySlug(slug: string): Promise<TagItem | null> {
-  const clean = normalizeSearchText(slug);
+export async function getTagById(id: string): Promise<TagItem | null> {
   const db = getDatabase();
   const rows = await db
     .select({
-      slug: tags.slug,
+      id: tags.id,
       label: tags.label,
       status: tags.status,
       useCount: sql<number>`count(${postTags.postId})::int`,
     })
     .from(tags)
-    .leftJoin(postTags, eq(postTags.tagSlug, tags.slug))
-    .where(and(eq(tags.status, "APPROVED"), sql`lower(${tags.slug}) = ${clean}`))
-    .groupBy(tags.slug, tags.label, tags.status)
+    .leftJoin(postTags, eq(postTags.tagId, tags.id))
+    .where(and(eq(tags.status, "APPROVED"), eq(tags.id, id)))
+    .groupBy(tags.id, tags.label, tags.status)
     .limit(1);
   const row = rows[0];
-  return row ? { slug: row.slug, label: row.label, useCount: row.useCount, status: row.status as TagItem["status"] } : null;
+  return row ? { id: row.id, label: row.label, useCount: row.useCount, status: row.status as TagItem["status"] } : null;
 }
 
 export async function suggestTagsFromText(text: string): Promise<string[]> {
   const norm = normalizeSearchText(text);
   const db = getDatabase();
   const rows = await db
-    .select({ label: tags.label, slug: tags.slug })
+    .select({ label: tags.label })
     .from(tags)
     .where(eq(tags.status, "APPROVED"));
-  const matched = rows.filter((t) => norm.includes(t.slug)).map((t) => t.label);
+  const matched = rows.filter((t) => norm.includes(normalizeSearchText(t.label))).map((t) => t.label);
   const defaults = ["Amour", "Solitude", "Vie", "Espoir"];
   return Array.from(new Set([...matched, ...defaults])).slice(0, 5);
 }
@@ -1518,16 +1477,8 @@ async function loadThemePostCounts(): Promise<Map<string, number>> {
     .innerJoin(posts, eq(posts.id, postThemes.postId))
     .where(eq(posts.status, "PUBLISHED"))
     .groupBy(postThemes.themeId);
-  const themeIds = rows.map((r) => r.themeId);
-  const slugRows = themeIds.length > 0
-    ? await db.select({ id: themes.id, slug: themes.slug }).from(themes).where(inArray(themes.id, themeIds))
-    : [];
-  const idToSlug = new Map(slugRows.map((r) => [r.id, r.slug]));
   const map = new Map<string, number>();
-  for (const row of rows) {
-    const slug = idToSlug.get(row.themeId);
-    if (slug) map.set(slug, row.count);
-  }
+  for (const row of rows) map.set(row.themeId, row.count);
   return map;
 }
 
@@ -1542,14 +1493,12 @@ export async function listThemes(query?: string): Promise<ThemeItem[]> {
     .filter((theme) => !clean || normalizeSearchText(theme.name).includes(clean) || normalizeSearchText(theme.tagline).includes(clean))
     .map((theme) => ({
       id: theme.id,
-      slug: theme.slug,
       name: theme.name,
       category: theme.category as ThemeCategory,
       tagline: theme.tagline,
       position: theme.position,
-      postCount: counts.get(theme.slug) ?? 0,
+      postCount: counts.get(theme.id) ?? 0,
       tagCount: 0,
-      relatedTags: [],
       active: theme.active,
     }));
 }
@@ -1562,34 +1511,12 @@ export async function getThemeById(id: string): Promise<ThemeItem | null> {
   const counts = await loadThemePostCounts();
   return {
     id: row.id,
-    slug: row.slug,
     name: row.name,
     category: row.category as ThemeCategory,
     tagline: row.tagline,
     position: row.position,
-    postCount: counts.get(row.slug) ?? 0,
+    postCount: counts.get(row.id) ?? 0,
     tagCount: 0,
-    relatedTags: [],
-    active: row.active,
-  };
-}
-
-export async function getThemeBySlug(slug: string): Promise<ThemeItem | null> {
-  const db = getDatabase();
-  const rows = await db.select().from(themes).where(and(eq(themes.slug, slug), eq(themes.active, true))).limit(1);
-  const row = rows[0];
-  if (!row) return null;
-  const counts = await loadThemePostCounts();
-  return {
-    id: row.id,
-    slug: row.slug,
-    name: row.name,
-    category: row.category as ThemeCategory,
-    tagline: row.tagline,
-    position: row.position,
-    postCount: counts.get(row.slug) ?? 0,
-    tagCount: 0,
-    relatedTags: [],
     active: row.active,
   };
 }

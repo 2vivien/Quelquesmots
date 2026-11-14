@@ -15,12 +15,24 @@ export default defineConfig({
     trace: "retain-on-failure",
     ...devices["Desktop Chrome"],
   },
-  webServer: {
-    command: "bun run dev --port 3000",
-    url: "http://localhost:3000",
-    reuseExistingServer: true,
-    timeout: 180_000,
-    stdout: "ignore",
-    stderr: "pipe",
-  },
+  webServer: [
+    {
+      command: "bun run scripts/mock-google.ts",
+      url: "http://127.0.0.1:3999/userinfo",
+      reuseExistingServer: false,
+      timeout: 30_000,
+      stdout: "pipe",
+      stderr: "pipe",
+    },
+    {
+      // Le bouchon Google n'est actif que pour les tests e2e (variables locales au serveur).
+      command:
+        "GOOGLE_OAUTH_TOKEN_URL=http://127.0.0.1:3999/token GOOGLE_OAUTH_USERINFO_URL=http://127.0.0.1:3999/userinfo bun run dev --port 3000",
+      url: "http://localhost:3000",
+      reuseExistingServer: true,
+      timeout: 180_000,
+      stdout: "ignore",
+      stderr: "pipe",
+    },
+  ],
 });

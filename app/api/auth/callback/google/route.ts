@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
   if (!clientId || !clientSecret) return fail("google-non-configure");
   const redirectUri = process.env.GOOGLE_REDIRECT_URI ?? `${appUrl}/api/auth/callback/google`;
 
-  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+  const tokenRes = await fetch(process.env.GOOGLE_OAUTH_TOKEN_URL ?? "https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({ code, client_id: clientId, client_secret: clientSecret, redirect_uri: redirectUri, grant_type: "authorization_code" }),
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
   const tokenParsed = tokenSchema.safeParse(await tokenRes.json().catch(() => null));
   if (!tokenParsed.success) return fail("token-invalide");
 
-  const infoRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+  const infoRes = await fetch(process.env.GOOGLE_OAUTH_USERINFO_URL ?? "https://www.googleapis.com/oauth2/v3/userinfo", {
     headers: { Authorization: `Bearer ${tokenParsed.data.access_token}` },
   });
   if (!infoRes.ok) return fail("profil-indisponible");

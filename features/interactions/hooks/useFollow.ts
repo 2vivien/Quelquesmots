@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { openAuthPopup } from "@/lib/open-auth";
 import { toast } from "sonner";
@@ -14,7 +14,6 @@ interface FollowBaseline {
   targetUserId: string;
   count: number;
   following: boolean;
-  ready: boolean;
 }
 
 /**
@@ -29,30 +28,25 @@ export function useFollow(targetUserId: string, baseCount = 0, authorLabel?: str
   const { data } = useInteractionState();
   const isSelf = Boolean(user && user.id === targetUserId);
   const following = data?.followedUserIds.includes(targetUserId) ?? false;
-  const baseline = useRef<FollowBaseline>({
-    userId: user?.id ?? null,
-    targetUserId,
-    count: baseCount,
-    following,
-    ready: !user || Boolean(data),
-  });
+  const [baseline, setBaseline] = useState<FollowBaseline | null>(null);
+  const baselineMatches = Boolean(
+    baseline &&
+    baseline.userId === (user?.id ?? null) &&
+    baseline.targetUserId === targetUserId &&
+    baseline.count === baseCount
+  );
 
-  const contextChanged =
-    baseline.current.userId !== (user?.id ?? null) ||
-    baseline.current.targetUserId !== targetUserId ||
-    baseline.current.count !== baseCount;
-
-  if (contextChanged) {
-    baseline.current = {
-      userId: user?.id ?? null,
-      targetUserId,
-      count: baseCount,
-      following,
-      ready: !user || Boolean(data),
-    };
-  } else if (user && data && !baseline.current.ready) {
-    baseline.current = { ...baseline.current, following, ready: true };
-  }
+  useEffect(() => {
+    if (user && !data) return;
+    setBaseline((current) => {
+      if (
+        current?.userId === (user?.id ?? null) &&
+        current.targetUserId === targetUserId &&
+        current.count === baseCount
+      ) return current;
+      return { userId: user?.id ?? null, targetUserId, count: baseCount, following };
+    });
+  }, [data, user, targetUserId, baseCount, following]);
 
   const mutation = useMutation({
     mutationFn: () => {
@@ -95,7 +89,7 @@ export function useFollow(targetUserId: string, baseCount = 0, authorLabel?: str
       openAuthPopup();
       return;
     }
-    if (!baseline.current.ready) {
+    if (!data || !baselineMatches) {
       toast.info("Chargement de vos interactions…");
       return;
     }
@@ -105,7 +99,7 @@ export function useFollow(targetUserId: string, baseCount = 0, authorLabel?: str
   return {
     following,
     isSelf,
-    count: baseCount + Number(following) - Number(baseline.current.following),
+    count: baseCount + Number(following) - Number(baselineMatches ? baseline.following : following),
     toggle,
   };
 }

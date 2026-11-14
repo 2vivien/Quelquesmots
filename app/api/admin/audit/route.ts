@@ -4,7 +4,7 @@ import { listAudit } from "@/lib/server/store";
 
 /** Journal d'audit administratif (200 dernières entrées). */
 export async function GET(req: NextRequest) {
-  const auth = requireAdmin(req);
+  const auth = await requireAdmin(req);
   if (!auth.ok) return auth.response;
-  return NextResponse.json({ entries: listAudit() });
+  return NextResponse.json({ entries: await listAudit() });
 }

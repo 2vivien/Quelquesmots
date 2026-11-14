@@ -3,6 +3,7 @@
  * Chaque fonction lit/écrit la base Neon ; aucun état n'est gardé en mémoire.
  */
 import { createHash, randomUUID } from "node:crypto";
+import { newId } from "@/lib/server/safe-id";
 import { and, desc, eq, inArray, isNull, or, sql, asc } from "drizzle-orm";
 import type { AuthUser } from "@/features/auth";
 import type { AuditEntry, SiteSettings } from "@/features/admin/types/admin.types";
@@ -43,7 +44,6 @@ import {
   posts,
 } from "@/db/schema";
 
-const newId = (prefix: string): string => `${prefix}-${randomUUID()}`;
 const today = (): string => new Date().toISOString().slice(0, 10);
 
 type Row<T> = T extends (infer U)[] ? U : never;

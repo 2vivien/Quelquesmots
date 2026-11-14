@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { openAuthPopup } from "@/lib/open-auth";
 import { toast } from "sonner";
@@ -18,7 +18,6 @@ interface LikeBaseline {
   initialDislikeCount: number;
   liked: boolean;
   disliked: boolean;
-  ready: boolean;
 }
 
 /** Hook optimiste gérant les likes, dislikes et leurs compteurs. */
@@ -29,35 +28,30 @@ export function useLike(postId: string, initialCount: number, initialDislikeCoun
   const liked = data?.likedIds.includes(postId) ?? false;
   const disliked = data?.dislikedIds.includes(postId) ?? false;
   const key = ["interactions", user?.id ?? "guest"];
-  const baseline = useRef<LikeBaseline>({
-    postId,
-    userId: user?.id ?? null,
-    initialCount,
-    initialDislikeCount,
-    liked,
-    disliked,
-    ready: !user || Boolean(data),
-  });
+  const baselineMatches = Boolean(
+    baseline && baseline.postId === postId &&
+    baseline.userId === (user?.id ?? null) &&
+    baseline.initialCount === initialCount &&
+    baseline.initialDislikeCount === initialDislikeCount
+  );
+  const [baseline, setBaseline] = useState<LikeBaseline | null>(null);
 
-  const contextChanged =
-    baseline.current.postId !== postId ||
-    baseline.current.userId !== (user?.id ?? null) ||
-    baseline.current.initialCount !== initialCount ||
-    baseline.current.initialDislikeCount !== initialDislikeCount;
+  useEffect(() => {
+    if (user && !data) return;
+    setBaseline((current) => {
+      if (
+        current?.postId === postId &&
+        current.userId === (user?.id ?? null) &&
+        current.initialCount === initialCount &&
+        current.initialDislikeCount === initialDislikeCount
+      ) return current;
+      return { postId, userId: user?.id ?? null, initialCount, initialDislikeCount, liked, disliked };
+    });
+  }, [data, user, postId, initialCount, initialDislikeCount, liked, disliked]);
 
-  if (contextChanged) {
-    baseline.current = {
-      postId,
-      userId: user?.id ?? null,
-      initialCount,
-      initialDislikeCount,
-      liked,
-      disliked,
-      ready: !user || Boolean(data),
-    };
-  } else if (user && data && !baseline.current.ready) {
-    baseline.current = { ...baseline.current, liked, disliked, ready: true };
-  }
+  const isReady = !user || Boolean(data && baselineMatches);
+  const baselineLiked = baselineMatches ? baseline.liked : liked;
+  const baselineDisliked = baselineMatches ? baseline.disliked : disliked;
 
   const likeMut = useMutation({
     mutationFn: () => interactionsService.toggleLike(user!.id, postId),
@@ -114,7 +108,7 @@ export function useLike(postId: string, initialCount: number, initialDislikeCoun
       openAuthPopup();
       return;
     }
-    if (!baseline.current.ready) {
+    if (!isReady) {
       toast.info("Chargement de vos interactions…");
       return;
     }
@@ -124,8 +118,8 @@ export function useLike(postId: string, initialCount: number, initialDislikeCoun
   return {
     liked,
     disliked,
-    count: initialCount + Number(liked) - Number(baseline.current.liked),
-    dislikeCount: initialDislikeCount + Number(disliked) - Number(baseline.current.disliked),
+    count: initialCount + Number(liked) - Number(baselineLiked),
+    dislikeCount: initialDislikeCount + Number(disliked) - Number(baselineDisliked),
     toggle: () => guard(() => !likeMut.isPending && likeMut.mutate()),
     toggleDislike: () => guard(() => !dislikeMut.isPending && dislikeMut.mutate()),
   };

@@ -152,22 +152,27 @@ function seedUsers(): AuthUser[] {
 }
 
 function seedDb(): Db {
+  const demoMode = process.env.NODE_ENV !== "production";
   const bookmarks = new Map<string, Set<string>>();
-  bookmarks.set("user-emma", new Set(["post-1", "post-2"]));
   const follows = new Map<string, Set<string>>();
-  follows.set("user-emma", new Set(["user-plume"]));
+  if (demoMode) {
+    bookmarks.set("user-emma", new Set(["post-1", "post-2"]));
+    follows.set("user-emma", new Set(["user-plume"]));
+  }
   return {
-    posts: SEED_POSTS.map((p) => ({ ...p })),
+    posts: demoMode ? SEED_POSTS.map((p) => ({ ...p })) : [],
     themes: SEED_THEMES.map((t) => ({ ...t })),
     tags: MOCK_TAGS.map((t) => ({ ...t })),
-    commentLikes: new Map(Object.entries(SEED_COMMENT_LIKES).map(([id, users]) => [id, new Set(users)])),
-    comments: SEED_COMMENTS.map((c) => ({ ...c })),
-    notifications: SEED_NOTIFICATIONS.map((n) => ({ ...n })),
-    reports: SEED_REPORTS.map((r) => ({ ...r })),
+    commentLikes: demoMode
+      ? new Map(Object.entries(SEED_COMMENT_LIKES).map(([id, users]) => [id, new Set(users)]))
+      : new Map(),
+    comments: demoMode ? SEED_COMMENTS.map((c) => ({ ...c })) : [],
+    notifications: demoMode ? SEED_NOTIFICATIONS.map((n) => ({ ...n })) : [],
+    reports: demoMode ? SEED_REPORTS.map((r) => ({ ...r })) : [],
     audit: [],
     settings: { maxChars: 50000, minChars: 20, maxTags: 5, dailyPublishLimit: 10 },
-    users: seedUsers(),
-    authors: SEED_AUTHORS.map((a) => ({ ...a })),
+    users: demoMode ? seedUsers() : [],
+    authors: demoMode ? SEED_AUTHORS.map((a) => ({ ...a })) : [],
     likes: new Map(),
     dislikes: new Map(),
     bookmarks,

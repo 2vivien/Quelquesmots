@@ -1,4 +1,5 @@
 import { Redis } from "@upstash/redis";
+import { revalidatePublicCache } from "./data-cache";
 
 /**
  * Cache Upstash du catalogue éditorial (thèmes, tags, compteurs de publications).
@@ -47,6 +48,7 @@ export async function invalidateCatalog(): Promise<void> {
   const redis = getRedisClient();
   if (!redis) return;
   try {
+    revalidatePublicCache();
     let cursor = "0";
     const keys: string[] = [];
     do {

@@ -21,6 +21,8 @@ import type { SearchResponse, SearchResultItem, SearchTab } from "@/features/sea
 import type { PostStatus, PublishAs, Visibility } from "@/types";
 import { getDatabase } from "@/db";
 import { withCatalogCache, invalidateCatalog } from "@/lib/server/catalog-cache";
+import { unstable_cache } from "next/cache";
+import { revalidatePublicCache } from "@/lib/server/data-cache";
 import {
   adminAudit,
   authorProfiles,
@@ -317,6 +319,8 @@ export async function updateUserProfile(
       await tx.update(authorProfiles).set(patchProfile).where(eq(authorProfiles.userId, id));
     }
   });
+  // Le profil est public : on invalide Upstash + Data Cache Next.
+  await invalidateCatalog();
   return selectAuthUserById(userId);
 }
 
@@ -342,7 +346,7 @@ function decodeFeedCursor(raw: string): { pa: Date; id: string } | null {
 /** Erreur de curseur (le client echobe un curseur non produit par le serveur). */
 export class InvalidFeedCursorError extends Error {}
 
-export async function listFeed(query: FeedQuery): Promise<FeedPage> {
+async function listFeedUncached(query: FeedQuery): Promise<FeedPage> {
   const db = getDatabase();
   const blockedIds = query.blockedAuthorIds ?? [];
   const limit = Math.min(Math.max(query.limit ?? 20, 1), 50);
@@ -407,7 +411,7 @@ export async function listFeed(query: FeedQuery): Promise<FeedPage> {
   return { items, nextCursor };
 }
 
-export async function getPostById(id: string): Promise<PostRecord | null> {
+async function getPostByIdUncached(id: string): Promise<PostRecord | null> {
   const db = getDatabase();
   const rows = await db.select(postColumns).from(posts).where(eq(posts.id, id)).limit(1);
   if (rows.length === 0) return null;
@@ -415,7 +419,7 @@ export async function getPostById(id: string): Promise<PostRecord | null> {
   return mapped ?? null;
 }
 
-export async function getPostsByIds(ids: string[], viewerId?: string | null): Promise<PostSummary[]> {
+async function getPostsByIdsUncached(ids: string[], viewerId?: string | null): Promise<PostSummary[]> {
   if (ids.length === 0) return [];
   const db = getDatabase();
   const rows = await db.select(postColumns).from(posts).where(inArray(posts.id, ids));
@@ -427,7 +431,7 @@ export async function getPostsByIds(ids: string[], viewerId?: string | null): Pr
   });
 }
 
-export async function listRelated(post: PostRecord, viewerId?: string | null): Promise<PostSummary[]> {
+async function listRelatedUncached(post: PostRecord, viewerId?: string | null): Promise<PostSummary[]> {
   if (post.themeIds.length === 0) return [];
   const db = getDatabase();
   const rows = await db
@@ -592,8 +596,10 @@ export async function publishPost(id: string, authorId: string, dailyLimit: numb
     const [mapped] = await mapPostRowIds(updatedRows);
     return mapped ?? "not-found";
   });
-  // Invalidation catalogue (rendu ISR/HTTP edge dépendent du catalogue) uniquement sur succès.
-  if (result && typeof result === "object") await invalidateCatalog();
+  // Invalidation catalogue (rendu ISR/HTTP edge + Data Cache Next dépendent du catalogue) uniquement sur succès.
+  if (result && typeof result === "object") {
+    await invalidateCatalog();
+  }
   return result;
 }
 
@@ -603,7 +609,9 @@ export async function deletePost(id: string, authorId: string, isAdmin: boolean)
     ? eq(posts.id, id)
     : and(eq(posts.id, id), eq(posts.authorId, authorId));
   const rows = await db.update(posts).set({ status: "DELETED" as const, updatedAt: new Date() }).where(where).returning({ id: posts.id });
-  if (rows.length > 0) await invalidateCatalog();
+  if (rows.length > 0) {
+    await invalidateCatalog();
+  }
   return rows.length > 0;
 }
 
@@ -1337,7 +1345,7 @@ async function findAuthorRows(): Promise<AuthorRowFlat[]> {
 
 /* ----------------------------------- Recherche ----------------------------------- */
 
-export async function search(query: string, tab: SearchTab, viewerId?: string | null): Promise<SearchResponse> {
+async function searchUncached(query: string, tab: SearchTab, viewerId?: string | null): Promise<SearchResponse> {
   const db = getDatabase();
   const clean = normalizeSearchText(query);
   const items: SearchResultItem[] = [];
@@ -1427,7 +1435,7 @@ export async function search(query: string, tab: SearchTab, viewerId?: string | 
 
 /* ----------------------------------- Tags ------------------------------------ */
 
-export async function listTags(): Promise<TagItem[]> {
+async function listTagsUncached(): Promise<TagItem[]> {
   return withCatalogCache("tags:list", async () => {
     const db = getDatabase();
     const rows = await db
@@ -1446,7 +1454,7 @@ export async function listTags(): Promise<TagItem[]> {
   });
 }
 
-export async function getTagById(id: string): Promise<TagItem | null> {
+async function getTagByIdUncached(id: string): Promise<TagItem | null> {
   return withCatalogCache(`tags:item:${id}`, async () => {
     const db = getDatabase();
     const rows = await db
@@ -1493,7 +1501,7 @@ async function loadThemePostCounts(): Promise<Map<string, number>> {
   return map;
 }
 
-export async function listThemes(query?: string): Promise<ThemeItem[]> {
+async function listThemesUncached(query?: string): Promise<ThemeItem[]> {
   const clean = normalizeSearchText(query ?? "");
   return withCatalogCache(`themes:list:${clean || "all"}`, async () => {
     const db = getDatabase();
@@ -1516,7 +1524,7 @@ export async function listThemes(query?: string): Promise<ThemeItem[]> {
   });
 }
 
-export async function getThemeById(id: string): Promise<ThemeItem | null> {
+async function getThemeByIdUncached(id: string): Promise<ThemeItem | null> {
   return withCatalogCache(`themes:item:${id}`, async () => {
     const db = getDatabase();
     const rows = await db.select().from(themes).where(and(eq(themes.id, id), eq(themes.active, true))).limit(1);
@@ -1538,7 +1546,7 @@ export async function getThemeById(id: string): Promise<ThemeItem | null> {
 
 /* ---------------------------------- Auteurs ----------------------------------- */
 
-export async function listAuthors(query?: string): Promise<AuthorProfile[]> {
+async function listAuthorsUncached(query?: string): Promise<AuthorProfile[]> {
   const db = getDatabase();
   const clean = normalizeSearchText(query ?? "");
   const rows = await db
@@ -1592,7 +1600,7 @@ export async function listAuthors(query?: string): Promise<AuthorProfile[]> {
     .sort((a, b) => (b.followersCount + b.postCount * 2) - (a.followersCount + a.postCount * 2));
 }
 
-export async function getAuthorById(id: string): Promise<AuthorProfile | null> {
+async function getAuthorByIdUncached(id: string): Promise<AuthorProfile | null> {
   const db = getDatabase();
   const rows = await db
     .select(authorRowColumns)
@@ -1649,4 +1657,56 @@ export async function countDraftsByAuthor(authorId: string): Promise<number> {
 export async function setAdminRoleForUser(userId: string): Promise<void> {
   const db = getDatabase();
   await db.update(users).set({ role: "admin" }).where(eq(users.id, userId));
+}
+
+/* ---------------------------------------------------------------------------
+ * Data Cache applicatif (Next.js unstable_cache).
+ * Ces wrappers ajoutent une couche de cache persistant (politesse/catégorie)
+ * par-dessus la couche Upstash du catalogue. Invalidation via le tag `qm-catalog`.
+ * ------------------------------------------------------------------------- */
+const CACHE_TAG = ["qm-catalog"] as const;
+const FEED_TAG = ["qm-catalog", "qm-feed"] as const;
+
+export function listFeed(query: FeedQuery): Promise<FeedPage> {
+  return unstable_cache(listFeedUncached, ["listFeed"], { revalidate: 30, tags: [...FEED_TAG] })(query);
+}
+
+export function getPostById(id: string): Promise<PostRecord | null> {
+  return unstable_cache(getPostByIdUncached, ["getPostById"], { revalidate: 60, tags: [...CACHE_TAG] })(id);
+}
+
+export function getPostsByIds(ids: string[], viewerId?: string | null): Promise<PostSummary[]> {
+  return unstable_cache(getPostsByIdsUncached, ["getPostsByIds"], { revalidate: 60, tags: [...CACHE_TAG] })(ids, viewerId);
+}
+
+export function listRelated(post: PostRecord, viewerId?: string | null): Promise<PostSummary[]> {
+  return unstable_cache(listRelatedUncached, ["listRelated"], { revalidate: 120, tags: [...CACHE_TAG] })(post, viewerId);
+}
+
+export function search(query: string, tab: SearchTab, viewerId?: string | null): Promise<SearchResponse> {
+  return unstable_cache(searchUncached, ["search"], { revalidate: 30, tags: [...CACHE_TAG] })(query, tab, viewerId);
+}
+
+export function listThemes(query?: string): Promise<ThemeItem[]> {
+  return unstable_cache(listThemesUncached, ["listThemes"], { revalidate: 120, tags: [...CACHE_TAG] })(query);
+}
+
+export function getThemeById(id: string): Promise<ThemeItem | null> {
+  return unstable_cache(getThemeByIdUncached, ["getThemeById"], { revalidate: 120, tags: [...CACHE_TAG] })(id);
+}
+
+export function listTags(): Promise<TagItem[]> {
+  return unstable_cache(listTagsUncached, ["listTags"], { revalidate: 120, tags: [...CACHE_TAG] })();
+}
+
+export function getTagById(id: string): Promise<TagItem | null> {
+  return unstable_cache(getTagByIdUncached, ["getTagById"], { revalidate: 120, tags: [...CACHE_TAG] })(id);
+}
+
+export function listAuthors(query?: string): Promise<AuthorProfile[]> {
+  return unstable_cache(listAuthorsUncached, ["listAuthors"], { revalidate: 120, tags: [...CACHE_TAG] })(query);
+}
+
+export function getAuthorById(id: string): Promise<AuthorProfile | null> {
+  return unstable_cache(getAuthorByIdUncached, ["getAuthorById"], { revalidate: 120, tags: [...CACHE_TAG] })(id);
 }

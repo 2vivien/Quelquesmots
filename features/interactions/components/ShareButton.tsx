@@ -6,14 +6,10 @@ import { useShare } from "../hooks/useShare";
 interface ShareButtonProps {
   title: string;
   postId: string;
-  showLabel?: boolean;
 }
 
-/**
- * Bouton de partage d'un texte (Web Share API ou copie du lien).
- * @param props Titre, identifiant et affichage optionnel du libellé « Partager ».
- */
-export function ShareButton({ title, postId, showLabel = false }: ShareButtonProps) {
+/** Partage d'un texte (Web Share API ou copier le lien). Icone seule, sans libellé. */
+export function ShareButton({ title, postId }: ShareButtonProps) {
   const { share } = useShare(title, postId);
   return (
     <button
@@ -27,7 +23,6 @@ export function ShareButton({ title, postId, showLabel = false }: ShareButtonPro
       className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-bord bg-carte text-muted transition-colors hover:border-encre hover:bg-pilule hover:text-encre"
     >
       <Share2 size={16} strokeWidth={1.5} aria-hidden="true" />
-      {showLabel ? <span className="hidden sm:inline">Partager</span> : null}
     </button>
   );
 }

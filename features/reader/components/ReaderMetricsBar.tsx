@@ -22,7 +22,7 @@ export function ReaderMetricsBar({ post, extraAction }: { post: PostRecord; extr
       </div>
       <div className="flex items-center gap-2">
         <BookmarkButton postId={post.id} />
-        <ShareButton title={post.title} postId={post.id} showLabel />
+        <ShareButton title={post.title} postId={post.id} />
         {extraAction}
       </div>
     </div>

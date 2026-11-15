@@ -1,72 +1,61 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { Bell, Plus, Search } from "lucide-react";
+import { Bell, Plus } from "lucide-react";
 import { useAuth } from "@/features/auth";
 import { useNotifications } from "@/features/notifications";
 import { openAuthPopup } from "@/lib/open-auth";
 import { MobileMenu } from "./MobileMenu";
 import { UserMenu } from "./UserMenu";
+import { HangingPill } from "./sidebar-items";
+import { HeaderSearch } from "./header-parts";
 
-/** Barre supérieure : logo (mobile), recherche centrée, actions à droite (cloche, Écrire, avatar) ; invités : À propos + Connexion. */
+interface HeaderSection {
+  href: string;
+  label: string;
+  bg: string;
+}
+
+const SECTIONS: HeaderSection[] = [
+  { href: "/", label: "Le mur", bg: "#CFFB7F" },
+  { href: "/themes", label: "Thèmes", bg: "#BDE0FE" },
+  { href: "/auteurs", label: "Auteurs", bg: "#FFB4CF" },
+  { href: "/parametres", label: "Paramètres", bg: "#EFE3CC" },
+];
+
+const LENGTHS = [12, 22, 16, 18];
+
+/** Barre supérieure façon Trugly : full-bleed, recherche centrée, actions connectées à droite ; pastilles accrochées dessous (Le mur, Thèmes, Auteurs, Paramètres). */
 export function Header() {
-  const router = useRouter();
   const { user } = useAuth();
   const { unreadCount } = useNotifications();
-  const [query, setQuery] = useState("");
-
-  const onSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    const trimmed = query.trim();
-    router.push(trimmed ? `/recherche?q=${encodeURIComponent(trimmed)}` : "/recherche");
-  };
 
   return (
-    <header className="sticky top-0 z-30 border-b-[1.5px] border-bord bg-ivoire/90 backdrop-blur-md">
-      <div className="mx-auto flex h-14 max-w-[1200px] items-center gap-3 px-4 sm:px-6">
-        <Link href="/" className="shrink-0 font-display text-[15px] uppercase leading-none tracking-tight text-encre lg:hidden">
-          Quelques mots
-        </Link>
-        <form onSubmit={onSubmit} className="relative mx-auto hidden h-full w-full max-w-2xl items-center lg:flex" role="search">
-          <Search size={16} strokeWidth={2} className="pointer-events-none absolute left-4 text-encre" aria-hidden="true" />
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Rechercher un mot, un thème, un auteur…"
-            aria-label="Rechercher"
-            className="h-10 w-full rounded-full border-[1.5px] border-bord bg-carte pl-10 pr-4 text-[15px] font-medium placeholder:font-normal placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-jaune"
-          />
-        </form>
-        <div className="ml-auto flex items-center gap-1.5">
-          <div className="hidden items-center gap-1.5 lg:flex">
-            {user ? (
-              <>
-                <Link href="/studio" className="btn-jaune inline-flex !min-h-[38px] !px-4 !py-0 !text-[13px]">
-                  <Plus size={16} strokeWidth={2.5} aria-hidden="true" />
-                  Écrire
-                </Link>
-                <Link href="/notifications" aria-label="Notifications" className="relative flex h-10 w-10 items-center justify-center rounded-full border-[1.5px] border-bord bg-carte text-encre shadow-[2px_2px_0_0_var(--color-encre)] transition-colors hover:bg-pilule">
-                  <Bell size={18} strokeWidth={2} aria-hidden="true" />
-                  {unreadCount > 0 ? <span className="badge-noir absolute -right-1 -top-1">{unreadCount}</span> : null}
-                </Link>
-                <UserMenu />
-              </>
-            ) : (
-              <>
-                <Link href="/a-propos" className="btn-fantome !min-h-[38px] !px-4 !py-0 !text-[13px]">
-                  À propos
-                </Link>
-                <button type="button" onClick={openAuthPopup} className="btn-noir !min-h-[38px] !px-5 !py-0 !text-[13px]">
-                  Connexion
-                </button>
-              </>
-            )}
-          </div>
+    <header className="sticky top-0 z-30">
+      {/* Barre principale — bord à bord */}
+      <div className="flex h-12 items-center gap-2 border-b-2 border-encre bg-carte px-3 shadow-[0_2px_0_0_var(--color-ink-jar)] sm:h-14 sm:px-6">
+        <HeaderSearch className="mx-auto w-[200px] max-w-sm sm:w-72 lg:w-80" />
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          {user ? (
+            <>
+              <Link href="/studio" className="btn-jaune inline-flex !min-h-[36px] !px-3 !py-0 !text-[12px] sm:!min-h-[38px] sm:!px-4 sm:!text-[13px]"><Plus size={16} strokeWidth={2.5} aria-hidden="true" /><span className="hidden xs:inline">Écrire</span></Link>
+              <Link href="/notifications" aria-label="Notifications" className="relative flex h-9 w-9 items-center justify-center rounded-full border-2 border-encre bg-ivoire text-encre shadow-[2px_2px_0_0_var(--color-ink-jar)] transition-colors hover:bg-pilule sm:h-10 sm:w-10">
+                <Bell size={17} strokeWidth={2} aria-hidden="true" />
+                {unreadCount > 0 ? <span className="badge-noir absolute -right-1 -top-1">{unreadCount}</span> : null}
+              </Link>
+              <UserMenu />
+            </>
+          ) : (
+            <button type="button" onClick={openAuthPopup} className="btn-noir !min-h-[36px] !px-4 !py-0 !text-[12px] sm:!min-h-[38px] sm:!px-5 sm:!text-[13px]">Connexion</button>
+          )}
           <MobileMenu />
         </div>
+      </div>
+      {/* Pastilles accrochées (visibles aussi sur mobile) */}
+      <div className="flex items-start justify-start gap-4 overflow-x-auto border-b border-bord/40 px-3 pt-1 sm:justify-center sm:gap-6 sm:px-4">
+        {SECTIONS.map((s, i) => (
+          <HangingPill key={s.href} href={s.href} bg={s.bg} length={LENGTHS[i % LENGTHS.length]!}>{s.label}</HangingPill>
+        ))}
       </div>
     </header>
   );

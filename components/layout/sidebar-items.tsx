@@ -45,7 +45,7 @@ export function HangingPill({ href, bg, length, children, onNavigate }: { href: 
       <span aria-hidden="true" className="block w-0 border-l-2 border-dotted border-encre" style={{ height: length }} />
       <span
         style={{ background: bg }}
-        className="swing rounded-full border-2 border-encre px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-encre shadow-[2px_2px_0_0_var(--color-ink-jar)] transition-transform group-hover:-translate-y-1"
+        className="swing rounded-full border-2 border-encre px-2.5 py-0.5 text-[9px] font-black uppercase tracking-[0.1em] text-encre shadow-[2px_2px_0_0_var(--color-ink-jar)] transition-transform group-hover:-translate-y-1 sm:px-3 sm:py-1 sm:text-[10px] sm:tracking-[0.14em] sm:tracking-[0.14em]"
       >
         {children}
       </span>

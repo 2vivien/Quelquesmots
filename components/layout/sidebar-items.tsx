@@ -13,13 +13,15 @@ export interface NavItemProps {
   Icon: IconComponent | typeof IconUserSquare;
   bg: string;
   active: boolean;
+  onNavigate?: () => void;
 }
 
 /** Pastille de navigation néo-brutalisme façon Trugly : icône en tuile colorée + libellé. */
-export function NavRow({ href, label, Icon, bg, active }: NavItemProps) {
+export function NavRow({ href, label, Icon, bg, active, onNavigate }: NavItemProps) {
   return (
     <Link
       href={href}
+      onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       style={{ background: active ? bg : undefined }}
       className={`flex h-12 items-center gap-3 rounded-2xl border-2 border-encre px-2 pr-3 text-[15px] font-extrabold text-encre transition-all duration-150 ${
@@ -37,9 +39,9 @@ export function NavRow({ href, label, Icon, bg, active }: NavItemProps) {
 }
 
 /** Petit bouton accroché sous la barre principale, avec fil en pointillés. */
-export function HangingPill({ href, bg, length, children }: { href: string; bg: string; length: number; children: string }) {
+export function HangingPill({ href, bg, length, children, onNavigate }: { href: string; bg: string; length: number; children: string; onNavigate?: () => void }) {
   return (
-    <Link href={href} className="group flex flex-col items-center" aria-label={children}>
+    <Link href={href} onClick={onNavigate} className="group flex flex-col items-center" aria-label={children}>
       <span aria-hidden="true" className="block w-0 border-l-2 border-dotted border-encre" style={{ height: length }} />
       <span
         style={{ background: bg }}

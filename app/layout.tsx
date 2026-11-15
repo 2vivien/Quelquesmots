@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Archivo_Black } from "next/font/google";
 import { AppProviders } from "@/components/layout/AppProviders";
-import { Header } from "@/components/layout/Header";
+import { AppChrome } from "@/components/layout/AppChrome";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { Header } from "@/components/layout/Header";
 import "./globals.css";
 
 const newsreader = localFont({
@@ -23,19 +24,16 @@ const inter = localFont({
 
 export const metadata: Metadata = {
   title: "Quelques mots — Un espace où les mots restent.",
-  description:
-    "Un espace où les mots restent. Plateforme littéraire de textes courts en français.",
+  description: "Un espace où les mots restent. Plateforme littéraire de textes courts en français.",
   openGraph: {
     title: "Quelques mots — Un espace où les mots restent.",
-    description:
-      "Un espace où les mots restent. Plateforme littéraire de textes courts en français.",
+    description: "Un espace où les mots restent. Plateforme littéraire de textes courts en français.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "Quelques mots — Un espace où les mots restent.",
-    description:
-      "Un espace où les mots restent. Plateforme littéraire de textes courts en français.",
+    description: "Un espace où les mots restent. Plateforme littéraire de textes courts en français.",
   },
 };
 
@@ -49,13 +47,9 @@ const archivoBlack = Archivo_Black({
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr" className={`${newsreader.variable} ${inter.variable} ${archivoBlack.variable}`} suppressHydrationWarning>
-      <body className="min-h-screen bg-ivoire text-encre antialiased lg:pl-64" suppressHydrationWarning>
+      <body className="min-h-screen bg-ivoire text-encre antialiased" suppressHydrationWarning>
         <AppProviders>
-          <Sidebar />
-          <Header />
-          <main className="mx-auto min-h-[68vh] max-w-[920px] px-4 py-6 sm:px-6">
-            {children}
-          </main>
+          <AppChrome sidebar={<Sidebar />} header={<Header />}>{children}</AppChrome>
         </AppProviders>
       </body>
     </html>

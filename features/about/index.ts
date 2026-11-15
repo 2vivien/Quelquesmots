@@ -1,6 +1,5 @@
-export { ClassicWindow } from "./components/ClassicWindow";
-export { AboutShowcase } from "./components/Showcase";
-export { AboutHero } from "./components/AboutHero";
-export { AboutProgrammer } from "./components/AboutProgrammer";
-export { Launchpad } from "./components/Launchpad";
+export { AboutMasthead } from "./components/AboutMasthead";
+export { BrowserWindow } from "./components/BrowserWindow";
+export { BioPortrait } from "./components/BioPortrait";
+export { LaunchpadSquare } from "./components/LaunchpadSquare";
 export { Signoff } from "./components/Signoff";

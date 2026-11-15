@@ -1661,52 +1661,45 @@ export async function setAdminRoleForUser(userId: string): Promise<void> {
 
 /* ---------------------------------------------------------------------------
  * Data Cache applicatif (Next.js unstable_cache).
- * Ces wrappers ajoutent une couche de cache persistant (politesse/catégorie)
- * par-dessus la couche Upstash du catalogue. Invalidation via le tag `qm-catalog`.
+ * Chaque lecture publique passe par un wrapper qui (a) tente le cache Next, et
+ * (b) retombe sur l'implémentation directe hors runtime Next (script seed,
+ * tsx). Invalidation globale via le tag `qm-catalog`.
  * ------------------------------------------------------------------------- */
 const CACHE_TAG = ["qm-catalog"] as const;
 const FEED_TAG = ["qm-catalog", "qm-feed"] as const;
 
-export function listFeed(query: FeedQuery): Promise<FeedPage> {
-  return unstable_cache(listFeedUncached, ["listFeed"], { revalidate: 30, tags: [...FEED_TAG] })(query);
+function safeCached<TArgs extends readonly unknown[], TResult>(
+  fn: (...args: TArgs) => Promise<TResult>,
+  key: readonly string[],
+  revalidate: number,
+  tags: readonly string[],
+): (...args: TArgs) => Promise<TResult> {
+  let wrapped: ((...args: TArgs) => Promise<TResult>) | null = null;
+  try {
+    wrapped = unstable_cache(fn, [...key], { revalidate, tags: [...tags] }) as unknown as (...args: TArgs) => Promise<TResult>;
+  } catch {
+    wrapped = null; // Hors runtime Next (ex. seed) : on bypass le cache.
+  }
+  return async (...args: TArgs): Promise<TResult> => {
+    if (!wrapped) return fn(...args);
+    try {
+      return await wrapped(...args);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (message.includes("incrementalCache missing")) return fn(...args);
+      throw error;
+    }
+  };
 }
 
-export function getPostById(id: string): Promise<PostRecord | null> {
-  return unstable_cache(getPostByIdUncached, ["getPostById"], { revalidate: 60, tags: [...CACHE_TAG] })(id);
-}
-
-export function getPostsByIds(ids: string[], viewerId?: string | null): Promise<PostSummary[]> {
-  return unstable_cache(getPostsByIdsUncached, ["getPostsByIds"], { revalidate: 60, tags: [...CACHE_TAG] })(ids, viewerId);
-}
-
-export function listRelated(post: PostRecord, viewerId?: string | null): Promise<PostSummary[]> {
-  return unstable_cache(listRelatedUncached, ["listRelated"], { revalidate: 120, tags: [...CACHE_TAG] })(post, viewerId);
-}
-
-export function search(query: string, tab: SearchTab, viewerId?: string | null): Promise<SearchResponse> {
-  return unstable_cache(searchUncached, ["search"], { revalidate: 30, tags: [...CACHE_TAG] })(query, tab, viewerId);
-}
-
-export function listThemes(query?: string): Promise<ThemeItem[]> {
-  return unstable_cache(listThemesUncached, ["listThemes"], { revalidate: 120, tags: [...CACHE_TAG] })(query);
-}
-
-export function getThemeById(id: string): Promise<ThemeItem | null> {
-  return unstable_cache(getThemeByIdUncached, ["getThemeById"], { revalidate: 120, tags: [...CACHE_TAG] })(id);
-}
-
-export function listTags(): Promise<TagItem[]> {
-  return unstable_cache(listTagsUncached, ["listTags"], { revalidate: 120, tags: [...CACHE_TAG] })();
-}
-
-export function getTagById(id: string): Promise<TagItem | null> {
-  return unstable_cache(getTagByIdUncached, ["getTagById"], { revalidate: 120, tags: [...CACHE_TAG] })(id);
-}
-
-export function listAuthors(query?: string): Promise<AuthorProfile[]> {
-  return unstable_cache(listAuthorsUncached, ["listAuthors"], { revalidate: 120, tags: [...CACHE_TAG] })(query);
-}
-
-export function getAuthorById(id: string): Promise<AuthorProfile | null> {
-  return unstable_cache(getAuthorByIdUncached, ["getAuthorById"], { revalidate: 120, tags: [...CACHE_TAG] })(id);
-}
+export const listFeed = safeCached(listFeedUncached, ["listFeed"], 30, FEED_TAG);
+export const getPostById = safeCached(getPostByIdUncached, ["getPostById"], 60, CACHE_TAG);
+export const getPostsByIds = safeCached(getPostsByIdsUncached, ["getPostsByIds"], 60, CACHE_TAG);
+export const listRelated = safeCached(listRelatedUncached, ["listRelated"], 120, CACHE_TAG);
+export const search = safeCached(searchUncached, ["search"], 30, CACHE_TAG);
+export const listThemes = safeCached(listThemesUncached, ["listThemes"], 120, CACHE_TAG);
+export const getThemeById = safeCached(getThemeByIdUncached, ["getThemeById"], 120, CACHE_TAG);
+export const listTags = safeCached(listTagsUncached, ["listTags"], 120, CACHE_TAG);
+export const getTagById = safeCached(getTagByIdUncached, ["getTagById"], 120, CACHE_TAG);
+export const listAuthors = safeCached(listAuthorsUncached, ["listAuthors"], 120, CACHE_TAG);
+export const getAuthorById = safeCached(getAuthorByIdUncached, ["getAuthorById"], 120, CACHE_TAG);

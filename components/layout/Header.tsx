@@ -20,12 +20,11 @@ const SECTIONS: HeaderSection[] = [
   { href: "/", label: "Le mur", bg: "#CFFB7F" },
   { href: "/themes", label: "Thèmes", bg: "#BDE0FE" },
   { href: "/auteurs", label: "Auteurs", bg: "#FFB4CF" },
-  { href: "/parametres", label: "Paramètres", bg: "#EFE3CC" },
 ];
 
-const LENGTHS = [12, 22, 16, 18];
+const LENGTHS = [14, 22, 18];
 
-/** Barre supérieure façon Trugly : full-bleed, recherche centrée, actions connectées à droite ; pastilles accrochées dessous (Le mur, Thèmes, Auteurs, Paramètres). */
+/** Barre supérieure façon Trugly : full-bleed, recherche centrée, actions connectées à droite ; pastilles accrochées dessous (Le mur, Thèmes, Auteurs — toujours accessibles). */
 export function Header() {
   const { user } = useAuth();
   const { unreadCount } = useNotifications();
@@ -52,7 +51,7 @@ export function Header() {
         </div>
       </div>
       {/* Pastilles accrochées (visibles aussi sur mobile) */}
-      <div className="flex items-start justify-start gap-4 overflow-x-auto border-b border-bord/40 px-3 pt-1 sm:justify-center sm:gap-6 sm:px-4">
+      <div className="no-scrollbar flex items-start justify-start gap-3 overflow-x-auto border-b border-bord/40 px-3 pt-1 sm:justify-center sm:gap-6 sm:px-4">
         {SECTIONS.map((s, i) => (
           <HangingPill key={s.href} href={s.href} bg={s.bg} length={LENGTHS[i % LENGTHS.length]!}>{s.label}</HangingPill>
         ))}

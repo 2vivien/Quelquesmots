@@ -59,10 +59,6 @@ export function useBookmark(postId: string) {
       openAuthPopup();
       return;
     }
-    if (!data) {
-      toast.info("Chargement de vos interactions…");
-      return;
-    }
     if (!mutation.isPending) mutation.mutate();
   };
 

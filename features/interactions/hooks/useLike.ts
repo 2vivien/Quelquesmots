@@ -28,8 +28,6 @@ export function useLike(postId: string, initialCount: number, initialDislikeCoun
   const disliked = data?.dislikedIds.includes(postId) ?? false;
   const baselineLiked = baseline?.likedIds.includes(postId) ?? false;
   const baselineDisliked = baseline?.dislikedIds.includes(postId) ?? false;
-  const ready = !user || Boolean(data && baseline);
-
   const likeMutation = useMutation({
     mutationFn: () => interactionsService.toggleLike(user!.id, postId),
     onMutate: async () => {
@@ -93,10 +91,6 @@ export function useLike(postId: string, initialCount: number, initialDislikeCoun
   const guard = (action: () => void) => {
     if (!user) {
       openAuthPopup();
-      return;
-    }
-    if (!ready) {
-      toast.info("Chargement de vos interactions…");
       return;
     }
     action();

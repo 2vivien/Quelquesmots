@@ -24,7 +24,6 @@ export function useFollow(targetUserId: string, baseCount = 0, authorLabel?: str
   const isSelf = Boolean(user && user.id === targetUserId);
   const following = data?.followedUserIds.includes(targetUserId) ?? false;
   const baselineFollowing = baseline?.followedUserIds.includes(targetUserId) ?? false;
-  const ready = !user || Boolean(data && baseline);
 
   const mutation = useMutation({
     mutationFn: () => {
@@ -73,10 +72,6 @@ export function useFollow(targetUserId: string, baseCount = 0, authorLabel?: str
   const toggle = (): void => {
     if (!user) {
       openAuthPopup();
-      return;
-    }
-    if (!ready) {
-      toast.info("Chargement de vos interactions…");
       return;
     }
     if (!isSelf && !mutation.isPending) mutation.mutate();

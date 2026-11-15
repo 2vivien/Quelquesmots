@@ -6,8 +6,6 @@ import { useAuth } from "../hooks/useAuth";
 import { useGooglePopup } from "../hooks/useGooglePopup";
 import { ConnexionCard } from "./ConnexionCard";
 
-const DISMISS_KEY = "qm_auth_popup_dismissed";
-
 const OAUTH_ERRORS: Record<string, string> = {
   "etat-invalide": "La connexion a expiré ou a été interrompue. Veuillez réessayer.",
   "google-non-configure": "La connexion Google n'est pas configurée sur ce serveur.",
@@ -17,12 +15,6 @@ const OAUTH_ERRORS: Record<string, string> = {
   "profil-invalide": "Les informations de votre compte Google sont incomplètes.",
 };
 
-/** Lit l'état de fermeture en session ; SSR-safe (toujours fermé côté serveur). */
-function readDismissed(): boolean {
-  if (typeof window === "undefined") return true;
-  return window.sessionStorage.getItem(DISMISS_KEY) === "1";
-}
-
 function readErrorMessage(): string | null {
   if (typeof window === "undefined") return null;
   const code = new URLSearchParams(window.location.search).get("erreur");
@@ -31,20 +23,18 @@ function readErrorMessage(): string | null {
 }
 
 /**
- * Popup de connexion obligatoire affiché au-dessus de n'importe quelle page pour les visiteurs.
- * Fermable pour la session via la croix ; la connexion reste exigée à chaque nouvelle visite.
+ * Popup de connexion : ne s'affiche JAMAIS à l'arrivée ; uniquement au clic explicite
+ * sur « Connexion » (événement qm:open-auth) ou au retour d'un OAuth Google échoué (?erreur=…).
  */
 export function AuthPopup() {
   const pathname = usePathname();
   const { user, hydrated } = useAuth();
-  const [dismissed, setDismissed] = useState(readDismissed);
+  // SSR-safe : toujours fermé côté serveur. Sur demande explicite ou erreur OAuth, on ouvre.
+  const [shown, setShown] = useState(() => (typeof window === "undefined" ? false : readErrorMessage() !== null));
   const [errorMessage] = useState(readErrorMessage);
 
   useEffect(() => {
-    const open = () => {
-      window.sessionStorage.removeItem(DISMISS_KEY);
-      setDismissed(false);
-    };
+    const open = () => setShown(true);
     window.addEventListener("qm:open-auth", open);
     return () => window.removeEventListener("qm:open-auth", open);
   }, []);
@@ -52,12 +42,9 @@ export function AuthPopup() {
   const { loading, signIn } = useGooglePopup(() => window.location.reload());
 
   const onAuthRoutes = pathname?.startsWith("/auth") ?? false;
-  if (!hydrated || user || dismissed || onAuthRoutes) return null;
+  if (!hydrated || user || onAuthRoutes || !shown) return null;
 
-  const close = () => {
-    setDismissed(true);
-    window.sessionStorage.setItem(DISMISS_KEY, "1");
-  };
+  const close = () => setShown(false);
 
   return (
     <div

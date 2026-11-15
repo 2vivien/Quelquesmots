@@ -1,8 +1,7 @@
 "use client";
 
-/** Rouvre le popup de connexion obligatoire (annulant une fermeture précédente). */
+/** Ouvre le popup de connexion — appelé uniquement après un clic explicite (header, CTA…). */
 export function openAuthPopup(): void {
   if (typeof window === "undefined") return;
-  window.sessionStorage.removeItem("qm_auth_popup_dismissed");
   window.dispatchEvent(new CustomEvent("qm:open-auth"));
 }

@@ -14,5 +14,5 @@ export async function GET(
   if (!parsed.success) return badRequest("Identifiant invalide.");
   const theme = await getThemeById(parsed.data.id);
   if (!theme) return notFound("Thème introuvable.");
-  return NextResponse.json({ theme });
+  return NextResponse.json({ theme }, { headers: { "Cache-Control": "public, s-maxage=120, stale-while-revalidate=300" } });
 }

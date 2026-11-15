@@ -17,5 +17,5 @@ export async function GET(
   const viewer = await getSessionUser(req);
   const post = await getPostById(parsed.data.id);
   if (!post || !canViewPost(post, viewer?.id ?? null)) return notFound("Texte introuvable.");
-  return NextResponse.json({ post });
+  return NextResponse.json({ post }, { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120" } });
 }

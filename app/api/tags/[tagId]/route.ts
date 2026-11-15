@@ -14,5 +14,5 @@ export async function GET(
   if (!parsed.success) return badRequest("Identifiant invalide.");
   const tag = await getTagById(parsed.data.tagId);
   if (!tag) return notFound("Tag introuvable.");
-  return NextResponse.json({ tag });
+  return NextResponse.json({ tag }, { headers: { "Cache-Control": "public, s-maxage=120, stale-while-revalidate=300" } });
 }

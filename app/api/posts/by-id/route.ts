@@ -21,5 +21,5 @@ export async function GET(req: NextRequest) {
   const viewer = await getSessionUser(req);
   const ids = Array.from(new Set(parsed.data.ids));
   const posts = await getPostsByIds(ids, viewer?.id ?? null);
-  return NextResponse.json({ posts });
+  return NextResponse.json({ posts }, { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120" } });
 }

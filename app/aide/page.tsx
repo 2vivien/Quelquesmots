@@ -1,3 +1,8 @@
+/**
+ * Page statique (ISR : régénère toutes les heures, aucun coût de rendu par requête).
+ */
+export const revalidate = 3600;
+
 /** Page d'aide et ressources d'écoute. */
 export default function HelpPage() {
   return (

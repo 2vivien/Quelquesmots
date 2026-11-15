@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
       viewerId: viewer?.id ?? null,
       blockedAuthorIds,
     });
-    return NextResponse.json(page);
+    return NextResponse.json(page, { headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60" } });
   } catch (err) {
     if (err instanceof InvalidFeedCursorError) return badRequest("Curseur invalide.");
     throw err;

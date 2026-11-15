@@ -9,6 +9,7 @@
 import { readFileSync } from "node:fs";
 import { Pool } from "@neondatabase/serverless";
 import { THEME_SEEDS } from "./data/themes";
+import { invalidateCatalog } from "../lib/server/catalog-cache";
 
 const TARGET_TAGS = [
   { label: "amour" },
@@ -74,6 +75,7 @@ async function main() {
 
     const themeCount = (await pool.query("select count(*)::int as c from themes")).rows[0].c;
     const tagCount = (await pool.query("select count(*)::int as c from tags")).rows[0].c;
+    await invalidateCatalog();
     console.log(`Seed OK — ${themeCount} thèmes, ${tagCount} tags.`);
   } finally {
     await pool.end();

@@ -20,7 +20,7 @@ import { isFuzzyMatch } from "@/features/search/utils/fuzzy";
 import type { SearchResponse, SearchResultItem, SearchTab } from "@/features/search/types/search.types";
 import type { PostStatus, PublishAs, Visibility } from "@/types";
 import { getDatabase } from "@/db";
-import { withCatalogCache } from "@/lib/server/catalog-cache";
+import { withCatalogCache, invalidateCatalog } from "@/lib/server/catalog-cache";
 import {
   adminAudit,
   authorProfiles,
@@ -563,7 +563,7 @@ export type PublishPostResult = "not-found" | "limit" | PostRecord;
 
 export async function publishPost(id: string, authorId: string, dailyLimit: number): Promise<PublishPostResult> {
   const db = getDatabase();
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     // Verrouille la ligne utilisateur : deux publications concurrentes ne dépassent pas la limite.
     const lockedUser = await tx.select({ id: users.id }).from(users).where(eq(users.id, authorId)).for("update").limit(1);
     if (lockedUser.length === 0) return "not-found";
@@ -592,6 +592,9 @@ export async function publishPost(id: string, authorId: string, dailyLimit: numb
     const [mapped] = await mapPostRowIds(updatedRows);
     return mapped ?? "not-found";
   });
+  // Invalidation catalogue (rendu ISR/HTTP edge dépendent du catalogue) uniquement sur succès.
+  if (result && typeof result === "object") await invalidateCatalog();
+  return result;
 }
 
 export async function deletePost(id: string, authorId: string, isAdmin: boolean): Promise<boolean> {
@@ -600,12 +603,14 @@ export async function deletePost(id: string, authorId: string, isAdmin: boolean)
     ? eq(posts.id, id)
     : and(eq(posts.id, id), eq(posts.authorId, authorId));
   const rows = await db.update(posts).set({ status: "DELETED" as const, updatedAt: new Date() }).where(where).returning({ id: posts.id });
+  if (rows.length > 0) await invalidateCatalog();
   return rows.length > 0;
 }
 
 export async function setModerationStatus(id: string, status: PostStatus, locked: boolean): Promise<void> {
   const db = getDatabase();
   await db.update(posts).set({ status, moderationLocked: locked, updatedAt: new Date() }).where(eq(posts.id, id));
+  await invalidateCatalog();
 }
 
 /* --------------------------------- Interactions --------------------------------- */
@@ -1229,6 +1234,7 @@ export async function adminModerate(input: {
       createdAt: new Date(),
     });
   });
+  await invalidateCatalog();
 }
 
 /* ----------------------------- Compteurs dynamiques ----------------------------- */
@@ -1615,20 +1621,6 @@ export async function getAuthorById(id: string): Promise<AuthorProfile | null> {
     joinedAt: row.createdAt.toISOString(),
     status: row.status as AuthorProfile["status"],
   };
-}
-
-export async function getAuthorByUsername(username: string): Promise<AuthorProfile | null> {
-  const target = normalizeSearchText(username);
-  const db = getDatabase();
-  const rows = await db
-    .select(authorRowColumns)
-    .from(authorProfiles)
-    .innerJoin(users, eq(users.id, authorProfiles.userId))
-    .where(and(sql`lower(${authorProfiles.usernameNormalized}) = ${target}`, eq(authorProfiles.status, "ACTIVE")))
-    .limit(1);
-  const row = (rows as unknown as AuthorRowFlat[])[0];
-  if (!row) return null;
-  return getAuthorById(row.userId);
 }
 
 /* ------------------------------- Suppression de compte ------------------------------ */

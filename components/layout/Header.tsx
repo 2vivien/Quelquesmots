@@ -33,7 +33,8 @@ export function Header() {
     <header className="sticky top-0 z-30">
       {/* Barre principale — bord à bord */}
       <div className="flex h-12 items-center gap-2 border-b-2 border-encre bg-carte px-3 shadow-[0_2px_0_0_var(--color-ink-jar)] sm:h-14 sm:px-6">
-        <HeaderSearch className="mx-auto w-[200px] max-w-sm sm:w-72 lg:w-80" />
+        <HeaderSearch className="min-w-0 w-44 flex-1 sm:w-64 md:w-80 lg:w-[360px] xl:w-[440px]" />
+        <Link href="/a-propos" className="inline-flex shrink-0 min-h-[36px] items-center whitespace-nowrap rounded-full border-2 border-encre bg-ivoire px-3 py-0 text-[11px] font-extrabold text-encre shadow-[2px_2px_0_0_var(--color-ink-jar)] transition-all hover:-translate-y-0.5 hover:bg-pilule md:min-h-[38px] md:px-4 md:text-[13px]">À propos</Link>
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           {user ? (
             <>

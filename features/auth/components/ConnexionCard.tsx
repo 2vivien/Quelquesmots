@@ -14,8 +14,9 @@ interface ConnexionCardProps {
 }
 
 /**
- * Écran de connexion 9:16 « Quelques mots » — le tronc imagettes des tags de l'app,
- * tronc-héros illustré et CTA officiel Google façon Trugly.
+ * Écran de connexion 9:16 « Quelques mots ».
+ * Fond = l'affiche officielle (auth.jpg), reprenant les lettres au-dessus d'un enfant qui écrit ;
+ * pastilles accrochées façon Trugly + CTA Google posé sur le demi-cercle jaune.
  */
 export function ConnexionCard({ onGoogleLogin, loading, fill = false, onClose }: ConnexionCardProps) {
   return (
@@ -27,34 +28,21 @@ export function ConnexionCard({ onGoogleLogin, loading, fill = false, onClose }:
             : "h-[min(620px,86vh)] aspect-[9/16] rounded-[28px] border-[3px] border-encre bg-[#FAF2EA] shadow-[10px_10px_0_0_var(--color-ink-jar)] ring-1 ring-black/10"
         }`}
       >
-        {/* Rayons doux derrière le tronc */}
-        <div
+        {/* Affiche officielle (auth.jpg) — plein cadre derrière tout le reste */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/images/editorial/auth.jpg"
+          alt="Quelques mots — une personne écrit à son bureau, des lettres et des smileys flottent au-dessus d'elle"
           aria-hidden="true"
-          className="absolute inset-x-0 top-0 h-[62%] bg-[radial-gradient(ellipse_at_50%_42%,rgba(255,227,126,0.65),transparent_72%)]"
+          className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover"
         />
 
         {/* Barre de pastilles accrochées (récupère celles de l'app) */}
-        <div className="absolute left-0 right-14 top-4 z-10 flex items-start justify-center gap-4">
+        <div className="absolute left-0 right-14 top-5 z-10 flex items-start justify-center gap-4">
           <DecorativePill bg="#FFE37E" length={14}>#vie</DecorativePill>
           <DecorativePill bg="#FFB4CF" length={26}>#amour</DecorativePill>
           <DecorativePill bg="#BDE0FE" length={18}>#espoir</DecorativePill>
         </div>
-
-        {/* Wordmark */}
-        <div className="relative z-10 mt-24 flex flex-col items-center">
-          <h1 className="font-display text-[44px] uppercase leading-[0.86] tracking-tight text-encre drop-shadow-[2px_2px_0_var(--color-jaune)]">
-            Quelques<br />mots
-          </h1>
-          <p className="mt-2 font-serif text-sm italic text-encre/80">un mur de mots.</p>
-        </div>
-
-        {/* Tronc illustré, image sans fond */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/images/editorial/trugy_popup_sans_fond_final.png"
-          alt="Tronc de héros Quelques mots — un petit arbre souriant entouré de feuilles"
-          className="absolute inset-x-0 bottom-[104px] z-0 mx-auto w-[86%] max-w-[280px] object-contain"
-        />
 
         {onClose ? (
           <button

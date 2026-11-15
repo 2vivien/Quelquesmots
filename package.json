@@ -10,11 +10,12 @@
     "typecheck": "tsc --noEmit",
     "check": "tsx scripts/check-conventions.ts",
     "smoke:neon": "tsx scripts/neon-smoke.ts",
-    "test:e2e": "playwright test",
+    "test:e2e": "bun run build && playwright test",
     "clean": "node -e \"require('node:fs').rmSync('.next', { recursive: true, force: true })\"",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:check": "drizzle-kit check"
+    "db:check": "drizzle-kit check",
+    "test:e2e:dev": "playwright test"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1169.0",

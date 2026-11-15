@@ -25,12 +25,12 @@ export default defineConfig({
       stderr: "pipe",
     },
     {
-      // Le bouchon Google n'est actif que pour les tests e2e (variables locales au serveur).
+      // Serveur de production (compilation unique) : déterministe, jamais de compilation à la volée.
       command:
-        "GOOGLE_OAUTH_TOKEN_URL=http://127.0.0.1:3999/token GOOGLE_OAUTH_USERINFO_URL=http://127.0.0.1:3999/userinfo bun run dev --port 3000",
+        "GOOGLE_OAUTH_TOKEN_URL=http://127.0.0.1:3999/token GOOGLE_OAUTH_USERINFO_URL=http://127.0.0.1:3999/userinfo bun run start --port 3000",
       url: "http://localhost:3000",
       reuseExistingServer: true,
-      timeout: 180_000,
+      timeout: 60_000,
       stdout: "ignore",
       stderr: "pipe",
     },

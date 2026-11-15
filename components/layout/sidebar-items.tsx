@@ -67,7 +67,7 @@ export function SidebarFooter({ user }: { user: { firstName: string; username: s
         </div>
       ) : null}
       <nav className="flex flex-col gap-1 px-1 text-[11px] font-bold uppercase tracking-wide text-encre/80" aria-label="Liens de pied">
-        <div className="flex gap-x-3"><Link href="/a-propos" className="hover:text-encre">À propos</Link><Link href="/aide" className="hover:text-encre">Aide</Link></div>
+        <div className="flex gap-x-3"><Link href="/aide" className="hover:text-encre">Aide</Link></div>
         <div className="flex gap-x-3"><Link href="/conditions" className="hover:text-encre">Conditions</Link><Link href="/confidentialite" className="hover:text-encre">Confidentialité</Link></div>
       </nav>
     </div>

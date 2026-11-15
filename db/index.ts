@@ -4,9 +4,6 @@ import WebSocket from "ws";
 import * as schema from "./schema";
 
 neonConfig.webSocketConstructor = WebSocket;
-// Les requêtes simples passent par HTTP plutôt que WebSocket (plus fiable en démarrage à froid
-// sur Neon) ; les transactions restent sur WebSocket.
-neonConfig.poolQueryViaFetch = true;
 
 const DEFAULT_POOL_MAX = 5;
 

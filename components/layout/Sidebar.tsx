@@ -83,13 +83,6 @@ export function Sidebar() {
         </nav>
       ) : null}
 
-      {/* Citation déco */}
-      <figure className="rounded-2xl border-2 border-encre bg-carte px-4 py-3 shadow-[3px_3px_0_0_var(--color-ink-jar)]">
-        <blockquote className="font-serif text-[13px] italic leading-snug text-encre">
-          « Quelques mots suffisent<br />pour faire germer une idée. »
-        </blockquote>
-      </figure>
-
       <SidebarFooter user={user ?? null} />
     </aside>
   );

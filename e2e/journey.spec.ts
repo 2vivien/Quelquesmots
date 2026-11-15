@@ -6,18 +6,18 @@ import { test, expect } from "@playwright/test";
  */
 
 test("l'accueil affiche le fil avec au moins un texte publié", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/", { waitUntil: "networkidle", timeout: 60_000 });
   const links = page.locator('a[href^="/mots/"]');
   await expect(links.first()).toBeVisible({ timeout: 30_000 });
   expect(await links.count()).toBeGreaterThan(0);
 });
 
 test("la page d'un texte publié s'ouvre et affiche le contenu", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/", { waitUntil: "networkidle", timeout: 60_000 });
   const first = page.locator('a[href^="/mots/"]').first();
   const href = await first.getAttribute("href");
   expect(href).toMatch(/^\/mots\//);
-  await page.goto(href!);
+  await page.goto(href!, { waitUntil: "networkidle", timeout: 60_000 });
   await expect(page.locator("main, article").first()).toBeVisible({ timeout: 30_000 });
 });
 

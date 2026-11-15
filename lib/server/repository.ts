@@ -20,6 +20,7 @@ import { isFuzzyMatch } from "@/features/search/utils/fuzzy";
 import type { SearchResponse, SearchResultItem, SearchTab } from "@/features/search/types/search.types";
 import type { PostStatus, PublishAs, Visibility } from "@/types";
 import { getDatabase } from "@/db";
+import { withCatalogCache } from "@/lib/server/catalog-cache";
 import {
   adminAudit,
   authorProfiles,
@@ -1421,38 +1422,42 @@ export async function search(query: string, tab: SearchTab, viewerId?: string | 
 /* ----------------------------------- Tags ------------------------------------ */
 
 export async function listTags(): Promise<TagItem[]> {
-  const db = getDatabase();
-  const rows = await db
-    .select({
-      id: tags.id,
-      label: tags.label,
-      status: tags.status,
-      useCount: sql<number>`count(${postTags.postId})::int`,
-    })
-    .from(tags)
-    .leftJoin(postTags, eq(postTags.tagId, tags.id))
-    .where(eq(tags.status, "APPROVED"))
-    .groupBy(tags.id, tags.label, tags.status)
-    .orderBy(desc(sql`count(${postTags.postId})`));
-  return rows.map((row) => ({ id: row.id, label: row.label, useCount: row.useCount, status: row.status as TagItem["status"] }));
+  return withCatalogCache("tags:list", async () => {
+    const db = getDatabase();
+    const rows = await db
+      .select({
+        id: tags.id,
+        label: tags.label,
+        status: tags.status,
+        useCount: sql<number>`count(${postTags.postId})::int`,
+      })
+      .from(tags)
+      .leftJoin(postTags, eq(postTags.tagId, tags.id))
+      .where(eq(tags.status, "APPROVED"))
+      .groupBy(tags.id, tags.label, tags.status)
+      .orderBy(desc(sql`count(${postTags.postId})`));
+    return rows.map((row) => ({ id: row.id, label: row.label, useCount: row.useCount, status: row.status as TagItem["status"] }));
+  });
 }
 
 export async function getTagById(id: string): Promise<TagItem | null> {
-  const db = getDatabase();
-  const rows = await db
-    .select({
-      id: tags.id,
-      label: tags.label,
-      status: tags.status,
-      useCount: sql<number>`count(${postTags.postId})::int`,
-    })
-    .from(tags)
-    .leftJoin(postTags, eq(postTags.tagId, tags.id))
-    .where(and(eq(tags.status, "APPROVED"), eq(tags.id, id)))
-    .groupBy(tags.id, tags.label, tags.status)
-    .limit(1);
-  const row = rows[0];
-  return row ? { id: row.id, label: row.label, useCount: row.useCount, status: row.status as TagItem["status"] } : null;
+  return withCatalogCache(`tags:item:${id}`, async () => {
+    const db = getDatabase();
+    const rows = await db
+      .select({
+        id: tags.id,
+        label: tags.label,
+        status: tags.status,
+        useCount: sql<number>`count(${postTags.postId})::int`,
+      })
+      .from(tags)
+      .leftJoin(postTags, eq(postTags.tagId, tags.id))
+      .where(and(eq(tags.status, "APPROVED"), eq(tags.id, id)))
+      .groupBy(tags.id, tags.label, tags.status)
+      .limit(1);
+    const row = rows[0];
+    return row ? { id: row.id, label: row.label, useCount: row.useCount, status: row.status as TagItem["status"] } : null;
+  });
 }
 
 export async function suggestTagsFromText(text: string): Promise<string[]> {
@@ -1483,42 +1488,46 @@ async function loadThemePostCounts(): Promise<Map<string, number>> {
 }
 
 export async function listThemes(query?: string): Promise<ThemeItem[]> {
-  const db = getDatabase();
   const clean = normalizeSearchText(query ?? "");
-  const [rows, counts] = await Promise.all([
+  return withCatalogCache(`themes:list:${clean || "all"}`, async () => {
+    const db = getDatabase();
+    const [rows, counts] = await Promise.all([
     db.select().from(themes).where(eq(themes.active, true)).orderBy(asc(themes.position)),
     loadThemePostCounts(),
   ]);
   return rows
     .filter((theme) => !clean || normalizeSearchText(theme.name).includes(clean) || normalizeSearchText(theme.tagline).includes(clean))
-    .map((theme) => ({
-      id: theme.id,
-      name: theme.name,
-      category: theme.category as ThemeCategory,
-      tagline: theme.tagline,
-      position: theme.position,
-      postCount: counts.get(theme.id) ?? 0,
-      tagCount: 0,
-      active: theme.active,
-    }));
+      .map((theme) => ({
+        id: theme.id,
+        name: theme.name,
+        category: theme.category as ThemeCategory,
+        tagline: theme.tagline,
+        position: theme.position,
+        postCount: counts.get(theme.id) ?? 0,
+        tagCount: 0,
+        active: theme.active,
+      }));
+  });
 }
 
 export async function getThemeById(id: string): Promise<ThemeItem | null> {
-  const db = getDatabase();
-  const rows = await db.select().from(themes).where(and(eq(themes.id, id), eq(themes.active, true))).limit(1);
-  const row = rows[0];
-  if (!row) return null;
-  const counts = await loadThemePostCounts();
-  return {
-    id: row.id,
-    name: row.name,
-    category: row.category as ThemeCategory,
-    tagline: row.tagline,
-    position: row.position,
-    postCount: counts.get(row.id) ?? 0,
-    tagCount: 0,
-    active: row.active,
-  };
+  return withCatalogCache(`themes:item:${id}`, async () => {
+    const db = getDatabase();
+    const rows = await db.select().from(themes).where(and(eq(themes.id, id), eq(themes.active, true))).limit(1);
+    const row = rows[0];
+    if (!row) return null;
+    const counts = await loadThemePostCounts();
+    return {
+      id: row.id,
+      name: row.name,
+      category: row.category as ThemeCategory,
+      tagline: row.tagline,
+      position: row.position,
+      postCount: counts.get(row.id) ?? 0,
+      tagCount: 0,
+      active: row.active,
+    };
+  });
 }
 
 /* ---------------------------------- Auteurs ----------------------------------- */

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LogOut, Trash2 } from "lucide-react";
+import { Flame, LogOut, Trash2 } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface DangerZoneProps {
@@ -9,10 +9,7 @@ interface DangerZoneProps {
   onDelete: () => void | Promise<void>;
 }
 
-/**
- * Zone compte : déconnexion et suppression définitive du compte (délai 14 jours).
- * Les deux actions exigent une confirmation via une fenêtre modale brutaliste.
- */
+/** Zone rouge — déconnexion et suppression définitive du compte. */
 export function DangerZone({ onSignOut, onDelete }: DangerZoneProps) {
   const [confirmingSignOut, setConfirmingSignOut] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -40,17 +37,35 @@ export function DangerZone({ onSignOut, onDelete }: DangerZoneProps) {
 
   return (
     <>
-      <section className="space-y-4 rounded-[16px] border-[1.5px] border-bord bg-carte p-6 shadow-[3px_3px_0_0_var(--color-encre)]">
-        <h2 className="font-serif text-xl font-extrabold text-encre">Données et compte</h2>
-        <div className="flex flex-wrap gap-3">
-          <button type="button" onClick={() => setConfirmingSignOut(true)} className="inline-flex min-h-[40px] items-center gap-2 rounded-full border-[1.5px] border-bord bg-carte px-4 text-sm font-semibold text-encre transition-colors hover:bg-pilule">
-            <LogOut size={15} strokeWidth={2} aria-hidden="true" />
-            Se déconnecter
-          </button>
-          <button type="button" onClick={() => setConfirmingDelete(true)} className="inline-flex min-h-[40px] items-center gap-2 rounded-full border-[1.5px] border-bord bg-carte px-4 text-sm font-semibold text-muted transition-colors hover:border-encre hover:text-encre">
-            <Trash2 size={15} strokeWidth={2} aria-hidden="true" />
-            Supprimer mon compte
-          </button>
+      <section className="overflow-hidden rounded-[28px] border-[3px] border-encre bg-[#FAF2EA] shadow-[8px_8px_0_0_var(--color-ink-jar)]">
+        <div className="flex items-center gap-3 border-b-[3px] border-encre bg-corail px-6 py-4">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full border-[2.5px] border-encre bg-carte">
+            <Flame size={18} strokeWidth={2.25} aria-hidden="true" className="text-encre" />
+          </span>
+          <h2 className="font-display text-[17px] uppercase leading-none tracking-wide text-encre">Zone rouge</h2>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-5">
+          <p className="max-w-[40ch] text-[13px] leading-snug text-encre/85">
+            Déconnexion immédiate ou suppression définitive du compte avec un délai de 14 jours.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => setConfirmingSignOut(true)}
+              className="inline-flex min-h-[42px] items-center gap-2 rounded-full border-[2px] border-encre bg-carte px-5 text-sm font-extrabold text-encre shadow-[3px_3px_0_0_var(--color-ink-jar)] transition hover:-translate-y-0.5 hover:bg-pilule"
+            >
+              <LogOut size={15} strokeWidth={2.5} aria-hidden="true" />
+              Se déconnecter
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmingDelete(true)}
+              className="inline-flex min-h-[42px] items-center gap-2 rounded-full border-[2px] border-encre bg-[#FF8A7A] px-5 text-sm font-extrabold text-encre shadow-[3px_3px_0_0_var(--color-ink-jar)] transition hover:-translate-y-0.5"
+            >
+              <Trash2 size={15} strokeWidth={2.5} aria-hidden="true" />
+              Supprimer le compte
+            </button>
+          </div>
         </div>
       </section>
       <ConfirmDialog

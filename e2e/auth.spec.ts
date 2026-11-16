@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { test, expect } from "@playwright/test";
 import { Pool } from "@neondatabase/serverless";
+import { signInGoogleWithRetry } from "./helpers";
 
 /**
  * Parcours d'authentification Google complet contre un bouchon local (jamais de compte
@@ -25,7 +26,7 @@ test.afterEach(async () => {
 
 test("OAuth Google → session persistée → déconnexion sans compte réel", async ({ request }) => {
   // 1) Le signin pose le cookie d'état et redirige vers Google.
-  const signin = await request.get("/api/auth/signin/google", { maxRedirects: 0 });
+  const signin = await signInGoogleWithRetry(request);
   expect(signin.status()).toBe(302);
   const signinCookies = signin.headers()["set-cookie"] ?? "";
   const stateMatch = signinCookies.match(/qm_oauth_state=([^;]+)/);

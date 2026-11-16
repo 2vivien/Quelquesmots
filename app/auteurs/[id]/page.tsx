@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 
-import { AuthorHeader, authorsService } from "@/features/authors";
+import { AuthorHeader } from "@/features/authors";
+import { serverAuthorsService } from "@/features/authors/services/authors.server";
 import { PostCard } from "@/features/feed";
 import { ReportDialog } from "@/features/moderation";
-import { postsService } from "@/features/posts";
+import { serverPostsService } from "@/features/posts/services/posts.server";
 
 export const dynamic = "force-dynamic";
 
@@ -14,10 +15,10 @@ interface AuthorProfilePageProps {
 /** Profil public d'un auteur et ses publications accessibles. */
 export default async function AuthorProfilePage({ params }: AuthorProfilePageProps) {
   const { id } = await params;
-  const author = await authorsService.getById(id);
+  const author = await serverAuthorsService.getById(id);
   if (!author) notFound();
 
-  const { items } = await postsService.listFeed({
+  const { items } = await serverPostsService.listFeed({
     authorId: author.userId,
     limit: 20,
     viewerId: null,

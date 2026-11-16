@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { PostCard } from "@/features/feed";
-import { postsService } from "@/features/posts";
-import { tagsService } from "@/features/tags";
+import { serverPostsService } from "@/features/posts/services/posts.server";
+import { serverTagsService } from "@/features/tags/services/tags.server";
 
 export const dynamic = "force-dynamic";
 
@@ -12,9 +12,9 @@ interface TagPageProps {
 /** Page listant les textes associés à un tag éditorial. */
 export default async function TagPage({ params }: TagPageProps) {
   const { tagId } = await params;
-  const tag = await tagsService.getById(tagId);
+  const tag = await serverTagsService.getById(tagId);
   if (!tag) notFound();
-  const { items } = await postsService.listFeed({ tagId, limit: 20, viewerId: null });
+  const { items } = await serverPostsService.listFeed({ tagId, limit: 20, viewerId: null });
 
   return (
     <div className="mx-auto max-w-[720px] space-y-6">

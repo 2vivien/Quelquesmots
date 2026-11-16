@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import { displayAuthor } from "@/features/authors";
-import { postsService } from "@/features/posts";
+import { serverPostsService } from "@/features/posts/services/posts.server";
+import { getServerSessionUser } from "@/lib/server/auth-server";
 
 export const dynamic = "force-dynamic";
 export const size = { width: 1200, height: 630 };
@@ -12,7 +13,8 @@ export default async function OpenGraphImage(props: {
 }) {
   const resolved = props.params ? await props.params : undefined;
   const id = resolved?.id ?? "";
-  const post = id ? await postsService.getById(id) : null;
+  const viewer = await getServerSessionUser();
+  const post = id ? await serverPostsService.getById(id, viewer?.id ?? null) : null;
   const title = post?.title ?? "Quelques mots";
   const author = post
     ? displayAuthor({

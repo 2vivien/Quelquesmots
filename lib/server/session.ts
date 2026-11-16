@@ -48,9 +48,8 @@ export async function createSession(
   return { token, expiresAt };
 }
 
-/** Résout le cookie en jeton actif ou `null`. */
-export async function getSessionUserId(req: NextRequest): Promise<string | null> {
-  const raw = req.cookies.get(SESSION_COOKIE)?.value;
+/** Résout le jeton de session brut (cookie ou header) en `userId` actif ou `null`. */
+export async function resolveSessionUserIdFromToken(raw: string | undefined | null): Promise<string | null> {
   if (!raw) return null;
   const db = getDatabase();
   const now = new Date();
@@ -66,6 +65,11 @@ export async function getSessionUserId(req: NextRequest): Promise<string | null>
   // Best-effort : rafraîchit lastUsedAt sans casser la requête.
   db.update(sessions).set({ lastUsedAt: new Date() }).where(eq(sessions.tokenHash, hashToken(raw))).catch(() => {});
   return row.id;
+}
+
+/** Résout le cookie en jeton actif ou `null`. */
+export async function getSessionUserId(req: NextRequest): Promise<string | null> {
+  return resolveSessionUserIdFromToken(req.cookies.get(SESSION_COOKIE)?.value);
 }
 
 /** Dépose le cookie httpOnly sur la réponse. */

@@ -1,11 +1,12 @@
-import { ThemesDirectoryView, themesService } from "@/features/themes";
+import { ThemesDirectoryView } from "@/features/themes";
+import { serverThemesService } from "@/features/themes/services/themes.server";
 
 export const dynamic = "force-dynamic";
 
 
 /** Page de répertoire de tous les thèmes (écran 4). */
 export default async function ThemesPage() {
-  const themes = await themesService.listActive();
+  const themes = await serverThemesService.listActive();
 
   return (
     <div className="space-y-6">

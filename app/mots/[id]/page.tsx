@@ -5,7 +5,8 @@ import { notFound } from "next/navigation";
 import { displayAuthor } from "@/features/authors";
 import { CommentList } from "@/features/comments";
 import { TagList } from "@/features/feed";
-import { postsService } from "@/features/posts";
+import { serverPostsService } from "@/features/posts/services/posts.server";
+import { getServerSessionUser } from "@/lib/server/auth-server";
 import {
   ReaderActions,
   ReaderBody,
@@ -17,7 +18,11 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const getPostForId = cache((id: string) => postsService.getById(id));
+const getPostForId = cache(async (id: string) => {
+  // Session lue côté serveur (cookie) : le propriétaire peut voir son texte privé.
+  const viewer = await getServerSessionUser();
+  return serverPostsService.getById(id, viewer?.id ?? null);
+});
 
 interface PostPageProps {
   params: Promise<{ id: string }>;
@@ -49,7 +54,8 @@ export default async function PostReaderPage({ params }: PostPageProps) {
   const post = await getPostForId(id);
   if (!post) notFound();
 
-  const related = await postsService.listRelated(post, null);
+  const viewer = await getServerSessionUser();
+  const related = await serverPostsService.listRelated(post, viewer?.id ?? null);
   const tagItems = post.tagIds.map((id, index) => ({ id, label: post.tagLabels[index] ?? id }));
 
   return (

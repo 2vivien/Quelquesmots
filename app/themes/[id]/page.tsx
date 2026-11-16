@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 
-import { authorsService } from "@/features/authors";
+import { serverAuthorsService } from "@/features/authors/services/authors.server";
 import { ThemeDetailView } from "@/features/feed";
-import { postsService } from "@/features/posts";
-import { ThemeHero, themesService } from "@/features/themes";
+import { serverPostsService } from "@/features/posts/services/posts.server";
+import { ThemeHero } from "@/features/themes";
+import { serverThemesService } from "@/features/themes/services/themes.server";
 
 export const dynamic = "force-dynamic";
 
@@ -14,12 +15,12 @@ interface ThemePageProps {
 /** Page dédiée à un thème littéraire (écran 5). */
 export default async function ThemeDetailPage({ params }: ThemePageProps) {
   const { id } = await params;
-  const theme = await themesService.getById(id);
+  const theme = await serverThemesService.getById(id);
   if (!theme) notFound();
 
   const [initialPage, authors] = await Promise.all([
-    postsService.listFeed({ themeId: theme.id, sort: "recent", limit: 10, viewerId: null }),
-    authorsService.listDirectory(),
+    serverPostsService.listFeed({ themeId: theme.id, sort: "recent", limit: 10, viewerId: null }),
+    serverAuthorsService.listDirectory(),
   ]);
 
   return (

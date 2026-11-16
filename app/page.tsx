@@ -1,6 +1,6 @@
 import { FeedView } from "@/features/feed";
 
-import { postsService } from "@/features/posts";
+import { serverPostsService } from "@/features/posts/services/posts.server";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +11,7 @@ interface HomePageProps {
 /** Page d'accueil : Mur éditorial des textes courts. */
 export default async function HomePage({ searchParams }: HomePageProps) {
   const { theme: themeId } = await searchParams;
-  const initialPage = await postsService.listFeed({
+  const initialPage = await serverPostsService.listFeed({
     themeId,
     sort: "recent",
     limit: 10,

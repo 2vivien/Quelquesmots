@@ -1,11 +1,12 @@
-import { AuthorsDirectoryView, authorsService } from "@/features/authors";
+import { AuthorsDirectoryView } from "@/features/authors";
+import { serverAuthorsService } from "@/features/authors/services/authors.server";
 
 export const dynamic = "force-dynamic";
 
 
 /** Annuaire des auteurs (écran 7). */
 export default async function AuthorsPage() {
-  const authors = await authorsService.listDirectory();
+  const authors = await serverAuthorsService.listDirectory();
 
   return (
     <div className="mx-auto max-w-[720px] space-y-6">

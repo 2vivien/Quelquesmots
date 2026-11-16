@@ -69,7 +69,7 @@ export function Header() {
         </div>
       </div>
       {/* Pastilles accrochées (visibles aussi sur mobile) */}
-      <div className="no-scrollbar flex items-start justify-start gap-3 overflow-x-auto border-b border-bord/40 px-3 pt-1 sm:justify-center sm:gap-6 sm:px-4">
+      <div className="no-scrollbar flex items-start justify-center gap-3 overflow-x-auto border-b border-bord/40 px-3 pt-1 sm:gap-6 sm:px-4">
         {SECTIONS.map((s, i) => (
           <HangingPill key={s.href} href={s.href} bg={s.bg} length={LENGTHS[i % LENGTHS.length]!}>{s.label}</HangingPill>
         ))}

@@ -41,11 +41,11 @@ export function Header() {
             alt="Plume Quelques mots"
             width={44}
             height={77}
-            className="h-9 w-auto select-none drop-shadow-[1px_1px_0_var(--color-ink-jar)]"
+            className="h-10 w-auto select-none drop-shadow-[1px_1px_0_var(--color-ink-jar)]"
             priority
           />
-          <span className="font-display text-[13px] uppercase leading-[0.92] tracking-tight text-encre">
-            Quelques<br />mots
+          <span className="whitespace-nowrap font-display text-[17px] uppercase tracking-tight text-encre">
+            Quelques mots
           </span>
         </Link>
         <HeaderSearch className="hidden lg:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 lg:w-[32rem] xl:w-[36rem]" />

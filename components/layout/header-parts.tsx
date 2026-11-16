@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Search } from "lucide-react";
 
 /** Barre de recherche façon Trugly : épaisse, bordurée, centrée. */
-export function HeaderSearch({ className = "" }: { className?: string }) {
+export function HeaderSearch({ className = "relative" }: { className?: string }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const submit = (event: React.FormEvent) => {
@@ -14,7 +14,7 @@ export function HeaderSearch({ className = "" }: { className?: string }) {
     router.push(trimmed ? `/recherche?q=${encodeURIComponent(trimmed)}` : "/recherche");
   };
   return (
-    <form onSubmit={submit} role="search" className={`relative ${className}`}>
+    <form onSubmit={submit} role="search" className={className}>
       <Search size={16} strokeWidth={2.5} aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-encre" />
       <input
         type="search"

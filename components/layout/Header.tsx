@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Bell, Plus } from "lucide-react";
 import { useAuth } from "@/features/auth";
 import { useNotifications } from "@/features/notifications";
@@ -33,7 +34,21 @@ export function Header() {
     <header className="sticky top-0 z-30">
       {/* Barre principale — bord à bord */}
       <div className="relative flex h-12 items-center border-b-2 border-encre bg-carte px-3 shadow-[0_2px_0_0_var(--color-ink-jar)] sm:h-14 sm:px-6">
-        <HeaderSearch className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-32 sm:w-[24rem] md:w-[28rem] lg:w-[32rem] xl:w-[36rem]" />
+        {/* Logo + nom (mobile uniquement — le desktop a la sidebar) */}
+        <Link href="/" className="flex items-center gap-2 lg:hidden" aria-label="Accueil — Quelques mots">
+          <Image
+            src="/images/editorial/plume.png"
+            alt="Plume Quelques mots"
+            width={44}
+            height={77}
+            className="h-9 w-auto select-none drop-shadow-[1px_1px_0_var(--color-ink-jar)]"
+            priority
+          />
+          <span className="font-display text-[13px] uppercase leading-[0.92] tracking-tight text-encre">
+            Quelques<br />mots
+          </span>
+        </Link>
+        <HeaderSearch className="hidden lg:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 lg:w-[32rem] xl:w-[36rem]" />
         <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
           {user ? (
             <>

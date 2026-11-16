@@ -1,13 +1,10 @@
-# Tests e2e — couverture complète et résultats (16/11/2026)
+# Tests e2e — couverture complète et résultats (16/11/2026, mis à jour)
 
 > Suite Playwright de bout en bout contre la base Neon de la branche de l'app.
-> `playwright.config.ts` (repo) : serveur de production sur **3000** + mock-google sur **3999**.
-> Pendant la phase de développement, le port **3000 est occupé par `next dev` du projet Quota** (un autre repo)
-> — les tests du run de validation ont donc été exécutés via une config jetable sur **3001**
-> (le repo, lui, n'a pas été modifié ; le serveur Quota n'a pas été touché).
-> Pour relancer chez vous : `bun run test:e2e` (port 3000 libre) ou `E2E_BASE_URL=http://127.0.0.1:3001 bunx playwright test` avec un serveur sur 3001.
+> `playwright.config.ts` : serveur de **production sur 3100** (dédié, `reuseExistingServer: false` — jamais de réutilisation silencieuse) + mock-google sur **3999**.
+> `bun run test:e2e` = build prod (`.next`) → `next start --port 3100` → suite. Le serveur de développement (`next dev`, port 3000, sortie isolée `.next-dev` via `distDir` par phase) n'est jamais impliqué.
 
-## Résultats — 22/22 ✔ (4.3 min, sans flaky)
+## Résultats — 26/26 ✔ (5.6 min, sans flaky)
 
 | # | Spec / test | Ce qu'il prouve |
 |---|---|---|
@@ -33,6 +30,10 @@
 | 20 | `interactions.spec.ts` — notifications LIKE | L'auteur reçoit `LIKE` quand un lecteur aime |
 | 21 | `interactions.spec.ts` — vues | `/api/posts/[postId]/view` : dédoublonnage 90 s (premier `counted: true`, second `false`) |
 | 22 | `admin.spec.ts` — signalement → masquage admin | 201 sur report, 403 pour non-admin, promotion via DB (`role=admin`), `HIDDEN` → 404 invité, entrée dans `/api/admin/audit` |
+| 23 | `delete.spec.ts` — l'auteur supprime son texte | Soft-delete (`status=DELETED`), inaccessible API/fil/rendu, commentaire refusé après suppression |
+| 24 | `delete.spec.ts` — tiers sans droits | Un autre utilisateur ne peut pas supprimer (404), le texte survit |
+| 25 | `delete.spec.ts` — UI : auteur supprime | Bouton → dialogue → redirection `/` → 404 |
+| 26 | `delete.spec.ts` — UI : non-propriétaire | Pas de bouton de suppression hors propriétaire/admin |
 
 ## Architecture des tests
 
@@ -66,5 +67,15 @@
 - Flux OAuth réel non couvert (bouchon uniquement).
 - Le build `next build` échoue parfois avec l'invariant `no direct app page entry found for /_not-found`
   (Next 15.5.29, transitoire) : il suffit de relancer `bun run build`.
-- `bun run test:e2e` nécessite le **port 3000 libre** (sinon le serveur de prod échoue à démarrer ;
-  `reuseExistingServer: true` ne contourne pas un port réellement pris).
+- `bun run test:e2e` utilise le **port 3100 dédié** pour le serveur de production de test ;
+  le départ dev (`next dev`, port 3000) n'est pas impliqué, et dev/prod n'écrivent plus dans le même répertoire grâce au `distDir` par phase.
+- `.next-dev` (sortie dev) est gitignorée ; `clean` supprime les deux (`.next` et `.next-dev`).
+
+## Infrastructure de isolation (16/11/2026)
+
+- `next.config.ts` : `distDir` par phase (`PHASE_DEVELOPMENT_SERVER` → `.next-dev`, sinon `.next`).
+- `playwright.config.ts` : serveur de test **production** sur le port **3100**
+  (`reuseExistingServer: false` — un port occupé fait échouer le run plutôt que de tester un autre serveur).
+- `package.json` : `test:e2e` = `bun run build && playwright test` ; `clean` purge `.next` et `.next-dev`.
+- `.gitignore` : `.next-dev/` ignoré.
+- `AGENTS.md` : règles agent « Next.js — build, dev server et processus » (isolation, identification des processus, validation de build, Playwright prod explicite).

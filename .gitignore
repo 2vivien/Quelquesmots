@@ -17,3 +17,9 @@ coverage/
 # Playwright
 test-results/
 playwright-report/
+
+# Sortie du serveur de développement (isolée de la prod)
+.next-dev/
+
+# Artefact du run jetable .next-e2e (à supprimer manuellement)
+.next-e2e/

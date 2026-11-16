@@ -1,6 +1,10 @@
-import type {NextConfig} from 'next';
+import type { NextConfig } from "next";
+import { PHASE_DEVELOPMENT_SERVER } from "next/constants";
 
-const nextConfig: NextConfig = {
+const nextConfig = (phase: string): NextConfig => ({
+  // Serveur de développement : sortie isolée (.next-dev).
+  // Production (build/start) : sortie standard (.next) — la même qu'avant.
+  distDir: phase === PHASE_DEVELOPMENT_SERVER ? ".next-dev" : ".next",
   reactStrictMode: true,
   eslint: {
     ignoreDuringBuilds: true,
@@ -35,6 +39,6 @@ const nextConfig: NextConfig = {
     }
     return config;
   },
-};
+});
 
 export default nextConfig;

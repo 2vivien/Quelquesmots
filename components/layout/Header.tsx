@@ -32,9 +32,9 @@ export function Header() {
   return (
     <header className="sticky top-0 z-30">
       {/* Barre principale — bord à bord */}
-      <div className="flex h-12 items-center gap-2 border-b-2 border-encre bg-carte px-3 shadow-[0_2px_0_0_var(--color-ink-jar)] sm:h-14 sm:px-6">
-        <HeaderSearch className="min-w-0 w-44 flex-1 sm:w-64 md:w-80 lg:w-[360px] xl:w-[440px]" />
-        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+      <div className="relative flex h-12 items-center border-b-2 border-encre bg-carte px-3 shadow-[0_2px_0_0_var(--color-ink-jar)] sm:h-14 sm:px-6">
+        <HeaderSearch className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-32 sm:w-[24rem] md:w-[28rem] lg:w-[32rem] xl:w-[36rem]" />
+        <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
           {user ? (
             <>
               <Link href="/studio" className="btn-jaune inline-flex !min-h-[36px] !px-3 !py-0 !text-[12px] sm:!min-h-[38px] sm:!px-4 sm:!text-[13px]"><Plus size={16} strokeWidth={2.5} aria-hidden="true" /><span className="hidden xs:inline">Écrire</span></Link>

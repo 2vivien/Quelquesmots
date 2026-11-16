@@ -45,10 +45,14 @@ export async function withCatalogCache<T>(key: string, compute: () => Promise<T>
  * Fail-open : aucun appelant n'échoue si Redis est indisponible.
  */
 export async function invalidateCatalog(): Promise<void> {
+  // Toujours invalider le Data Cache Next.js, même si Upstash est absent.
+  revalidatePublicCache();
+
+  // Upstash est une couche complémentaire (best-effort).
   const redis = getRedisClient();
   if (!redis) return;
+
   try {
-    revalidatePublicCache();
     let cursor = "0";
     const keys: string[] = [];
     do {

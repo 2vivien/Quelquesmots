@@ -263,6 +263,7 @@ export const notifications = pgTable("notifications", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   actorId: uuid("actor_id").references(() => users.id, { onDelete: "set null" }),
+  actorIds: uuid("actor_ids").array().notNull().default([]),
   type: notificationTypeEnum("type").notNull(),
   actorUsername: varchar("actor_username", { length: 32 }).notNull(),
   actorAvatarUrl: varchar("actor_avatar_url", { length: 512 }).notNull().default(""),

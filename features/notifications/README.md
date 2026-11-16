@@ -36,12 +36,11 @@ Exclus volontairement : acteur lui-même, dislikes, favoris, retraits de réacti
 
 Fenêtre retenue : **24 h**. Un même couple `(destinataire, acteur, type, postId, commentId)` réactivé dans la fenêtre met `readAt = null` et rajeunit `createdAt` au lieu d'insérer une ligne. Aucun événement déjà enregistré n'est supprimé. Cela couvre le retrait puis la remise d'un like sans flooder la cloche.
 
-Stratégie de regroupement visée (non implémentée ici, nécessite une migration dédiée) :
-regrouper les `LIKE` d'un même texte sur une fenêtre glissante d'1 h en une seule entrée
-du type « Marie et 4 autres personnes ont aimé votre texte ». Le contrat devra porter
-les identifiants des acteurs pour que le marquage comme lu couvre tout le groupe, et la
-période de regroupement devra être alignée sur l'anti-doublon. Aucune donnée existante
-ne doit être écrasée lors de la bascule.
+Regroupement des LIKE implémenté : les likes d'un même texte sont fusionnés sur une
+fenêtre glissante d'1 h dans une seule notification portant `actorIds`. Le rendu affiche
+« Marie et 4 autres personnes ont aimé votre texte ». Le marquage comme lu couvre tout
+le groupe (une seule ligne). Migration `0003_marvelous_adam_destine.sql` : colonne
+`actor_ids uuid[]` avec backfill depuis `actor_id` — aucune donnée existante écrasée.
 
 ## Dépendances
 

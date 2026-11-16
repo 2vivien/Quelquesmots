@@ -29,6 +29,12 @@ export function NotificationRow({ item, onRead }: NotificationRowProps) {
   const href = item.postId
     ? `/mots/${item.postId}${item.commentId ? `#comment-${item.commentId}` : ""}`
     : "/notifications";
+  const extraActors = item.type === "LIKE" ? Math.max(0, item.actorIds.length - 1) : 0;
+  const actionText = extraActors === 0
+    ? ACTION_TEXT[item.type]
+    : extraActors === 1
+      ? "et 1 autre personne a aimé votre texte"
+      : `et ${extraActors} autres personnes ont aimé votre texte`;
   return (
     <Link
       href={href}
@@ -38,7 +44,7 @@ export function NotificationRow({ item, onRead }: NotificationRowProps) {
       <AuthorAvatar src={item.actorAvatarUrl} alt={item.actorUsername} size={40} />
       <div className="min-w-0 flex-1">
         <p className="text-[15px] text-encre">
-          <span className="font-medium">{item.actorUsername}</span> {ACTION_TEXT[item.type]}
+          <span className="font-medium">{item.actorUsername}</span> {actionText}
         </p>
         <p className="text-[13px] text-muted"><RelativeTime isoDate={item.createdAt} /></p>
       </div>

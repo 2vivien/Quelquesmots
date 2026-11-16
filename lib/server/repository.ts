@@ -1076,6 +1076,7 @@ export async function hideComment(commentId: string, actor: AuthUser): Promise<"
 
 /** Fenêtre d'anti-doublon : un même événement réactivé dans les 24 h ne crée pas de ligne. */
 const NOTIFICATION_DEDUPE_WINDOW_MS = 24 * 60 * 60 * 1000;
+const NOTIFICATION_LIKE_GROUP_WINDOW_MS = 60 * 60 * 1000;
 
 async function insertNotification(entry: {
   userId: string;
@@ -1090,10 +1091,39 @@ async function insertNotification(entry: {
   if (entry.actorId && entry.userId === entry.actorId) return; // Pas de notification pour soi-même.
   const client = tx ?? getDatabase();
   const now = new Date();
-  const windowStart = new Date(now.getTime() - NOTIFICATION_DEDUPE_WINDOW_MS);
+
+  // Les LIKE d'un même texte sont regroupés sur 1 h glissante : une seule ligne
+  // porte tous les acteurs (« Marie et 4 autres personnes ont aimé votre texte »).
+  if (entry.type === "LIKE" && entry.postId && entry.actorId) {
+    const groupStart = new Date(now.getTime() - NOTIFICATION_LIKE_GROUP_WINDOW_MS);
+    const group = await client
+      .select({ id: notifications.id, actorIds: notifications.actorIds })
+      .from(notifications)
+      .where(and(
+        eq(notifications.userId, entry.userId),
+        eq(notifications.type, "LIKE"),
+        eq(notifications.postId, entry.postId),
+        gte(notifications.createdAt, groupStart),
+      ))
+      .orderBy(desc(notifications.createdAt))
+      .limit(1);
+    if (group[0]) {
+      const actorIds = group[0].actorIds ?? [];
+      await client
+        .update(notifications)
+        .set({
+          actorIds: actorIds.includes(entry.actorId) ? actorIds : [...actorIds, entry.actorId],
+          readAt: null,
+          createdAt: now,
+        })
+        .where(eq(notifications.id, group[0].id));
+      return;
+    }
+  }
 
   // Retrait puis remise d'une même réaction : on réactive l'événement existant
   // au lieu d'en perdre le fil ou d'en créer un doublon.
+  const windowStart = new Date(now.getTime() - NOTIFICATION_DEDUPE_WINDOW_MS);
   const existing = await client
     .select({ id: notifications.id })
     .from(notifications)
@@ -1119,6 +1149,7 @@ async function insertNotification(entry: {
     id: randomUUID(),
     userId: entry.userId,
     actorId: entry.actorId,
+    actorIds: entry.actorId ? [entry.actorId] : [],
     type: entry.type,
     actorUsername: entry.actorUsername,
     actorAvatarUrl: entry.actorAvatarUrl,
@@ -1177,6 +1208,7 @@ export async function listNotifications(userId: string): Promise<NotificationIte
     type: row.type as NotificationKind,
     actorUsername: row.actorUsername,
     actorAvatarUrl: row.actorAvatarUrl,
+    actorIds: row.actorIds ?? [],
     postTitle: row.postTitle,
     postId: row.postId ?? "",
     commentId: row.commentId,

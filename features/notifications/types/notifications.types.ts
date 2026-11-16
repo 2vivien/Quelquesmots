@@ -19,6 +19,7 @@ export interface NotificationItem {
   type: NotificationKind;
   actorUsername: string;
   actorAvatarUrl: string;
+  actorIds: string[];
   postId: string;
   commentId: string | null;
   postTitle: string;

@@ -33,7 +33,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-30">
       {/* Barre principale — bord à bord */}
-      <div className="relative flex h-12 items-center border-b-2 border-encre bg-carte px-3 shadow-[0_2px_0_0_var(--color-ink-jar)] sm:h-14 sm:px-6">
+      <div className="relative flex h-16 items-center border-b-2 border-encre bg-carte px-3 shadow-[0_2px_0_0_var(--color-ink-jar)] sm:h-[4.5rem] sm:px-6">
         {/* Logo + nom (mobile uniquement — le desktop a la sidebar) */}
         <Link href="/" className="flex items-center gap-2 lg:hidden" aria-label="Accueil — Quelques mots">
           <Image

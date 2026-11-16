@@ -32,7 +32,7 @@ interface PostPageProps {
 export async function generateMetadata({ params }: PostPageProps): Promise<Metadata> {
   const { id } = await params;
   const post = await getPostForId(id);
-  if (!post) return { title: "Texte introuvable — Quelques mots" };
+  if (!post) return { title: "Texte introuvable — Quelques mots", robots: { index: false, follow: false } };
   const author = displayAuthor({
     publishAs: post.publishAs,
     username: post.authorUsername,

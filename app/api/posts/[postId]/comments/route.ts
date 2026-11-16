@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getSessionUser, requireUser } from "@/lib/server/auth";
 import { addComment, getPostById, listComments } from "@/lib/server/repository";
 import { canViewPost } from "@/features/posts/utils/visibility";
-import { badRequest, notFound, parseJsonBody, rateLimit } from "@/lib/server/http";
+import { badRequest, notFound, parseJsonBody, rateLimit, PRIVATE_NO_STORE } from "@/lib/server/http";
 import { commentCreateSchema } from "@/lib/server/schemas";
 
 const paramsSchema = z.object({ postId: z.string().uuid("Identifiant invalide.") });
@@ -20,7 +20,7 @@ export async function GET(
   const byId = await getPostById(key);
   const post = byId ? (canViewPost(byId, viewer?.id ?? null) ? byId : null) : null;
   if (!post) return notFound("Texte introuvable.");
-  return NextResponse.json({ comments: await listComments(post.id, viewer?.id ?? null) });
+  return NextResponse.json({ comments: await listComments(post.id, viewer?.id ?? null) }, { headers: PRIVATE_NO_STORE });
 }
 
 /** Ajoute un commentaire (auteur dérivé de la session, limité à 10 par 10 minutes). */

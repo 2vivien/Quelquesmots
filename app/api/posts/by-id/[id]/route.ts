@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getPostById } from "@/lib/server/repository";
-import { badRequest, notFound } from "@/lib/server/http";
+import { badRequest, notFound, PRIVATE_NO_STORE } from "@/lib/server/http";
 import { canViewPost } from "@/features/posts/utils/visibility";
 import { getSessionUser } from "@/lib/server/auth";
 
@@ -17,5 +17,5 @@ export async function GET(
   const viewer = await getSessionUser(req);
   const post = await getPostById(parsed.data.id);
   if (!post || !canViewPost(post, viewer?.id ?? null)) return notFound("Texte introuvable.");
-  return NextResponse.json({ post }, { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120" } });
+  return NextResponse.json({ post }, { headers: PRIVATE_NO_STORE });
 }

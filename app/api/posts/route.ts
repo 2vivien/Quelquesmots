@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSessionUser } from "@/lib/server/auth";
 import { getInteractionState, listFeed, InvalidFeedCursorError } from "@/lib/server/repository";
-import { badRequest, rateLimit, clientIp } from "@/lib/server/http";
+import { badRequest, rateLimit, clientIp, PRIVATE_NO_STORE } from "@/lib/server/http";
 
 const querySchema = z.object({
   themeId: z.string().uuid().optional(),
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
       viewerId: viewer?.id ?? null,
       blockedAuthorIds,
     });
-    return NextResponse.json(page, { headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60" } });
+    return NextResponse.json(page, { headers: PRIVATE_NO_STORE });
   } catch (err) {
     if (err instanceof InvalidFeedCursorError) return badRequest("Curseur invalide.");
     throw err;

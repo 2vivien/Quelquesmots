@@ -19,6 +19,14 @@ export function jsonError(
 
 export const badRequest = (message: string, fieldErrors?: Record<string, string>) =>
   jsonError(400, "VALIDATION", message, fieldErrors);
+
+/**
+ * En-têtes pour toute réponse dépendant du lecteur (session, blocages, visibilité) :
+ * jamais mise en cache par un cache partagé. N'affecte pas le Data Cache interne.
+ */
+export const PRIVATE_NO_STORE = {
+  "Cache-Control": "private, no-store, max-age=0, must-revalidate",
+} as const;
 export const unauthorized = (message = "Connexion requise.") =>
   jsonError(401, "UNAUTHENTICATED", message);
 export const forbidden = (message = "Action non autorisée.") =>

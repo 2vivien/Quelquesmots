@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSessionUser } from "@/lib/server/auth";
 import { getPostsByIds } from "@/lib/server/repository";
-import { badRequest, clientIp, rateLimit } from "@/lib/server/http";
+import { badRequest, clientIp, rateLimit, PRIVATE_NO_STORE } from "@/lib/server/http";
 
 const querySchema = z.object({
   ids: z.array(z.string().uuid("Identifiant invalide.")).min(1).max(100),
@@ -21,5 +21,5 @@ export async function GET(req: NextRequest) {
   const viewer = await getSessionUser(req);
   const ids = Array.from(new Set(parsed.data.ids));
   const posts = await getPostsByIds(ids, viewer?.id ?? null);
-  return NextResponse.json({ posts }, { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120" } });
+  return NextResponse.json({ posts }, { headers: PRIVATE_NO_STORE });
 }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSessionUser } from "@/lib/server/auth";
 import { search } from "@/lib/server/repository";
-import { badRequest, clientIp, rateLimit } from "@/lib/server/http";
+import { badRequest, clientIp, rateLimit, PRIVATE_NO_STORE } from "@/lib/server/http";
 
 const querySchema = z.object({
   q: z.string().trim().min(1, "Recherche vide.").max(120),
@@ -19,5 +19,7 @@ export async function GET(req: NextRequest) {
   });
   if (!parsed.success) return badRequest("Paramètres de recherche invalides.");
   const viewer = await getSessionUser(req);
-  return NextResponse.json(await search(parsed.data.q, parsed.data.tab, viewer?.id ?? null));
+  return NextResponse.json(await search(parsed.data.q, parsed.data.tab, viewer?.id ?? null), {
+    headers: PRIVATE_NO_STORE,
+  });
 }

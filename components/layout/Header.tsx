@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Bell, Plus } from "lucide-react";
 import { useAuth } from "@/features/auth";
-import { useNotifications } from "@/features/notifications";
+import { useUnreadNotificationCount } from "@/features/notifications";
 import { openAuthPopup } from "@/lib/open-auth";
 import { MobileMenu } from "./MobileMenu";
 import { UserMenu } from "./UserMenu";
@@ -28,7 +28,7 @@ const LENGTHS = [14, 22, 18];
 /** Barre supérieure façon Trugly : full-bleed, recherche centrée, actions connectées à droite ; pastilles accrochées dessous (Le mur, Thèmes, Auteurs — toujours accessibles). */
 export function Header() {
   const { user } = useAuth();
-  const { unreadCount } = useNotifications();
+  const { unreadCount } = useUnreadNotificationCount();
 
   return (
     <header className="sticky top-0 z-30">
@@ -55,7 +55,7 @@ export function Header() {
             {user ? (
               <>
                 <Link href="/studio" className="btn-jaune inline-flex !min-h-[36px] !px-3 !py-0 !text-[12px] sm:!min-h-[38px] sm:!px-4 sm:!text-[13px]"><Plus size={16} strokeWidth={2.5} aria-hidden="true" /><span className="hidden xs:inline">Écrire</span></Link>
-                <Link href="/notifications" aria-label="Notifications" className="relative flex h-9 w-9 items-center justify-center rounded-full border-2 border-encre bg-ivoire text-encre shadow-[2px_2px_0_0_var(--color-ink-jar)] transition-colors hover:bg-pilule sm:h-10 sm:w-10">
+                <Link href="/notifications" aria-label={unreadCount > 0 ? `Notifications (${unreadCount} non lues)` : "Notifications"} className="relative flex h-9 w-9 items-center justify-center rounded-full border-2 border-encre bg-ivoire text-encre shadow-[2px_2px_0_0_var(--color-ink-jar)] transition-colors hover:bg-pilule sm:h-10 sm:w-10">
                   <Bell size={17} strokeWidth={2} aria-hidden="true" />
                   {unreadCount > 0 ? <span className="badge-noir absolute -right-1 -top-1">{unreadCount}</span> : null}
                 </Link>

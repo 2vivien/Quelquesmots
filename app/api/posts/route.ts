@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSessionUser } from "@/lib/server/auth";
-import { getInteractionState, listFeed, InvalidFeedCursorError } from "@/lib/server/repository";
+import { getBlockedUserIds, listFeed, InvalidFeedCursorError } from "@/lib/server/repository";
 import { badRequest, rateLimit, clientIp, PRIVATE_NO_STORE } from "@/lib/server/http";
 
 const querySchema = z.object({
@@ -29,7 +29,8 @@ export async function GET(req: NextRequest) {
   if (!parsed.success) return badRequest("Paramètres invalides.");
 
   const viewer = await getSessionUser(req);
-  const blockedAuthorIds = viewer ? (await getInteractionState(viewer.id)).blockedUserIds : [];
+  // Lecture unique des auteurs bloqués (getInteractionState complète n'est pas nécessaire ici).
+  const blockedAuthorIds = viewer ? await getBlockedUserIds(viewer.id) : [];
   try {
     const page = await listFeed({
       themeId: parsed.data.themeId,

@@ -623,6 +623,13 @@ export async function setModerationStatus(id: string, status: PostStatus, locked
 
 /* --------------------------------- Interactions --------------------------------- */
 
+/** Lecteur connecté : ids bloqués uniquement (feed) — évite les 5 requêtes de getInteractionState. */
+export async function getBlockedUserIds(userId: string): Promise<string[]> {
+  const db = getDatabase();
+  const rows = await db.select({ blockedId: userBlocks.blockedId }).from(userBlocks).where(eq(userBlocks.blockerId, userId));
+  return rows.map((r) => r.blockedId);
+}
+
 export async function getInteractionState(userId: string): Promise<InteractionState> {
   const db = getDatabase();
   const [likesRows, dislikesRows, bookmarksRows, followRows, blockRows] = await Promise.all([

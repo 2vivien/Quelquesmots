@@ -50,18 +50,21 @@ export function Header() {
         </Link>
         <HeaderSearch className="hidden lg:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 lg:w-[32rem] xl:w-[36rem]" />
         <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
-          {user ? (
-            <>
-              <Link href="/studio" className="btn-jaune inline-flex !min-h-[36px] !px-3 !py-0 !text-[12px] sm:!min-h-[38px] sm:!px-4 sm:!text-[13px]"><Plus size={16} strokeWidth={2.5} aria-hidden="true" /><span className="hidden xs:inline">Écrire</span></Link>
-              <Link href="/notifications" aria-label="Notifications" className="relative flex h-9 w-9 items-center justify-center rounded-full border-2 border-encre bg-ivoire text-encre shadow-[2px_2px_0_0_var(--color-ink-jar)] transition-colors hover:bg-pilule sm:h-10 sm:w-10">
-                <Bell size={17} strokeWidth={2} aria-hidden="true" />
-                {unreadCount > 0 ? <span className="badge-noir absolute -right-1 -top-1">{unreadCount}</span> : null}
-              </Link>
-              <UserMenu />
-            </>
-          ) : (
-            <button type="button" onClick={openAuthPopup} className="btn-noir !min-h-[36px] !px-4 !py-0 !text-[12px] sm:!min-h-[38px] sm:!px-5 sm:!text-[13px]">Connexion</button>
-          )}
+          {/* Actions complètes uniquement sur desktop — sur mobile : hamburger seul (tout passe par le tiroir) */}
+          <div className="hidden items-center gap-1.5 lg:flex sm:gap-2">
+            {user ? (
+              <>
+                <Link href="/studio" className="btn-jaune inline-flex !min-h-[36px] !px-3 !py-0 !text-[12px] sm:!min-h-[38px] sm:!px-4 sm:!text-[13px]"><Plus size={16} strokeWidth={2.5} aria-hidden="true" /><span className="hidden xs:inline">Écrire</span></Link>
+                <Link href="/notifications" aria-label="Notifications" className="relative flex h-9 w-9 items-center justify-center rounded-full border-2 border-encre bg-ivoire text-encre shadow-[2px_2px_0_0_var(--color-ink-jar)] transition-colors hover:bg-pilule sm:h-10 sm:w-10">
+                  <Bell size={17} strokeWidth={2} aria-hidden="true" />
+                  {unreadCount > 0 ? <span className="badge-noir absolute -right-1 -top-1">{unreadCount}</span> : null}
+                </Link>
+                <UserMenu />
+              </>
+            ) : (
+              <button type="button" onClick={openAuthPopup} className="btn-noir !min-h-[36px] !px-4 !py-0 !text-[12px] sm:!min-h-[38px] sm:!px-5 sm:!text-[13px]">Connexion</button>
+            )}
+          </div>
           <MobileMenu />
         </div>
       </div>

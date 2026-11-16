@@ -23,3 +23,4 @@ playwright-report/
 
 # Artefact du run jetable .next-e2e (à supprimer manuellement)
 .next-e2e/
+.vercel

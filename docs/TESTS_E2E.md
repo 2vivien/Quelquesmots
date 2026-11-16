@@ -4,7 +4,7 @@
 > `playwright.config.ts` : serveur de **production sur 3100** (dédié, `reuseExistingServer: false` — jamais de réutilisation silencieuse) + mock-google sur **3999**.
 > `bun run test:e2e` = build prod (`.next`) → `next start --port 3100` → suite. Le serveur de développement (`next dev`, port 3000, sortie isolée `.next-dev` via `distDir` par phase) n'est jamais impliqué.
 
-## Résultats — 26/26 ✔ (5.6 min, sans flaky)
+## Résultats — 32/32 ✔ (7.9 min, sans flaky)
 
 | # | Spec / test | Ce qu'il prouve |
 |---|---|---|
@@ -34,6 +34,13 @@
 | 24 | `delete.spec.ts` — tiers sans droits | Un autre utilisateur ne peut pas supprimer (404), le texte survit |
 | 25 | `delete.spec.ts` — UI : auteur supprime | Bouton → dialogue → redirection `/` → 404 |
 | 26 | `delete.spec.ts` — UI : non-propriétaire | Pas de bouton de suppression hors propriétaire/admin |
+| 27 | `notification-grouping.spec.ts` (1) — LIKE groupé glissant | 3 likes → 1 notification (acteurs agrégés) ; après 1 h → nouvelle notification |
+| 28 | `notifications.spec.ts` (1) — groupement | LIKE groupé listé avec actorIds complets ; compteur non lu ; marquage individuel |
+| 29 | `notifications.spec.ts` (1) — COMMENT_LIKE | Commentaire liké → notif COMMENT_LIKE avec commentId ; auto-like sans notif |
+| 30 | `notifications.spec.ts` (1) — FOLLOW | Follow → FOLLOW ; auto-follow refusé (400) |
+| 31 | `notifications.spec.ts` (1) — marquage global | POST /api/notifications/read avec tous les ids → compteur à zéro |
+| 32 | `notifications.spec.ts` (1) — 401 invité | Endpoints notifications interdits sans session (401) |
+
 
 ## Architecture des tests
 

@@ -20,7 +20,7 @@ export function HeaderSearch({ className = "" }: { className?: string }) {
         type="search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Rechercher…"
+        placeholder="Rechercher un texte, un thème, un auteur…"
         aria-label="Rechercher"
         className="h-10 w-full rounded-full border-2 border-encre bg-carte pl-11 pr-4 text-[14px] font-medium text-encre placeholder:font-normal placeholder:text-muted shadow-[2px_2px_0_0_var(--color-ink-jar)] transition focus:outline-none focus:shadow-[3px_3px_0_0_var(--color-ink-jar)] sm:h-11 sm:pl-12 sm:text-[15px]"
       />

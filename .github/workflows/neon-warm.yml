@@ -1,0 +1,31 @@
+name: Neon warm-up
+
+# Réveille Neon (évite le scale-to-zéro) toutes les 10 minutes.
+# Dépôt PUBLIC : les minutes GitHub Actions sont gratuites et illimitées.
+# Le secret CRON_SECRET vit dans les GitHub Secrets (jamais dans le code ni dans les logs).
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  warm-neon:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping /api/cron/neon-warm
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 \
+            -H "authorization: Bearer ${CRON_SECRET}" \
+            "https://quelquesmots-2viviens-projects.vercel.app/api/cron/neon-warm")
+          echo "HTTP status: ${code}"
+          if [ "${code}" != "200" ]; then
+            echo "::error::Neon warm-up failed (HTTP ${code})"
+            exit 1
+          fi
+          echo "Neon réveillée (HTTP 200)."

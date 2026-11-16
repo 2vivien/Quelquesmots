@@ -3,7 +3,7 @@
  * Chaque fonction lit/écrit la base Neon ; aucun état n'est gardé en mémoire.
  */
 import { createHash, randomUUID } from "node:crypto";
-import { and, asc, desc, eq, inArray, isNull, notInArray, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNull, notInArray, or, sql } from "drizzle-orm";
 import type { AuthUser } from "@/features/auth";
 import type { AuditEntry, SiteSettings } from "@/features/admin/types/admin.types";
 import type { AuthorProfile } from "@/features/authors/types/authors.types";
@@ -856,24 +856,36 @@ export async function toggleBlockUser(blockerId: string, targetUserId: string): 
 
 export async function toggleFollow(followerId: string, targetUserId: string): Promise<{ following: boolean }> {
   const db = getDatabase();
-  const existing = await db.select({ followerId: userFollows.followerId }).from(userFollows).where(and(eq(userFollows.followerId, followerId), eq(userFollows.followedId, targetUserId))).limit(1);
-  const following = existing.length === 0;
-  if (following) {
-    await db.insert(userFollows).values({ followerId, followedId: targetUserId }).onConflictDoNothing({ target: [userFollows.followerId, userFollows.followedId] });
-  } else {
-    await db.delete(userFollows).where(and(eq(userFollows.followerId, followerId), eq(userFollows.followedId, targetUserId)));
-  }
+  const actor = await findUserById(followerId);
+  const result = await db.transaction(async (tx) => {
+    const existing = await tx.select({ followerId: userFollows.followerId }).from(userFollows).where(and(eq(userFollows.followerId, followerId), eq(userFollows.followedId, targetUserId))).limit(1);
+    const following = existing.length === 0;
+    if (following) {
+      const inserted = await tx
+        .insert(userFollows)
+        .values({ followerId, followedId: targetUserId })
+        .onConflictDoNothing({ target: [userFollows.followerId, userFollows.followedId] })
+        .returning({ followerId: userFollows.followerId });
+      if (inserted.length > 0 && actor) {
+        await notify(targetUserId, "FOLLOW", { id: actor.id, username: actor.username, avatarUrl: actor.avatarUrl }, null, tx);
+      }
+    } else {
+      await tx.delete(userFollows).where(and(eq(userFollows.followerId, followerId), eq(userFollows.followedId, targetUserId)));
+    }
+    return { following };
+  });
   await invalidateCatalog();
-  return { following };
+  return result;
 }
 
 /* -------------------------------- Commentaires -------------------------------- */
 
 export async function toggleCommentLike(commentId: string, userId: string): Promise<{ liked: boolean; likeCount: number } | null> {
   const db = getDatabase();
+  const actor = await findUserById(userId);
   const result = await db.transaction(async (tx) => {
     const comment = await tx
-      .select({ id: comments.id })
+      .select({ id: comments.id, postId: comments.postId, authorId: comments.authorId })
       .from(comments)
       .where(eq(comments.id, commentId))
       .for("update")
@@ -887,7 +899,22 @@ export async function toggleCommentLike(commentId: string, userId: string): Prom
       .limit(1);
     const liked = existing.length === 0;
     if (liked) {
-      await tx.insert(commentLikes).values({ userId, commentId }).onConflictDoNothing({ target: [commentLikes.userId, commentLikes.commentId] });
+      const inserted = await tx
+        .insert(commentLikes)
+        .values({ userId, commentId })
+        .onConflictDoNothing({ target: [commentLikes.userId, commentLikes.commentId] })
+        .returning({ userId: commentLikes.userId });
+      if (inserted.length > 0 && actor && comment[0].authorId) {
+        const postRows = await tx
+          .select({ id: posts.id, title: posts.title })
+          .from(posts)
+          .where(eq(posts.id, comment[0].postId))
+          .limit(1);
+        const post = postRows[0];
+        if (post) {
+          await notify(comment[0].authorId, "COMMENT_LIKE", { id: actor.id, username: actor.username, avatarUrl: actor.avatarUrl }, { id: post.id, title: post.title }, tx, commentId);
+        }
+      }
     } else {
       await tx.delete(commentLikes).where(and(eq(commentLikes.userId, userId), eq(commentLikes.commentId, commentId)));
     }
@@ -985,10 +1012,10 @@ export async function addComment(input: {
     if (parent) {
       // Réponse : notification REPLY à l'auteur du parent (jamais à soi-même).
       if (parent.authorId && parent.authorId !== input.author.id) {
-        await notify(parent.authorId, "REPLY", actor, postSnapshot, tx);
+        await notify(parent.authorId, "REPLY", actor, postSnapshot, tx, id);
       }
     } else if (target.authorId && target.authorId !== input.author.id) {
-      await notify(target.authorId, "COMMENT", actor, postSnapshot, tx);
+      await notify(target.authorId, "COMMENT", actor, postSnapshot, tx, id);
     }
 
     return {
@@ -1047,6 +1074,9 @@ export async function hideComment(commentId: string, actor: AuthUser): Promise<"
   return result;
 }
 
+/** Fenêtre d'anti-doublon : un même événement réactivé dans les 24 h ne crée pas de ligne. */
+const NOTIFICATION_DEDUPE_WINDOW_MS = 24 * 60 * 60 * 1000;
+
 async function insertNotification(entry: {
   userId: string;
   type: NotificationKind;
@@ -1054,10 +1084,37 @@ async function insertNotification(entry: {
   actorAvatarUrl: string;
   actorId: string | null;
   postId: string | null;
+  commentId?: string | null;
   postTitle: string;
 }, tx?: DbTx): Promise<void> {
   if (entry.actorId && entry.userId === entry.actorId) return; // Pas de notification pour soi-même.
   const client = tx ?? getDatabase();
+  const now = new Date();
+  const windowStart = new Date(now.getTime() - NOTIFICATION_DEDUPE_WINDOW_MS);
+
+  // Retrait puis remise d'une même réaction : on réactive l'événement existant
+  // au lieu d'en perdre le fil ou d'en créer un doublon.
+  const existing = await client
+    .select({ id: notifications.id })
+    .from(notifications)
+    .where(and(
+      eq(notifications.userId, entry.userId),
+      eq(notifications.type, entry.type),
+      entry.actorId ? eq(notifications.actorId, entry.actorId) : isNull(notifications.actorId),
+      entry.postId ? eq(notifications.postId, entry.postId) : isNull(notifications.postId),
+      entry.commentId ? eq(notifications.commentId, entry.commentId) : isNull(notifications.commentId),
+      gte(notifications.createdAt, windowStart),
+    ))
+    .orderBy(desc(notifications.createdAt))
+    .limit(1);
+  if (existing[0]) {
+    await client
+      .update(notifications)
+      .set({ readAt: null, createdAt: now })
+      .where(eq(notifications.id, existing[0].id));
+    return;
+  }
+
   await client.insert(notifications).values({
     id: randomUUID(),
     userId: entry.userId,
@@ -1066,18 +1123,45 @@ async function insertNotification(entry: {
     actorUsername: entry.actorUsername,
     actorAvatarUrl: entry.actorAvatarUrl,
     postId: entry.postId,
+    commentId: entry.commentId ?? null,
     postTitle: entry.postTitle,
     readAt: null,
-    createdAt: new Date(),
+    createdAt: now,
   });
 }
 
-async function notify(userId: string, type: NotificationKind, actor: { id: string; username: string; avatarUrl: string }, post: { id: string; title: string }, tx?: DbTx): Promise<void> {
+async function notify(
+  userId: string,
+  type: NotificationKind,
+  actor: { id: string; username: string; avatarUrl: string },
+  post: { id: string; title: string } | null,
+  tx?: DbTx,
+  commentId?: string | null,
+): Promise<void> {
   if (userId === actor.id) return;
-  await insertNotification({ userId, type, actorUsername: actor.username, actorAvatarUrl: actor.avatarUrl, actorId: actor.id, postId: post.id, postTitle: post.title }, tx);
+  await insertNotification({
+    userId,
+    type,
+    actorUsername: actor.username,
+    actorAvatarUrl: actor.avatarUrl,
+    actorId: actor.id,
+    postId: post?.id ?? null,
+    postTitle: post?.title ?? "",
+    commentId: commentId ?? null,
+  }, tx);
 }
 
 /* -------------------------------- Notifications -------------------------------- */
+
+/** COUNT optimisé via l'index partiel notifications_user_unread_idx. */
+export async function countUnreadNotifications(userId: string): Promise<number> {
+  const db = getDatabase();
+  const rows = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(notifications)
+    .where(and(eq(notifications.userId, userId), isNull(notifications.readAt)));
+  return rows[0]?.count ?? 0;
+}
 
 export async function listNotifications(userId: string): Promise<NotificationItem[]> {
   const db = getDatabase();
@@ -1095,6 +1179,7 @@ export async function listNotifications(userId: string): Promise<NotificationIte
     actorAvatarUrl: row.actorAvatarUrl,
     postTitle: row.postTitle,
     postId: row.postId ?? "",
+    commentId: row.commentId,
     read: Boolean(row.readAt),
     createdAt: row.createdAt.toISOString(),
   }));

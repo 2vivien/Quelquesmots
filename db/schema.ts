@@ -29,7 +29,7 @@ export const postStatusEnum = pgEnum("post_status", ["DRAFT", "PUBLISHED", "UNDE
 export const commentStatusEnum = pgEnum("comment_status", ["VISIBLE", "HIDDEN_BY_AUTHOR", "HIDDEN_BY_MOD", "DELETED"]);
 export const reactionTypeEnum = pgEnum("reaction_type", ["LIKE", "DISLIKE"]);
 export const tagStatusEnum = pgEnum("tag_status", ["PENDING", "APPROVED", "BLOCKED"]);
-export const notificationTypeEnum = pgEnum("notification_type", ["LIKE", "COMMENT", "REPLY", "SHARE", "MENTION", "MODERATION"]);
+export const notificationTypeEnum = pgEnum("notification_type", ["LIKE", "COMMENT", "REPLY", "SHARE", "MENTION", "MODERATION", "COMMENT_LIKE", "FOLLOW"]);
 export const reportTargetTypeEnum = pgEnum("report_target_type", ["POST", "COMMENT", "USER"]);
 export const reportReasonEnum = pgEnum("report_reason", ["SPAM", "HARASSMENT", "HATE", "DANGER", "OTHER"]);
 export const reportStatusEnum = pgEnum("report_status", ["OPEN", "RESOLVED", "DISMISSED"]);
@@ -267,6 +267,7 @@ export const notifications = pgTable("notifications", {
   actorUsername: varchar("actor_username", { length: 32 }).notNull(),
   actorAvatarUrl: varchar("actor_avatar_url", { length: 512 }).notNull().default(""),
   postId: uuid("post_id").references(() => posts.id, { onDelete: "set null" }),
+  commentId: uuid("comment_id").references(() => comments.id, { onDelete: "set null" }),
   postTitle: varchar("post_title", { length: 120 }).notNull().default(""),
   readAt: timestampColumn("read_at"),
   createdAt: timestampColumn("created_at").notNull().defaultNow(),

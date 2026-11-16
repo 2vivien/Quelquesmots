@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { Bell } from "lucide-react";
-import { useNotifications } from "../hooks/useNotifications";
+import { useUnreadNotificationCount } from "../hooks/useUnreadNotificationCount";
 
 /**
- * Bouton cloche avec compteur numérique discret pour l'en-tête connecté.
+ * Bouton cloche avec pastille : consomme uniquement la route COUNT,
+ * jamais la liste complète des notifications (≤ 50 lignes).
  */
 export function BellBadge() {
-  const { unreadCount } = useNotifications();
+  const { unreadCount } = useUnreadNotificationCount();
   return (
     <Link
       href="/notifications"

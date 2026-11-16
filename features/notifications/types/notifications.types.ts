@@ -1,5 +1,13 @@
 /** Catégorie d'une notification. */
-export type NotificationKind = "LIKE" | "COMMENT" | "REPLY" | "SHARE" | "MENTION" | "MODERATION";
+export type NotificationKind =
+  | "LIKE"
+  | "COMMENT"
+  | "REPLY"
+  | "SHARE"
+  | "MENTION"
+  | "MODERATION"
+  | "COMMENT_LIKE"
+  | "FOLLOW";
 
 /** Onglet de filtrage de l'écran Notifications. */
 export type NotificationTab = "all" | "posts" | "mentions" | "interactions";
@@ -12,6 +20,7 @@ export interface NotificationItem {
   actorUsername: string;
   actorAvatarUrl: string;
   postId: string;
+  commentId: string | null;
   postTitle: string;
   read: boolean;
   createdAt: string;
@@ -20,5 +29,6 @@ export interface NotificationItem {
 /** Contrat du service de notifications. */
 export interface NotificationsService {
   list(userId: string): Promise<NotificationItem[]>;
+  unreadCount(): Promise<number>;
   markRead(ids: string[]): Promise<void>;
 }

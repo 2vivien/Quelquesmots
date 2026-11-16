@@ -8,7 +8,9 @@ import type { NotificationItem, NotificationKind } from "../types/notifications.
 const ACTION_TEXT: Record<NotificationKind, string> = {
   LIKE: "a aimé votre texte",
   COMMENT: "a commenté",
+  COMMENT_LIKE: "a aimé votre commentaire",
   REPLY: "a répondu à votre commentaire",
+  FOLLOW: "a commencé à vous suivre",
   SHARE: "a partagé votre texte",
   MENTION: "vous a mentionné",
   MODERATION: "décision de modération sur votre texte",
@@ -20,13 +22,16 @@ interface NotificationRowProps {
 }
 
 /**
- * Ligne d'une notification cliquable ouvrant le texte associé.
- * @param props Notification et callback de marquage comme lu.
+ * Ligne d'une notification cliquable ouvrant le texte associé, et le commentaire
+ * ciblé lorsqu'il existe (ancre #comment-{id}) — ≤ 50 lignes.
  */
 export function NotificationRow({ item, onRead }: NotificationRowProps) {
+  const href = item.postId
+    ? `/mots/${item.postId}${item.commentId ? `#comment-${item.commentId}` : ""}`
+    : "/notifications";
   return (
     <Link
-      href={item.postId ? `/mots/${item.postId}` : "/notifications"}
+      href={href}
       onClick={() => onRead(item.id)}
       className={`flex items-center gap-3.5 border-b border-bord py-4 transition-colors hover:bg-carte/70 ${item.read ? "opacity-75" : ""}`}
     >

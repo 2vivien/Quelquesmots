@@ -24,7 +24,10 @@ interface CommentItemProps {
 export function CommentItem({ comment, canHide, isReply = false, onReply, onLike, onHide }: CommentItemProps) {
   const { user } = useAuth();
   return (
-    <div className={`space-y-1.5 py-3 ${isReply ? "ml-8 border-l border-bord pl-4" : "border-b border-bord last:border-b-0"}`}>
+    <div
+      id={`comment-${comment.id}`}
+      className={`scroll-mt-24 space-y-1.5 py-3 ${isReply ? "ml-8 border-l border-bord pl-4" : "border-b border-bord last:border-b-0"}`}
+    >
       <div className="flex items-center justify-between gap-3 text-[13px] text-muted">
         <div className="flex min-w-0 items-center gap-2">
           <AuthorAvatar src={comment.authorAvatarUrl} alt={comment.authorUsername} size={24} />

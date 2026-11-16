@@ -5,10 +5,16 @@ import type { NotificationItem, NotificationsService } from "../types/notificati
 /** Implémentation réelle du service de notifications via API. */
 export const notificationsReal: NotificationsService = {
   async list(): Promise<NotificationItem[]> {
-    const res = await fetch(apiUrl("/api/notifications"));
+    const res = await fetch(apiUrl("/api/notifications"), { cache: "no-store" });
     if (!res.ok) throw new Error(await apiErrorMessage(res, "Impossible de charger les notifications."));
     const data = (await res.json()) as { items: NotificationItem[] };
     return data.items;
+  },
+  async unreadCount(): Promise<number> {
+    const res = await fetch(apiUrl("/api/notifications/unread-count"), { cache: "no-store" });
+    if (!res.ok) throw new Error(await apiErrorMessage(res, "Impossible de charger le compteur de notifications."));
+    const data = (await res.json()) as { count: number };
+    return data.count;
   },
   async markRead(ids: string[]): Promise<void> {
     const res = await fetch(apiUrl("/api/notifications/read"), {

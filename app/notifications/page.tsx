@@ -18,8 +18,8 @@ export default function NotificationsPage() {
   const filtered = items.filter((n) => {
     if (tab === "all") return true;
     if (tab === "mentions") return n.type === "MENTION";
-    if (tab === "posts") return n.type === "COMMENT" || n.type === "REPLY";
-    return n.type === "LIKE" || n.type === "SHARE";
+    if (tab === "posts") return n.type === "COMMENT" || n.type === "REPLY" || n.type === "COMMENT_LIKE";
+    return n.type === "LIKE" || n.type === "SHARE" || n.type === "FOLLOW";
   });
 
   return (

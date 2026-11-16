@@ -1,0 +1,4 @@
+ALTER TYPE "public"."notification_type" ADD VALUE 'COMMENT_LIKE';--> statement-breakpoint
+ALTER TYPE "public"."notification_type" ADD VALUE 'FOLLOW';--> statement-breakpoint
+ALTER TABLE "notifications" ADD COLUMN "comment_id" uuid;--> statement-breakpoint
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_comment_id_comments_id_fk" FOREIGN KEY ("comment_id") REFERENCES "public"."comments"("id") ON DELETE set null ON UPDATE no action;

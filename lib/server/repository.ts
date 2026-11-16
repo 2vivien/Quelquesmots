@@ -411,7 +411,12 @@ async function listFeedUncached(query: FeedQuery): Promise<FeedPage> {
   return { items, nextCursor };
 }
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** Un identifiant invalide est traité comme une ressource absente (404), pas comme une erreur SQL. */
+const isUuid = (value: string): boolean => UUID_PATTERN.test(value);
+
 async function getPostByIdUncached(id: string): Promise<PostRecord | null> {
+  if (!isUuid(id)) return null;
   const db = getDatabase();
   const rows = await db.select(postColumns).from(posts).where(eq(posts.id, id)).limit(1);
   if (rows.length === 0) return null;
@@ -420,12 +425,13 @@ async function getPostByIdUncached(id: string): Promise<PostRecord | null> {
 }
 
 async function getPostsByIdsUncached(ids: string[], viewerId?: string | null): Promise<PostSummary[]> {
-  if (ids.length === 0) return [];
+  const validIds = ids.filter(isUuid);
+  if (validIds.length === 0) return [];
   const db = getDatabase();
-  const rows = await db.select(postColumns).from(posts).where(inArray(posts.id, ids));
+  const rows = await db.select(postColumns).from(posts).where(inArray(posts.id, validIds));
   const mapped = await mapPostRowIds(rows);
   const byId = new Map(mapped.map((p) => [p.id, p]));
-  return ids.flatMap((id) => {
+  return validIds.flatMap((id) => {
     const post = byId.get(id);
     return post && canViewPost(post, viewerId) ? [stripPostContent(post)] : [];
   });
@@ -696,7 +702,7 @@ async function lockPostById(tx: DbTx, postId: string): Promise<{ id: string; aut
 export async function toggleLike(userId: string, postId: string): Promise<{ liked: boolean }> {
   const db = getDatabase();
   const actor = await findUserById(userId);
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     // Le verrou FOR UPDATE sérialise les réactions concurrentes sur ce texte.
     const post = await lockPostById(tx, postId);
     if (!post) return { liked: false };
@@ -722,11 +728,13 @@ export async function toggleLike(userId: string, postId: string): Promise<{ like
     }
     return { liked };
   });
+  await invalidateCatalog();
+  return result;
 }
 
 export async function toggleDislike(userId: string, postId: string): Promise<{ disliked: boolean }> {
   const db = getDatabase();
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     const post = await lockPostById(tx, postId);
     if (!post) return { disliked: false };
 
@@ -748,11 +756,13 @@ export async function toggleDislike(userId: string, postId: string): Promise<{ d
     }
     return { disliked };
   });
+  await invalidateCatalog();
+  return result;
 }
 
 export async function toggleBookmark(userId: string, postId: string): Promise<{ bookmarked: boolean }> {
   const db = getDatabase();
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     const post = await lockPostById(tx, postId);
     if (!post) return { bookmarked: false };
 
@@ -782,6 +792,8 @@ export async function toggleBookmark(userId: string, postId: string): Promise<{ 
     }
     return { bookmarked };
   });
+  await invalidateCatalog();
+  return result;
 }
 
 /** Hash de l'IP (ou du pseudonyme) pour la déduplication des vues. */
@@ -838,6 +850,7 @@ export async function toggleBlockUser(blockerId: string, targetUserId: string): 
   } else {
     await db.delete(userBlocks).where(and(eq(userBlocks.blockerId, blockerId), eq(userBlocks.blockedId, targetUserId)));
   }
+  await invalidateCatalog();
   return { blocked };
 }
 
@@ -850,6 +863,7 @@ export async function toggleFollow(followerId: string, targetUserId: string): Pr
   } else {
     await db.delete(userFollows).where(and(eq(userFollows.followerId, followerId), eq(userFollows.followedId, targetUserId)));
   }
+  await invalidateCatalog();
   return { following };
 }
 
@@ -857,7 +871,7 @@ export async function toggleFollow(followerId: string, targetUserId: string): Pr
 
 export async function toggleCommentLike(commentId: string, userId: string): Promise<{ liked: boolean; likeCount: number } | null> {
   const db = getDatabase();
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     const comment = await tx
       .select({ id: comments.id })
       .from(comments)
@@ -883,6 +897,8 @@ export async function toggleCommentLike(commentId: string, userId: string): Prom
       .where(eq(commentLikes.commentId, commentId));
     return { liked, likeCount: countRows[0]?.count ?? 0 };
   });
+  await invalidateCatalog();
+  return result;
 }
 
 export async function listComments(postId: string, viewerId?: string | null): Promise<CommentItemData[]> {
@@ -925,7 +941,7 @@ export async function addComment(input: {
   body: string;
 }): Promise<AddCommentResult> {
   const db = getDatabase();
-  return db.transaction(async (tx) => {
+  const result: AddCommentResult = await db.transaction(async (tx) => {
     const locked = await tx
       .select({ id: posts.id, authorId: posts.authorId, title: posts.title, commentsEnabled: posts.commentsEnabled })
       .from(posts)
@@ -992,11 +1008,13 @@ export async function addComment(input: {
       },
     };
   });
+  await invalidateCatalog();
+  return result;
 }
 
 export async function hideComment(commentId: string, actor: AuthUser): Promise<"ok" | "not-found" | "forbidden"> {
   const db = getDatabase();
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     const row = await tx
       .select({ id: comments.id, postId: comments.postId, authorId: comments.authorId, status: comments.status })
       .from(comments)
@@ -1025,6 +1043,8 @@ export async function hideComment(commentId: string, actor: AuthUser): Promise<"
     }
     return "ok";
   });
+  await invalidateCatalog();
+  return result;
 }
 
 async function insertNotification(entry: {
@@ -1462,6 +1482,7 @@ async function listTagsUncached(): Promise<TagItem[]> {
 }
 
 async function getTagByIdUncached(id: string): Promise<TagItem | null> {
+  if (!isUuid(id)) return null;
   return withCatalogCache(`tags:item:${id}`, async () => {
     const db = getDatabase();
     const rows = await db
@@ -1532,6 +1553,7 @@ async function listThemesUncached(query?: string): Promise<ThemeItem[]> {
 }
 
 async function getThemeByIdUncached(id: string): Promise<ThemeItem | null> {
+  if (!isUuid(id)) return null;
   return withCatalogCache(`themes:item:${id}`, async () => {
     const db = getDatabase();
     const rows = await db.select().from(themes).where(and(eq(themes.id, id), eq(themes.active, true))).limit(1);
@@ -1608,6 +1630,7 @@ async function listAuthorsUncached(query?: string): Promise<AuthorProfile[]> {
 }
 
 async function getAuthorByIdUncached(id: string): Promise<AuthorProfile | null> {
+  if (!isUuid(id)) return null;
   const db = getDatabase();
   const rows = await db
     .select(authorRowColumns)
@@ -1651,6 +1674,7 @@ export async function deleteAccount(userId: string): Promise<void> {
     await tx.update(comments).set({ status: "DELETED" as const, updatedAt: new Date() }).where(eq(comments.authorId, userId));
     await tx.delete(users).where(eq(users.id, userId));
   });
+  await invalidateCatalog();
 }
 
 /** Nombre de brouillons d'un auteur (limite produit : 50). */

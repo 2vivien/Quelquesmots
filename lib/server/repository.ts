@@ -61,6 +61,7 @@ const authColumns = {
   listedInDirectory: authorProfiles.listedInDirectory,
   showJoinDate: authorProfiles.showJoinDate,
   role: users.role,
+  status: users.status,
   onboarded: users.onboarded,
 };
 

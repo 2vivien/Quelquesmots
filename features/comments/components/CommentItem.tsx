@@ -15,13 +15,15 @@ interface CommentItemProps {
   onReply?: (rootId: string) => void;
   onLike: (commentId: string) => void;
   onHide: (id: string) => void;
+  likePending?: boolean;
+  hidePending?: boolean;
 }
 
 /**
  * Affiche un commentaire ou une réponse dans la discussion d'un texte.
  * @param props Données du commentaire et actions de like/réponse/masquage.
  */
-export function CommentItem({ comment, canHide, isReply = false, onReply, onLike, onHide }: CommentItemProps) {
+export function CommentItem({ comment, canHide, isReply = false, onReply, onLike, onHide, likePending = false, hidePending = false }: CommentItemProps) {
   const { user } = useAuth();
   return (
     <div
@@ -43,7 +45,7 @@ export function CommentItem({ comment, canHide, isReply = false, onReply, onLike
             </button>
           ) : null}
           {canHide ? (
-            <button type="button" onClick={() => onHide(comment.id)} className="hover:text-encre">Masquer</button>
+            <button type="button" onClick={() => onHide(comment.id)} disabled={hidePending} className="hover:text-encre disabled:opacity-50">Masquer</button>
           ) : null}
         </div>
       </div>
@@ -52,9 +54,10 @@ export function CommentItem({ comment, canHide, isReply = false, onReply, onLike
         <button
           type="button"
           onClick={() => (user ? onLike(comment.id) : openAuthPopup())}
+          disabled={likePending}
           aria-pressed={comment.likedByMe}
           aria-label={`${comment.likeCount} j'aime`}
-          className={`inline-flex min-h-[32px] items-center gap-1.5 rounded-full px-2 text-[13px] font-semibold tabular-nums transition-colors ${comment.likedByMe ? "bg-pilule text-encre" : "text-muted hover:bg-pilule hover:text-encre"}`}
+          className={`inline-flex min-h-[32px] items-center gap-1.5 rounded-full px-2 text-[13px] font-semibold tabular-nums transition-colors ${comment.likedByMe ? "bg-pilule text-encre" : "text-muted hover:bg-pilule hover:text-encre"} ${likePending ? "cursor-not-allowed opacity-60" : ""}`}
         >
           <ThumbsUp size={15} strokeWidth={1.75} className={comment.likedByMe ? "fill-encre text-encre" : ""} aria-hidden="true" />
           <span>{comment.likeCount}</span>

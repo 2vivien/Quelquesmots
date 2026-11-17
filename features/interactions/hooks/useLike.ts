@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { openAuthPopup } from "@/lib/open-auth";
 import { toast } from "sonner";
@@ -16,23 +17,33 @@ const EMPTY_STATE: InteractionState = {
   followedUserIds: [],
 };
 
-/** Hook optimiste gérant les likes, dislikes et leurs compteurs. */
+/**
+ * Hook optimiste gérant les likes/dislikes d'une publication.
+ *
+ * Source de vérité : l'état serveur (props `initialCount`/`initialDislikeCount` du rendu
+ * + valeurs canoniques renvoyées par l'API à chaque confirmation). Les mises à jour optimistes
+ * ajustent un compteur local ±1 ; celui-ci est ensuite réconcilié avec la valeur serveur.
+ * Aucune valeur dérivée de deux caches disjoints n'est plus utilisée pour afficher le compteur.
+ */
 export function useLike(postId: string, initialCount: number, initialDislikeCount = 0) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { data } = useInteractionState();
   const userId = user?.id ?? "guest";
   const key = ["interactions", userId];
-  const baseline = queryClient.getQueryData<InteractionState>(["interactions-baseline", userId]);
   const liked = data?.likedIds.includes(postId) ?? false;
   const disliked = data?.dislikedIds.includes(postId) ?? false;
-  const baselineLiked = baseline?.likedIds.includes(postId) ?? false;
-  const baselineDisliked = baseline?.dislikedIds.includes(postId) ?? false;
+
+  const [likeCount, setLikeCount] = useState(initialCount);
+  const [dislikeCount, setDislikeCount] = useState(initialDislikeCount);
+
   const likeMutation = useMutation({
     mutationFn: () => interactionsService.toggleLike(user!.id, postId),
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueryData<InteractionState>(key);
+      const currentLiked = previous?.likedIds.includes(postId) ?? liked;
+      const currentDisliked = previous?.dislikedIds.includes(postId) ?? disliked;
       queryClient.setQueryData<InteractionState>(key, (current) => {
         const state = current ?? EMPTY_STATE;
         const alreadyLiked = state.likedIds.includes(postId);
@@ -46,10 +57,18 @@ export function useLike(postId: string, initialCount: number, initialDislikeCoun
             : state.dislikedIds.filter((id) => id !== postId),
         };
       });
-      return { previous };
+      setLikeCount((count) => count + (currentLiked ? -1 : 1));
+      if (currentDisliked && !currentLiked) setDislikeCount((count) => count - 1);
+      return { previous, currentLiked, currentDisliked };
+    },
+    onSuccess: (result) => {
+      setLikeCount(result.likeCount);
+      setDislikeCount(result.dislikeCount);
     },
     onError: (_error, _variables, context) => {
       if (context?.previous) queryClient.setQueryData(key, context.previous);
+      setLikeCount(initialCount);
+      setDislikeCount(initialDislikeCount);
       toast.error("Impossible d'enregistrer votre réaction.");
     },
     onSettled: () => {
@@ -63,6 +82,8 @@ export function useLike(postId: string, initialCount: number, initialDislikeCoun
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueryData<InteractionState>(key);
+      const currentDisliked = previous?.dislikedIds.includes(postId) ?? disliked;
+      const currentLiked = previous?.likedIds.includes(postId) ?? liked;
       queryClient.setQueryData<InteractionState>(key, (current) => {
         const state = current ?? EMPTY_STATE;
         const alreadyDisliked = state.dislikedIds.includes(postId);
@@ -76,10 +97,18 @@ export function useLike(postId: string, initialCount: number, initialDislikeCoun
             : state.likedIds.filter((id) => id !== postId),
         };
       });
+      setDislikeCount((count) => count + (currentDisliked ? -1 : 1));
+      if (currentLiked && !currentDisliked) setLikeCount((count) => count - 1);
       return { previous };
+    },
+    onSuccess: (result) => {
+      setLikeCount(result.likeCount);
+      setDislikeCount(result.dislikeCount);
     },
     onError: (_error, _variables, context) => {
       if (context?.previous) queryClient.setQueryData(key, context.previous);
+      setLikeCount(initialCount);
+      setDislikeCount(initialDislikeCount);
       toast.error("Impossible d'enregistrer votre réaction.");
     },
     onSettled: () => {
@@ -99,9 +128,10 @@ export function useLike(postId: string, initialCount: number, initialDislikeCoun
   return {
     liked,
     disliked,
-    count: initialCount + Number(liked) - Number(baselineLiked),
-    dislikeCount: initialDislikeCount + Number(disliked) - Number(baselineDisliked),
+    count: Math.max(0, likeCount),
+    dislikeCount: Math.max(0, dislikeCount),
     toggle: () => guard(() => !likeMutation.isPending && likeMutation.mutate()),
     toggleDislike: () => guard(() => !dislikeMutation.isPending && dislikeMutation.mutate()),
+    pending: likeMutation.isPending || dislikeMutation.isPending,
   };
 }

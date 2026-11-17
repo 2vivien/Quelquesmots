@@ -2,6 +2,7 @@
 
 import { useThemes } from "@/features/themes";
 import { countGraphemes } from "@/lib/sanitize";
+import { STUDIO_LIMITS } from "../schemas/publish.schema";
 import { usePublish } from "../hooks/usePublish";
 import { useStudioDraft } from "../hooks/useStudioDraft";
 import { useStudioStore } from "../stores/studio.store";
@@ -21,7 +22,8 @@ export function StudioScreen({ draftId }: { draftId?: string }) {
   const { saveNow, applyDoc } = useStudioDraft(draftId);
   const { publishing, publish } = usePublish(saveNow);
   const ready = store.loadStatus === "ready";
-  const canPublish = ready && store.title.trim().length >= 3 && countGraphemes(store.contentText) >= 20 && store.themeIds.length >= 1 && store.themeIds.length <= 5;
+  const bodyLength = countGraphemes(store.contentText);
+  const canPublish = ready && store.title.trim().length >= 3 && bodyLength >= 20 && bodyLength <= STUDIO_LIMITS.BODY_MAX && store.themeIds.length >= 1 && store.themeIds.length <= 5;
 
   return (
     <div className="mx-auto max-w-[720px] space-y-6">

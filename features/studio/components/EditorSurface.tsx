@@ -7,6 +7,7 @@ import StarterKit from "@tiptap/starter-kit";
 import { Bold, Italic, Quote } from "lucide-react";
 import { useEffect } from "react";
 import type { TiptapDoc } from "@/types";
+import { countGraphemes } from "@/lib/sanitize";
 import { STUDIO_LIMITS } from "../schemas/publish.schema";
 
 /** Surface d'écriture Tiptap avec barre discrète et limite à 50 000 caractères. */
@@ -15,7 +16,7 @@ export function EditorSurface({ content, onUpdate, ready = true }: { content: Ti
     extensions: [
       StarterKit.configure({ heading: false, codeBlock: false, bulletList: false, orderedList: false }),
       Placeholder.configure({ placeholder: "Commencez à écrire…" }),
-      CharacterCount.configure({ limit: STUDIO_LIMITS.BODY_MAX }),
+      CharacterCount.configure({ limit: STUDIO_LIMITS.BODY_MAX, textCounter: (text) => countGraphemes(text) }),
     ],
     content,
     immediatelyRender: false,

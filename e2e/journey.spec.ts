@@ -1,9 +1,15 @@
 import { test, expect } from "@playwright/test";
+import { cleanupE2eTestData, createPublishedPost, signInMockUser, uniqueTag } from "./helpers";
 
 /**
  * Parcours public de Quelquesmots sur la branche Neon de l'app.
- * Suppose qu'au moins un texte est publié (contenu réel de la base — adapter si la base est remise à zéro).
+ * Les scénarios de recherche créent leur propre texte (mot unique) : ils ne dépendent
+ * pas du contenu présent dans la base au moment du run.
  */
+
+test.afterAll(async () => {
+  await cleanupE2eTestData();
+});
 
 test("l'accueil affiche le fil avec au moins un texte publié", async ({ page }) => {
   await page.goto("/", { waitUntil: "networkidle", timeout: 60_000 });
@@ -21,15 +27,28 @@ test("la page d'un texte publié s'ouvre et affiche le contenu", async ({ page }
   await expect(page.locator("main, article").first()).toBeVisible({ timeout: 30_000 });
 });
 
-test("la recherche plein-texte retrouve le texte publié", async ({ page }) => {
-  await page.goto("/recherche?q=calme");
+test("la recherche plein-texte retrouve le texte publié", async ({ page, request }) => {
+  const author = await signInMockUser(request, uniqueTag("fts-auteur-"));
+  const mot = `sereinite${Date.now().toString(36)}`;
+  await createPublishedPost(request, author.sessionCookie, {
+    title: "Texte de recherche e2e",
+    body: `Une matinée d'une grande ${mot} au bord de l'eau, sans bruit ni presse.`,
+  });
+
+  await page.goto(`/recherche?q=${mot}`);
   await expect(page.getByRole("searchbox", { name: "Rechercher un mot, un thème, un auteur…" })).toBeVisible();
-  // Le backfill FTS (index posts_fts_fr) doit remonter "Un dimanche au bord de la rivière".
   await expect(page.locator('a[href^="/mots/"]').first()).toBeVisible({ timeout: 30_000 });
 });
 
 test("l'API de recherche renvoie des résultats FTS", async ({ request }) => {
-  const res = await request.get("/api/search?q=calme&tab=posts");
+  const author = await signInMockUser(request, uniqueTag("fts-api-"));
+  const mot = `harmonie${Date.now().toString(36)}`;
+  await createPublishedPost(request, author.sessionCookie, {
+    title: "Texte API recherche e2e",
+    body: `Une ${mot} retrouvée au détour d'une phrase, comme une musique calme.`,
+  });
+
+  const res = await request.get(`/api/search?q=${mot}&tab=posts`);
   expect(res.ok()).toBe(true);
   const body = (await res.json()) as { items: Array<{ kind: string }> };
   expect(body.items.length).toBeGreaterThan(0);

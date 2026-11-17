@@ -61,6 +61,7 @@ const authColumns = {
   listedInDirectory: authorProfiles.listedInDirectory,
   showJoinDate: authorProfiles.showJoinDate,
   role: users.role,
+  status: users.status,
   onboarded: users.onboarded,
 };
 
@@ -865,7 +866,7 @@ export function viewerKeyFromIp(ip: string): string {
 
 export async function recordView(postId: string, viewerKey: string): Promise<boolean> {
   const db = getDatabase();
-  return db.transaction(async (tx) => {
+  const counted = await db.transaction(async (tx) => {
     const post = await tx
       .select({ id: posts.id })
       .from(posts)
@@ -896,6 +897,8 @@ export async function recordView(postId: string, viewerKey: string): Promise<boo
     await tx.update(posts).set({ viewCount: sql`${posts.viewCount} + 1` }).where(eq(posts.id, postId));
     return true;
   });
+  if (counted) await invalidateCatalog();
+  return counted;
 }
 
 export async function toggleBlockUser(blockerId: string, targetUserId: string): Promise<{ blocked: boolean }> {
@@ -1413,6 +1416,7 @@ export async function updateSettings(next: SiteSettings, updatedBy?: string | nu
     .insert(siteSettings)
     .values({ id: 1, maxChars: next.maxChars, minChars: next.minChars, maxTags: next.maxTags, dailyPublishLimit: next.dailyPublishLimit, updatedBy: updatedBy ?? null, updatedAt: new Date() })
     .onConflictDoUpdate({ target: siteSettings.id, set: { maxChars: next.maxChars, minChars: next.minChars, maxTags: next.maxTags, dailyPublishLimit: next.dailyPublishLimit, updatedBy: updatedBy ?? null, updatedAt: new Date() } });
+  await invalidateCatalog();
   return { maxChars: next.maxChars, minChars: next.minChars, maxTags: next.maxTags, dailyPublishLimit: next.dailyPublishLimit };
 }
 

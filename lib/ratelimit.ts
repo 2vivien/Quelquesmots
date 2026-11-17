@@ -74,12 +74,16 @@ async function checkRateLimitPostgres(key: string, limit: number, windowMs: numb
  * @param key Identifiant unique (utilisateur, route, action).
  * @param limit Nombre d'appels autorisés dans la fenêtre.
  * @param windowMs Durée de la fenêtre en millisecondes.
- * @returns `true` si la requête est autorisée, `false` si la limite est dépassée.
+ * @param critical Si `true` (routes sensibles : auth, publications, uploads, compte…), un échec
+ *                 total Redis+PostgreSQL ferme la requête au lieu de laisser passer l'abus.
+ *                 Si `false` (lectures non destructives), l'incident est loggé et autorisé.
+ * @returns `true` si la requête est autorisée, `false` si la limite est dépassée ou si le contrôle est indisponible en mode critique.
  */
 export async function checkRateLimit(
   key: string,
   limit: number,
   windowMs: number,
+  critical = false,
 ): Promise<boolean> {
   const limiter = getUpstashLimiter(limit, windowMs);
   if (limiter) {
@@ -87,14 +91,14 @@ export async function checkRateLimit(
       const res = await limiter.limit(key);
       return res.success;
     } catch (error) {
-      console.error("Upstash Redis indisponible (fail-open) :", error);
-      return true;
+      // Redis indisponible : on tente le repli PostgreSQL.
+      console.error(`Rate limit Redis down${critical ? " (critical)" : ""} :`, error);
     }
   }
   try {
     return await checkRateLimitPostgres(key, limit, windowMs);
   } catch (error) {
-    console.error("Limitation de débit indisponible (fail-open) :", error);
-    return true;
+    console.error(`Rate limit indisponible${critical ? " (critical)" : ""} :`, error);
+    return critical ? false : true;
   }
 }

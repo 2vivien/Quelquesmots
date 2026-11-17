@@ -12,6 +12,7 @@ export interface AuthUser {
   listedInDirectory: boolean;
   showJoinDate: boolean;
   role: UserRole;
+  status: "ACTIVE" | "SUSPENDED" | "BANNED";
   onboarded: boolean;
 }
 

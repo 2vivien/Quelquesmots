@@ -8,7 +8,7 @@ import { rateLimit } from "@/lib/server/http";
 export async function DELETE(req: NextRequest) {
   const auth = await requireUser(req);
   if (!auth.ok) return auth.response;
-  const limited = await rateLimit(`delete-account:${auth.user.id}`, 3, 3_600_000);
+  const limited = await rateLimit(`delete-account:${auth.user.id}`, 3, 3_600_000, true);
   if (limited) return limited;
   await deleteAccount(auth.user.id);
   const res = NextResponse.json({ ok: true });

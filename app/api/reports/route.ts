@@ -8,7 +8,7 @@ import { reportCreateSchema } from "@/lib/server/schemas";
 export async function POST(req: NextRequest) {
   const auth = await requireUser(req);
   if (!auth.ok) return auth.response;
-  const limited = await rateLimit(`report:${auth.user.id}`, 20, 86_400_000);
+  const limited = await rateLimit(`report:${auth.user.id}`, 20, 86_400_000, true);
   if (limited) return limited;
   const body = await parseJsonBody(req, reportCreateSchema);
   if (!body.ok) return body.response;

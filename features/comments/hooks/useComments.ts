@@ -36,6 +36,7 @@ export function useComments(postId: string) {
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["comments", postId] });
+      void qc.invalidateQueries({ queryKey: ["feed"] });
       toast.success("Commentaire publié");
     },
     onError: (err: Error) => toast.error(err.message),
@@ -43,7 +44,10 @@ export function useComments(postId: string) {
 
   const hideMutation = useMutation({
     mutationFn: (commentId: string) => commentsService.hideComment(commentId),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["comments", postId] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["comments", postId] });
+      void qc.invalidateQueries({ queryKey: ["feed"] });
+    },
   });
 
   const likeMutation = useMutation({

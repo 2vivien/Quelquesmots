@@ -16,10 +16,13 @@ export async function getSessionUser(req: NextRequest): Promise<AuthUser | null>
   return findUserById(userId);
 }
 
-/** Exige un utilisateur connecté ; renvoie 401 sinon. */
+/** Exige un utilisateur connecté ; renvoie 401 sinon ou un compte suspendu/banni. */
 export async function requireUser(req: NextRequest): Promise<AuthResult> {
   const user = await getSessionUser(req);
   if (!user) return { ok: false, response: unauthorized() };
+  if (user.status !== "ACTIVE") {
+    return { ok: false, response: forbidden("Votre compte n'est pas autorisé à effectuer cette action.") };
+  }
   return { ok: true, user };
 }
 

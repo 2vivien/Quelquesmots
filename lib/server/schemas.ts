@@ -70,7 +70,7 @@ export const adminPostPatchSchema = z.object({
 
 /** Paramètres globaux du site. */
 export const siteSettingsSchema = z.object({
-  maxChars: z.number().int().min(100).max(5_000),
+  maxChars: z.number().int().min(100).max(50_000),
   minChars: z.number().int().min(1).max(500),
   maxTags: z.number().int().min(1).max(10),
   dailyPublishLimit: z.number().int().min(1).max(100),

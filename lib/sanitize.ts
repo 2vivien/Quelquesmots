@@ -73,11 +73,27 @@ function collectNodeText(node: TiptapNode): string {
     : inner;
 }
 
+/** Compte les graphèmes Unicode (Intl.Segmenter si disponible, sinon points de code). */
+export function countGraphemes(text: string): number {
+  const Segmenter = (Intl as unknown as { Segmenter?: typeof Intl.Segmenter }).Segmenter;
+  if (Segmenter) {
+    try {
+      const segmenter = new Segmenter("fr", { granularity: "grapheme" });
+      return Array.from(segmenter.segment(text)).length;
+    } catch {
+      // Segmentation en échec — repli sur les points de code Unicode.
+    }
+  }
+  return Array.from(text).length;
+}
+
 /**
  * Extrait le texte brut d'un document Tiptap pour la recherche et le compteur.
+ * Les espaces au début/à la fin et les lignes vides font partie du texte (le document
+ * est la source de vérité — aucune normalisation .trim() ici).
  * @param doc Document Tiptap.
  * @returns Texte brut sans balisage.
  */
 export function extractPlainText(doc: TiptapDoc): string {
-  return doc.content.map(collectNodeText).join("\n").trim();
+  return doc.content.map(collectNodeText).join("").replace(/\n+$/g, "");
 }

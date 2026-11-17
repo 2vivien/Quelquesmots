@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { countGraphemes } from "@/lib/sanitize";
 
 /** Limites de publication éditoriale. */
 export const STUDIO_LIMITS = {
@@ -10,18 +11,28 @@ export const STUDIO_LIMITS = {
   THEMES_MAX: 5,
 } as const;
 
-/** Schéma Zod de validation stricte avant publication (1 à 5 thèmes obligatoires, visibilité Tout le monde ou Privé). */
+/** Schéma Zod de validation stricte avant publication (comptage en graphèmes Unicode). */
 export const publishSchema = z.object({
   title: z
     .string()
     .trim()
     .min(STUDIO_LIMITS.TITLE_MIN, "Le titre doit contenir au moins 3 caractères.")
-    .max(STUDIO_LIMITS.TITLE_MAX, "Le titre ne doit pas dépasser 120 caractères."),
+    .superRefine((title, ctx) => {
+      if (countGraphemes(title) > STUDIO_LIMITS.TITLE_MAX) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Le titre ne doit pas dépasser 120 caractères." });
+      }
+    }),
   contentText: z
     .string()
-    .trim()
-    .min(STUDIO_LIMITS.BODY_MIN, "Votre texte doit contenir au moins 20 caractères.")
-    .max(STUDIO_LIMITS.BODY_MAX, "Votre texte dépasse la limite de 50 000 caractères."),
+    .superRefine((text, ctx) => {
+      const graphemes = countGraphemes(text);
+      if (graphemes < STUDIO_LIMITS.BODY_MIN) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Votre texte doit contenir au moins 20 caractères." });
+      }
+      if (graphemes > STUDIO_LIMITS.BODY_MAX) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Votre texte dépasse la limite de 50 000 caractères." });
+      }
+    }),
   themeIds: z
     .array(z.string().uuid())
     .min(STUDIO_LIMITS.THEMES_MIN, "Choisissez au moins 1 thème.")

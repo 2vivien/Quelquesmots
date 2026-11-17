@@ -15,6 +15,7 @@ export function buildDraftPayload(
 ): Partial<PostRecord> & { authorId: string } {
   const cleanJson = sanitizeTiptapDoc(state.contentJson);
   const plain = extractPlainText(cleanJson);
+  const excerpt = plain.replace(/\n+/g, " ").trim().slice(0, 140);
   return {
     id: state.draftId ?? undefined,
     authorId: user.id,
@@ -24,7 +25,7 @@ export function buildDraftPayload(
     authorAvatarUrl: user.avatarUrl,
     publishAs: user.defaultPublishAs,
     title: state.title.trim() || "Sans titre",
-    excerpt: plain.slice(0, 140),
+    excerpt,
     contentJson: cleanJson,
     contentText: plain,
     tagIds: state.themeIds,

@@ -1,6 +1,7 @@
 /** Schémas Zod des entrées des routes API (messages d'erreur en français). */
 import "./zod-fr";
 import { z } from "zod";
+import { countGraphemes } from "@/lib/sanitize";
 import { profileSchema } from "@/features/settings/schemas/profile.schema";
 
 const shortId = z.string().uuid("Identifiant invalide.");
@@ -11,7 +12,14 @@ export const draftUpsertSchema = z.object({
   title: z.string().trim().max(120).optional(),
   excerpt: z.string().trim().max(280).optional(),
   contentJson: z.unknown().optional(),
-  contentText: z.string().max(5_000).optional(),
+  contentText: z
+    .string()
+    .superRefine((text, ctx) => {
+      if (countGraphemes(text) > 50_000) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Votre texte dépasse la limite de 50 000 caractères." });
+      }
+    })
+    .optional(),
   publishAs: z.enum(["USERNAME", "REAL_NAME", "ANONYMOUS"]).optional(),
   visibility: z.enum(["PUBLIC", "PRIVATE"]).optional(),
   themeIds: z.array(z.string().uuid()).max(5).optional(),

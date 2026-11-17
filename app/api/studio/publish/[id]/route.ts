@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireUser } from "@/lib/server/auth";
 import { getPostById, getSettings, publishPost } from "@/lib/server/repository";
 import { badRequest, notFound, rateLimit, jsonError } from "@/lib/server/http";
+import { countGraphemes } from "@/lib/sanitize";
 
 const paramsSchema = z.object({ id: z.string().uuid("Identifiant invalide.") });
 
@@ -24,10 +25,11 @@ export async function POST(
   }
   const settings = await getSettings();
   const title = draft.title.trim();
-  if (title.length < 3 || title.length > 120) {
+  const titleLength = countGraphemes(title);
+  if (titleLength < 3 || titleLength > 120) {
     return badRequest("Le titre doit contenir entre 3 et 120 caractères.");
   }
-  const bodyLength = draft.contentText.trim().length;
+  const bodyLength = countGraphemes(draft.contentText);
   if (bodyLength < settings.minChars) {
     return badRequest(`Votre texte doit contenir au moins ${settings.minChars} caractères.`);
   }

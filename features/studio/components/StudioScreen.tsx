@@ -1,6 +1,7 @@
 "use client";
 
 import { useThemes } from "@/features/themes";
+import { countGraphemes } from "@/lib/sanitize";
 import { usePublish } from "../hooks/usePublish";
 import { useStudioDraft } from "../hooks/useStudioDraft";
 import { useStudioStore } from "../stores/studio.store";
@@ -19,7 +20,7 @@ export function StudioScreen({ draftId }: { draftId?: string }) {
   const { data: themes = [] } = useThemes();
   const { saveNow, applyDoc } = useStudioDraft(draftId);
   const { publishing, publish } = usePublish(saveNow);
-  const canPublish = store.title.trim().length >= 3 && store.contentText.trim().length >= 20 && store.themeIds.length >= 1 && store.themeIds.length <= 5;
+  const canPublish = store.title.trim().length >= 3 && countGraphemes(store.contentText) >= 20 && store.themeIds.length >= 1 && store.themeIds.length <= 5;
 
   return (
     <div className="mx-auto max-w-[720px] space-y-6">
@@ -34,7 +35,7 @@ export function StudioScreen({ draftId }: { draftId?: string }) {
             <ThemePicker selected={store.themeIds} onChange={(v) => store.setField("themeIds", v)} />
             <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
               <VisibilitySelect value={store.visibility} onChange={(v) => store.setField("visibility", v)} />
-              <CharCounter length={store.contentText.length} />
+              <CharCounter length={countGraphemes(store.contentText)} />
             </div>
           </div>
         </div>

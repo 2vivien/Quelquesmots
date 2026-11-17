@@ -13,7 +13,6 @@ import {
   ReaderHeader,
   ReaderHero,
   RelatedPosts,
-  ViewTrackerMount,
 } from "@/features/reader";
 
 export const dynamic = "force-dynamic";
@@ -60,7 +59,6 @@ export default async function PostReaderPage({ params }: PostPageProps) {
 
   return (
     <article className="mx-auto max-w-[680px] space-y-8">
-      <ViewTrackerMount postId={post.id} authorId={post.authorId} />
       <ReaderHero imageUrl={post.heroImageUrl} alt={post.title} />
       <ReaderHeader
         post={post}

@@ -60,5 +60,8 @@ export function useComments(postId: string) {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  return { comments: query.data ?? [], isLoading: query.isLoading, addMutation, hideMutation, likeMutation };
+  const hidePending = hideMutation.isPending;
+  const likePending = likeMutation.isPending;
+
+  return { comments: query.data ?? [], isLoading: query.isLoading, addMutation, hideMutation, likeMutation, hidePending, likePending };
 }

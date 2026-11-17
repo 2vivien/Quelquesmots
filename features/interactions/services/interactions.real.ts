@@ -21,11 +21,11 @@ export const interactionsReal: InteractionsService = {
     if (!res.ok) throw new Error(await readErrorMessage(res, "Impossible de charger vos interactions."));
     return (await res.json()) as InteractionState;
   },
-  async toggleLike(_userId: string, postId: string): Promise<{ liked: boolean }> {
-    return togglePost(`/api/posts/${encodeURIComponent(postId)}/like`, "Impossible d'enregistrer votre réaction.");
+  async toggleLike(_userId: string, postId: string): Promise<{ liked: boolean; likeCount: number; dislikeCount: number }> {
+    return togglePost<{ liked: boolean; likeCount: number; dislikeCount: number }>(`/api/posts/${encodeURIComponent(postId)}/like`, "Impossible d'enregistrer votre réaction.");
   },
-  async toggleDislike(_userId: string, postId: string): Promise<{ disliked: boolean }> {
-    return togglePost(`/api/posts/${encodeURIComponent(postId)}/dislike`, "Impossible d'enregistrer votre réaction.");
+  async toggleDislike(_userId: string, postId: string): Promise<{ disliked: boolean; likeCount: number; dislikeCount: number }> {
+    return togglePost<{ disliked: boolean; likeCount: number; dislikeCount: number }>(`/api/posts/${encodeURIComponent(postId)}/dislike`, "Impossible d'enregistrer votre réaction.");
   },
   async toggleBookmark(_userId: string, postId: string): Promise<{ bookmarked: boolean }> {
     return togglePost(`/api/posts/${encodeURIComponent(postId)}/bookmark`, "Impossible de mettre à jour la bibliothèque.");

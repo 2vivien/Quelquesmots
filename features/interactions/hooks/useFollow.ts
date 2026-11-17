@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { openAuthPopup } from "@/lib/open-auth";
 import { toast } from "sonner";
@@ -9,10 +10,9 @@ import type { InteractionState } from "../types/interactions.types";
 import { useInteractionState } from "./useInteractionState";
 
 /**
- * Hook optimiste de suivi d'un auteur et calcul du nombre de suivis.
- * @param targetUserId Identifiant de l'auteur cible.
- * @param baseCount Nombre de suivis initial issu du profil auteur.
- * @param authorLabel Nom affiché pour la confirmation.
+ * Hook optimiste de suivi d'un auteur. Le compteur suit la même logique que useLike :
+ * l'état React Query d'interactions porte la vérité utilisateur ;
+ * le delta optimiste est purgé à la confirmation serveur / annulation.
  */
 export function useFollow(targetUserId: string, baseCount = 0, authorLabel?: string) {
   const { user } = useAuth();
@@ -20,10 +20,10 @@ export function useFollow(targetUserId: string, baseCount = 0, authorLabel?: str
   const { data } = useInteractionState();
   const userId = user?.id ?? "guest";
   const key = ["interactions", userId];
-  const baseline = queryClient.getQueryData<InteractionState>(["interactions-baseline", userId]);
   const isSelf = Boolean(user && user.id === targetUserId);
   const following = data?.followedUserIds.includes(targetUserId) ?? false;
-  const baselineFollowing = baseline?.followedUserIds.includes(targetUserId) ?? false;
+
+  const [followDelta, setFollowDelta] = useState(0);
 
   const mutation = useMutation({
     mutationFn: () => {
@@ -33,6 +33,7 @@ export function useFollow(targetUserId: string, baseCount = 0, authorLabel?: str
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueryData<InteractionState>(key);
+      const currentFollowing = previous?.followedUserIds.includes(targetUserId) ?? following;
       queryClient.setQueryData<InteractionState>(key, (current) => {
         const state = current ?? {
           likedIds: [],
@@ -49,6 +50,7 @@ export function useFollow(targetUserId: string, baseCount = 0, authorLabel?: str
             : [...state.followedUserIds, targetUserId],
         };
       });
+      setFollowDelta((delta) => delta + (currentFollowing ? -1 : 1));
       return { previous };
     },
     onSuccess: (result) => {
@@ -60,6 +62,7 @@ export function useFollow(targetUserId: string, baseCount = 0, authorLabel?: str
     },
     onError: (_error, _variables, context) => {
       if (context?.previous) queryClient.setQueryData(key, context.previous);
+      setFollowDelta(0);
       toast.error("Impossible de mettre à jour le suivi.");
     },
     onSettled: () => {
@@ -80,7 +83,8 @@ export function useFollow(targetUserId: string, baseCount = 0, authorLabel?: str
   return {
     following,
     isSelf,
-    count: baseCount + Number(following) - Number(baselineFollowing),
+    count: Math.max(0, baseCount + followDelta),
     toggle,
+    pending: mutation.isPending,
   };
 }

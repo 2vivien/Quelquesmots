@@ -757,13 +757,13 @@ async function lockPostById(tx: DbTx, postId: string): Promise<{ id: string; aut
   return rows[0] ?? null;
 }
 
-export async function toggleLike(userId: string, postId: string): Promise<{ liked: boolean }> {
+export async function toggleLike(userId: string, postId: string): Promise<{ liked: boolean; likeCount: number; dislikeCount: number }> {
   const db = getDatabase();
   const actor = await findUserById(userId);
   const result = await db.transaction(async (tx) => {
     // Le verrou FOR UPDATE sérialise les réactions concurrentes sur ce texte.
     const post = await lockPostById(tx, postId);
-    if (!post) return { liked: false };
+    if (!post) return { liked: false, likeCount: 0, dislikeCount: 0 };
 
     const existingRows = await tx
       .select({ reaction: postReactions.reaction })
@@ -784,17 +784,27 @@ export async function toggleLike(userId: string, postId: string): Promise<{ like
     } else {
       await deleteReactionAndAdjustCounter(tx, userId, postId, "LIKE");
     }
-    return { liked };
+
+    const counters = await tx
+      .select({ likeCount: posts.likeCount, dislikeCount: posts.dislikeCount })
+      .from(posts)
+      .where(eq(posts.id, postId))
+      .limit(1);
+    return {
+      liked,
+      likeCount: counters[0]?.likeCount ?? 0,
+      dislikeCount: counters[0]?.dislikeCount ?? 0,
+    };
   });
   await invalidateCatalog();
   return result;
 }
 
-export async function toggleDislike(userId: string, postId: string): Promise<{ disliked: boolean }> {
+export async function toggleDislike(userId: string, postId: string): Promise<{ disliked: boolean; likeCount: number; dislikeCount: number }> {
   const db = getDatabase();
   const result = await db.transaction(async (tx) => {
     const post = await lockPostById(tx, postId);
-    if (!post) return { disliked: false };
+    if (!post) return { disliked: false, likeCount: 0, dislikeCount: 0 };
 
     const existingRows = await tx
       .select({ reaction: postReactions.reaction })
@@ -812,8 +822,20 @@ export async function toggleDislike(userId: string, postId: string): Promise<{ d
     } else {
       await deleteReactionAndAdjustCounter(tx, userId, postId, "DISLIKE");
     }
-    return { disliked };
+
+    const counters = await tx
+      .select({ likeCount: posts.likeCount, dislikeCount: posts.dislikeCount })
+      .from(posts)
+      .where(eq(posts.id, postId))
+      .limit(1);
+    return {
+      disliked,
+      likeCount: counters[0]?.likeCount ?? 0,
+      dislikeCount: counters[0]?.dislikeCount ?? 0,
+    };
   });
+  await invalidateCatalog();
+  return result;
   await invalidateCatalog();
   return result;
 }

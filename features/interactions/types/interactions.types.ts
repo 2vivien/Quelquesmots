@@ -10,8 +10,8 @@ export interface InteractionState {
 /** Contrat du service d'interactions sociales. */
 export interface InteractionsService {
   getUserState(userId: string): Promise<InteractionState>;
-  toggleLike(userId: string, postId: string): Promise<{ liked: boolean }>;
-  toggleDislike(userId: string, postId: string): Promise<{ disliked: boolean }>;
+  toggleLike(userId: string, postId: string): Promise<{ liked: boolean; likeCount: number; dislikeCount: number }>;
+  toggleDislike(userId: string, postId: string): Promise<{ disliked: boolean; likeCount: number; dislikeCount: number }>;
   toggleBookmark(userId: string, postId: string): Promise<{ bookmarked: boolean }>;
   recordView(postId: string): Promise<boolean>;
   toggleBlockUser(blockerId: string, targetUserId: string): Promise<{ blocked: boolean }>;

@@ -10,7 +10,7 @@ import { openAuthPopup } from "@/lib/open-auth";
 /** Section commentaires sous un texte lu. */
 export function CommentList({ postId, postAuthorId, commentsEnabled }: { postId: string; postAuthorId: string; commentsEnabled: boolean }) {
   const { user } = useAuth();
-  const { comments, addMutation, hideMutation, likeMutation } = useComments(postId);
+  const { comments, addMutation, hideMutation, likeMutation, hidePending, likePending } = useComments(postId);
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
@@ -32,9 +32,14 @@ export function CommentList({ postId, postAuthorId, commentsEnabled }: { postId:
             replyToId={replyTo}
             onCancelReply={() => setReplyTo(null)}
             disabled={addMutation.isPending}
-            onSubmit={(body) => {
-              addMutation.mutate({ body, parentId: replyTo });
-              setReplyTo(null);
+            onSubmit={async (body) => {
+              try {
+                await addMutation.mutateAsync({ body, parentId: replyTo });
+                setReplyTo(null);
+                return true;
+              } catch {
+                return false;
+              }
             }}
           />
         ) : (
@@ -49,6 +54,8 @@ export function CommentList({ postId, postAuthorId, commentsEnabled }: { postId:
               canHide={user?.id === postAuthorId || user?.id === root.authorId}
               onReply={user ? () => setReplyTo(root.id) : openAuthPopup}
               onLike={(id) => likeMutation.mutate(id)}
+              likePending={likePending}
+              hidePending={hidePending}
               onHide={(id) => hideMutation.mutate(id)}
             />
             {comments
@@ -61,6 +68,8 @@ export function CommentList({ postId, postAuthorId, commentsEnabled }: { postId:
                   canHide={user?.id === postAuthorId || user?.id === reply.authorId}
                   onReply={user ? () => setReplyTo(root.id) : openAuthPopup}
                   onLike={(id) => likeMutation.mutate(id)}
+              likePending={likePending}
+              hidePending={hidePending}
                   onHide={(id) => hideMutation.mutate(id)}
                 />
               ))}

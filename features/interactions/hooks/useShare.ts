@@ -29,18 +29,31 @@ export function useShare(title: string, postId: string) {
 }
 
 /**
- * Enregistre une vue après 5 secondes de lecture réelle (chaque visite compte, comme sur YouTube).
- * @param postId Identifiant du texte.
- * @param authorId Identifiant de l'auteur (exclu du comptage).
+ * Enregistre une vue après 5 secondes de lecture réelle et notifie l'interface
+ * uniquement lorsque le serveur confirme que le compteur a été incrémenté.
  */
-export function useViewTracker(postId: string, authorId: string): void {
+export function useViewTracker(
+  postId: string,
+  authorId: string,
+  onCounted?: () => void,
+): void {
   const { user } = useAuth();
   useEffect(() => {
     if (user?.id === authorId) return;
+    let active = true;
     const timer = setTimeout(() => {
-      const key = user?.id ?? "visiteur-anonyme";
-      void interactionsService.recordView(postId, key);
+      void interactionsService
+        .recordView(postId)
+        .then((counted) => {
+          if (active && counted) onCounted?.();
+        })
+        .catch(() => {
+          // Une erreur de métrique ne doit pas interrompre l'expérience de lecture.
+        });
     }, 5000);
-    return () => clearTimeout(timer);
-  }, [postId, authorId, user?.id]);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [postId, authorId, user?.id, onCounted]);
 }

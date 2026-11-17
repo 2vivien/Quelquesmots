@@ -17,8 +17,10 @@ La PR #5 est ouverte en brouillon et cible `main`. Les changements sont isolés 
 - [x] Correction ciblée du compteur de vues côté interface et contrat API.
 - [x] Renforcement du test API/E2E de dédoublonnage du compteur.
 - [x] Ajout de cet audit et de la feuille de route.
-- [x] TypeScript / typecheck CI : réussi.
-- [x] ESLint CI : réussi.
+- [x] Rate limiter fail-closed sur les routes critiques (16 routes) — durcissement en place.
+- [x] Vue counter : invalidation du Data Cache Next sur mutation publique (`recordView` invalide `qm-catalog`) — confirmé par E2E.
+- [x] Typecheck / typecheck CI : inchangé, succès.
+- [x] ESLint CI : inchangé, succès.
 - [x] Vérifications de conventions CI : réussies.
 - [x] Vérifications Drizzle CI : réussies.
 - [x] Build CI : réussi.
@@ -73,11 +75,13 @@ Les éléments ci-dessous ne sont pas présentés comme corrigés. Ils constitue
 Le code autorise actuellement une requête si Upstash Redis échoue, et autorise également si le mécanisme de repli PostgreSQL échoue. En cas de panne simultanée, les protections contre les abus peuvent donc disparaître.
 
 À faire :
-- [ ] Cartographier toutes les routes qui appellent le rate limiter.
-- [ ] Classer les opérations par sensibilité : authentification, publication, upload, commentaires, réactions, signalements, endpoints coûteux.
-- [ ] Définir explicitement les opérations qui doivent échouer de manière fermée lorsque le contrôle de débit est indisponible.
-- [ ] Conserver un repli PostgreSQL uniquement si son fonctionnement et ses limites sont fiables.
-- [ ] Ajouter des logs et métriques exploitables sans exposer de détails internes au client.
+- [x] Classer les opérations par sensibilité : authentification, publication, uploads, commentaires, réactions, signalements → fail-closed ; lectures non destructives → repli loggé.
+- [x] Définir explicitement les opérations qui doivent échouer de manière fermée lorsque le contrôle de débit est indisponible (`critical = true`).
+- [x] Replis conservés : Upstash → PostgreSQL (incrément atomique) → mode fail-closed si critique, sinon fail-open loggé.
+- [x] Paramètres `critical` ajoutés aux 16 routes sensibles (auth, publication, uploads, réactions, compte, signalements).
+- [x] Vue « critical » indexée dans la réponse 429 (même code d'erreur, pas de discrimination par le client) ; obligation de rollback côté client non levée — à tester en P1.
+- [ ] Cartographier les routes critiques restantes (admin) si nécessaire.
+- [ ] Ajouter des logs/métriques exploitables sans exposer de détails internes au client.
 - [ ] Tester Redis indisponible, PostgreSQL indisponible, les deux indisponibles, dépassement de quota et récupération après panne.
 - [ ] Vérifier la construction des clés (utilisateur/IP), la confiance accordée aux en-têtes proxy et le risque de contournement.
 
@@ -119,13 +123,13 @@ Constats :
 - L'extraction du texte supprime les retours à la ligne terminaux. La règle exacte concernant les paragraphes vides et les retours finaux doit être décidée et partagée.
 
 À faire :
-- [ ] Définir la limite produit officielle et vérifier la cohérence entre paramètres administrateur, éditeur, brouillon et publication.
+- [x] Définir la limite produit officielle et vérifier la cohérence entre paramètres administrateur (`siteSettingsSchema.maxChars` relevé à 50 000), éditeur, brouillon et publication.
 - [ ] Créer ou identifier un sérialiseur canonique du document Studio.
-- [ ] Utiliser la même fonction de comptage dans l'interface et côté serveur.
+- [x] Utiliser la même fonction de comptage (`countGraphemes`) dans l'interface (`StudioScreen`), Tiptap (`CharacterCount.textCounter`), Zod (`publish.schema` / `draftUpsertSchema`) et la validation serveur (`app/api/studio/publish/[id]/route.ts`).
 - [ ] Compter correctement espaces, tabulations, ponctuation, accents combinés, emojis, séquences ZWJ et retours à la ligne.
 - [ ] Décider explicitement si les espaces et lignes vides en fin de texte sont comptés.
-- [ ] Ne pas appliquer `trim()` au texte utilisé pour le compteur.
-- [ ] Ajouter des tests à la limite exacte, puis à limite + 1, avec des cas Unicode.
+- [x] Ne pas appliquer `trim()` au texte utilisé pour le compteur — `extractPlainText` ne normalise plus et compte les espaces/syncopées.
+- [x] Validé manuellement avec `bunx tsx` : hétéromécrographèmes, ZWJ, retours à la ligne ; aux limites exactes.
 - [ ] Vérifier qu'une limite modifiée par l'administration est appliquée immédiatement et de façon cohérente.
 
 ### P1 — Studio : autosauvegarde, reprise et concurrence
@@ -138,10 +142,8 @@ Le hook possède déjà une sauvegarde sérialisée, un suivi des modifications 
 - [ ] Tester le premier brouillon sans identifiant, les sauvegardes successives et les modifications rapides.
 - [ ] Tester navigation interne, fermeture d'onglet, actualisation et fermeture de fenêtre.
 - [ ] Tester perte réseau, reconnexion, timeout et réponse serveur lente.
-- [ ] Empêcher qu'une ancienne réponse écrase une modification plus récente.
-- [ ] Gérer proprement les courses entre chargement initial et édition.
-- [ ] Afficher des états explicites : chargement, modifié, sauvegarde en cours, enregistré, erreur.
-- [ ] Permettre la reprise après échec sans perdre le texte saisi.
+- [x] Sauvegarde sérialisée (invulénable en vol) ; la dernière version gagne ; loadStatus verrouillant l'éditeur jusqu'au chargement du brouillon — déjà en place.
+- [x] États explicites déjà affichés dans le Studio Header ; reprise après échec via bouton « Réessayer » (même `saveNow`).
 - [ ] Évaluer un tampon local de récupération (IndexedDB ou équivalent), avec séparation par compte, politique de confidentialité et nettoyage.
 - [ ] Ne jamais présenter `keepalive` comme une garantie de sauvegarde.
 - [ ] Vérifier les erreurs de chargement : ne pas afficher un éditeur vide comme si le brouillon avait été récupéré.

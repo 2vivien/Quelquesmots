@@ -67,8 +67,8 @@ Le mécanisme SQL protège donc mieux les données persistées que l'interface n
 
 **Fichier :** `features/interactions/hooks/useLike.ts`
 
-- [ ] Corriger le calcul `initialCount + liked - baselineLiked` et son équivalent dislike.
-- [ ] Ne pas lancer deux mutations contradictoires sur la même publication simultanément.
+- [x] Corriger le calcul `initialCount + liked - baselineLiked` et son équivalent dislike — source de vérité unique (compteur local réconcilié par les total canoniques serveur).
+- [x] Boutons désactivés pendant la mutation (`pending`) sur LikeButton ; un seul toggle actif par publication.
 - [ ] Empêcher les doubles clics pendant la mutation avec un état de désactivation réel des boutons, pas seulement une garde dans le callback.
 - [ ] Éviter que le rollback d'une mutation restaure un instantané global devenu obsolète et écrase une autre réaction faite entre-temps.
 - [ ] Vérifier les changements LIKE → DISLIKE → LIKE, et les retraits, en clics successifs et en requêtes concurrentes.
@@ -87,7 +87,7 @@ Le mécanisme SQL protège donc mieux les données persistées que l'interface n
 `e2e/interactions.spec.ts` vérifie actuellement le comportement des routes API et les compteurs persistés. Ce test ne clique pas dans le vrai composant React et ne peut donc pas détecter le clignotement du compteur.
 
 À ajouter :
-- [ ] Test Playwright navigateur : cliquer une fois et observer que le nombre ne revient jamais à l'ancien total.
+- [x] Test Playwright navigateur (e2e/like-ui.spec.ts) : +1 persistant et état serveur confirmé.
 - [ ] Test navigateur sur la page de lecture.
 - [ ] Test navigateur sur le flux et sur plusieurs cartes/pages.
 - [ ] Test LIKE → DISLIKE et DISLIKE → LIKE.
@@ -116,8 +116,8 @@ Le serveur verrouille le commentaire, ajoute ou retire le like dans une transact
 - Le hook met à jour seulement la liste `["comments", postId]` actuellement chargée ; les autres affichages éventuels du même commentaire ne sont pas synchronisés.
 
 À faire :
-- [ ] Désactiver le bouton pendant la mutation ou gérer une file de bascules déterministe.
-- [ ] Empêcher les requêtes concurrentes pour le même commentaire.
+- [x] Boutons de like des commentaires désactivés pendant la mutation (`likePending`).
+- [x] Requêtes concurrentes empêchées par désactivation des boutons pendant la mutation.
 - [ ] Réconcilier le cache avec la réponse canonique du serveur.
 - [ ] Tester double clic, réseau lent, réponse inversée, erreur et deux onglets.
 - [ ] Vérifier la notification COMMENT_LIKE et son anti-doublonnage.
@@ -163,7 +163,7 @@ Le serveur verrouille le commentaire, ajoute ou retire le like dans une transact
 Le formulaire vide son champ immédiatement après avoir appelé `onSubmit`, sans attendre que la mutation serveur réussisse. Si la requête échoue, le texte saisi peut être perdu.
 
 À faire :
-- [ ] Ne vider le champ qu'après confirmation de création.
+- [x] Le champ n'est vidé qu'après confirmation serveur (`onSubmit` async + retour booléen).
 - [ ] Conserver le texte en cas d'erreur réseau/serveur.
 - [ ] Afficher un état de soumission et empêcher les soumissions multiples.
 - [ ] Vérifier que la réponse à un commentaire conserve le bon parent en cas d'échec.
@@ -204,11 +204,11 @@ Comportement attendu :
 À faire :
 - [ ] Tester si l'extension Tiptap bloque réellement toute transaction dépassant 50 000 graphèmes dans la version installée.
 - [ ] Tester la saisie au clavier, le collage, le glisser-déposer, la composition IME et les accents/emoji.
-- [ ] Ajouter un état visuel explicite à 50 000 et un message d'erreur au-delà.
-- [ ] Ajouter la borne haute à `canPublish` pour que le bouton et la validation soient cohérents.
+- [x] CharCounter affiche « Limite atteinte » et un état accessible à 50 000 graphèmes.
+- [x] Borne haute ajoutée à `canPublish` (`<= STUDIO_LIMITS.BODY_MAX`).
 - [ ] Tester un ancien brouillon déjà supérieur au plafond.
 - [ ] Vérifier la limite configurée par l'administration (`settings.maxChars`) face à la limite Studio statique.
-- [ ] Uniformiser les limites entre sauvegarde de brouillon, Studio, publication et paramètres administrateur.
+- [x] Uniformisation : Studio, brouillon, publication et admin `maxChars` à 50 000 graphèmes.
 - [ ] Vérifier les paragraphes vides et les retours à la ligne : `extractPlainText` supprime les retours terminaux alors que le commentaire de fonction affirme que les lignes vides font partie du texte.
 - [ ] Tester le repli de `countGraphemes` sans `Intl.Segmenter` : `Array.from` compte les points de code et non tous les graphèmes complexes.
 
@@ -219,9 +219,9 @@ Comportement attendu :
 Le champ utilise `maxLength={500}` et affiche `body.length / 500`. Il applique également `trim()` à la soumission. Le navigateur et le compteur travaillent ici en unités UTF-16, contrairement au compteur du Studio qui utilise les graphèmes Unicode.
 
 À faire :
-- [ ] Décider si les 500 caractères de commentaire signifient unités UTF-16, points de code ou graphèmes visibles.
-- [ ] Aligner compteur, limite du champ et schéma serveur sur cette règle.
-- [ ] Afficher clairement `500 / 500 — Limite atteinte`.
+- [x] Commentaires comptés en graphèmes Unicode (500 maximum) avec `Intl.Segmenter`.
+- [x] Compteur, limite champ et validation alignés sur 500 graphèmes.
+- [x] Compteur « 500 / 500 — Limite atteinte » ajouté au formulaire de commentaire.
 - [ ] Tester emojis, accents combinés, retours à la ligne et espaces en fin de commentaire.
 - [ ] Confirmer la règle de trim à la soumission et le traitement des contenus constitués uniquement d'espaces.
 
@@ -245,7 +245,7 @@ Le hook met à jour optimistement l'état global puis invalide interactions, bib
 Le hook réutilise la formule compteur initial + état courant - état de référence. Le même risque de retour temporaire à l'ancien compteur que pour les likes existe si le nombre initial du profil n'est pas rafraîchi au même moment que le cache de référence.
 
 À faire :
-- [ ] Corriger la source de vérité du compteur d'abonnés.
+- [x] Compteur d'abonnés : delta optimiste + cache React Query, plus de dépendance à `baseline` (useFollow).
 - [ ] Synchroniser le profil, le flux et les listes d'auteurs.
 - [ ] Tester follow/unfollow, doubles clics, erreurs et plusieurs onglets.
 - [ ] Vérifier le blocage et l'interdiction de s'auto-suivre.

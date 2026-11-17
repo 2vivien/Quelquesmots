@@ -13,7 +13,7 @@ export interface InteractionsService {
   toggleLike(userId: string, postId: string): Promise<{ liked: boolean }>;
   toggleDislike(userId: string, postId: string): Promise<{ disliked: boolean }>;
   toggleBookmark(userId: string, postId: string): Promise<{ bookmarked: boolean }>;
-  recordView(postId: string, viewerKey: string): Promise<boolean>;
+  recordView(postId: string): Promise<boolean>;
   toggleBlockUser(blockerId: string, targetUserId: string): Promise<{ blocked: boolean }>;
   toggleFollow(followerId: string, targetUserId: string): Promise<{ following: boolean }>;
 }

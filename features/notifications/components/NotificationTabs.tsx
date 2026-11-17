@@ -15,24 +15,26 @@ interface NotificationTabsProps {
 }
 
 /**
- * Onglets de filtrage de l'écran Notifications (écran 10).
- * @param props Onglet actif et gestionnaire de sélection.
+ * Onglets de filtrage en pastilles (maquette notifications).
+ * La logique de filtrage reste dans la page, ce composant ne gère que la sélection.
  */
 export function NotificationTabs({ active, onChange }: NotificationTabsProps) {
   return (
-    <div className="flex items-center gap-6 overflow-x-auto border-b border-bord">
-      {TABS.map((t) => (
+    <div className="flex items-center gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Filtrer les notifications">
+      {TABS.map((tab) => (
         <button
-          key={t.id}
+          key={tab.id}
           type="button"
-          onClick={() => onChange(t.id)}
-          className={`whitespace-nowrap border-b-2 pb-2.5 text-sm ${
-            active === t.id
-              ? "border-encre font-medium text-encre"
-              : "border-transparent text-muted hover:text-encre"
+          role="tab"
+          aria-selected={active === tab.id}
+          onClick={() => onChange(tab.id)}
+          className={`min-h-[36px] whitespace-nowrap rounded-full border-[1.5px] px-4 text-[13px] font-bold transition-transform active:scale-[0.97] ${
+            active === tab.id
+              ? "border-bord bg-encre text-ivoire shadow-[2px_2px_0_0_var(--color-jaune)]"
+              : "border-bord bg-carte text-encre hover:bg-pilule"
           }`}
         >
-          {t.label}
+          {tab.label}
         </button>
       ))}
     </div>

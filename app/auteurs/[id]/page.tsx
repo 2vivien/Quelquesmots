@@ -25,17 +25,22 @@ export default async function AuthorProfilePage({ params }: AuthorProfilePagePro
   });
 
   return (
-    <div className="mx-auto max-w-[720px] space-y-8">
+    <div className="mx-auto max-w-[720px] space-y-6">
       <AuthorHeader
         author={author}
         actions={<ReportDialog targetType="USER" targetId={author.userId} targetLabel={author.username} />}
       />
-      <section className="space-y-2">
-        <h2 className="font-serif text-2xl text-encre">Publications</h2>
+      <section className="space-y-3">
+        {/* Onglet actif unique : la page ne propose que les publications réelles de l'auteur. */}
+        <div className="flex items-center gap-6 overflow-x-auto border-b-[1.5px] border-bord" role="tablist" aria-label="Contenu de l'auteur">
+          <span role="tab" aria-selected="true" className="whitespace-nowrap border-b-[3px] border-encre pb-2.5 font-display text-[13px] uppercase tracking-wide text-encre">
+            Publications
+          </span>
+        </div>
         {items.length === 0 ? (
-          <p className="py-8 font-serif italic text-muted">Rien ici pour l&apos;instant.</p>
+          <p className="py-8 text-center font-serif italic text-muted">Rien ici pour l&apos;instant.</p>
         ) : (
-          <div>{items.map((p) => <PostCard key={p.id} post={p} />)}</div>
+          <div className="space-y-3">{items.map((p) => <PostCard key={p.id} post={p} />)}</div>
         )}
       </section>
     </div>

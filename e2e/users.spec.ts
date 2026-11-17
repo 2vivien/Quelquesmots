@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { cleanupE2eTestData, signInMockUser, uniqueTag } from "./helpers";
+import { cleanupE2eTestData, createPublishedPost, signInMockUser, uniqueTag } from "./helpers";
 
 /**
  * Utilisateurs : inscription via bouchon Google, session, onboarding, annuaire, pseudonyme unique.
@@ -76,4 +76,23 @@ test("un pseudonyme déjà pris est refusé (400)", async ({ request }) => {
 test("un invité non connecté ne peut pas créer de brouillon (401)", async ({ request }) => {
   const res = await request.post("/api/studio/drafts", { data: { title: "Non autorisé e2e" } });
   expect(res.status()).toBe(401);
+});
+
+test("renommer le pseudonyme se propage aux publications existantes de l'auteur", async ({ request }) => {
+  const tag = uniqueTag("sync-auteur-");
+  const { sessionCookie } = await signInMockUser(request, tag);
+  const { postId } = await createPublishedPost(request, sessionCookie, { visibility: "PUBLIC" });
+
+  const newUsername = `e2erenom${Date.now().toString(36)}`;
+  const patch = await request.patch("/api/settings/profile", {
+    headers: { cookie: sessionCookie },
+    data: { username: newUsername },
+  });
+  expect(patch.ok()).toBe(true);
+
+  // Le texte publié affiche le nouveau pseudonyme au prochain chargement.
+  const after = await request.get(`/api/posts/by-id/${postId}`, { headers: { cookie: sessionCookie } });
+  expect(after.ok()).toBe(true);
+  const body = (await after.json()) as { post: { authorUsername: string; authorAvatarUrl: string } };
+  expect(body.post.authorUsername).toBe(newUsername);
 });

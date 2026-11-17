@@ -20,7 +20,8 @@ export function StudioScreen({ draftId }: { draftId?: string }) {
   const { data: themes = [] } = useThemes();
   const { saveNow, applyDoc } = useStudioDraft(draftId);
   const { publishing, publish } = usePublish(saveNow);
-  const canPublish = store.title.trim().length >= 3 && countGraphemes(store.contentText) >= 20 && store.themeIds.length >= 1 && store.themeIds.length <= 5;
+  const ready = store.loadStatus === "ready";
+  const canPublish = ready && store.title.trim().length >= 3 && countGraphemes(store.contentText) >= 20 && store.themeIds.length >= 1 && store.themeIds.length <= 5;
 
   return (
     <div className="mx-auto max-w-[720px] space-y-6">
@@ -30,7 +31,7 @@ export function StudioScreen({ draftId }: { draftId?: string }) {
       ) : (
         <div className="space-y-6 rounded-[16px] border border-bord bg-carte p-6 sm:p-8">
           <TitleField value={store.title} onChange={(v) => store.setField("title", v)} />
-          <EditorSurface content={store.contentJson} onUpdate={applyDoc} />
+          <EditorSurface content={store.contentJson} onUpdate={applyDoc} ready={ready} />
           <div className="space-y-4 border-t border-bord pt-4">
             <ThemePicker selected={store.themeIds} onChange={(v) => store.setField("themeIds", v)} />
             <div className="flex flex-wrap items-center justify-between gap-3 pt-1">

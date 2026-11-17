@@ -10,7 +10,7 @@ import type { TiptapDoc } from "@/types";
 import { STUDIO_LIMITS } from "../schemas/publish.schema";
 
 /** Surface d'écriture Tiptap avec barre discrète et limite à 50 000 caractères. */
-export function EditorSurface({ content, onUpdate }: { content: TiptapDoc; onUpdate: (doc: TiptapDoc) => void }) {
+export function EditorSurface({ content, onUpdate, ready = true }: { content: TiptapDoc; onUpdate: (doc: TiptapDoc) => void; ready?: boolean }) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: false, codeBlock: false, bulletList: false, orderedList: false }),
@@ -19,9 +19,14 @@ export function EditorSurface({ content, onUpdate }: { content: TiptapDoc; onUpd
     ],
     content,
     immediatelyRender: false,
+    editable: ready,
     onUpdate: ({ editor: ed }) => onUpdate(ed.getJSON() as TiptapDoc),
     editorProps: { attributes: { class: "tiptap min-h-[260px] font-serif text-[19px] leading-[1.7] text-encre focus:outline-none" } },
   });
+
+  useEffect(() => {
+    if (editor) editor.setEditable(ready);
+  }, [editor, ready]);
 
   useEffect(() => {
     if (editor && editor.isEmpty && content.content.length > 0 && content.content[0]?.content) {

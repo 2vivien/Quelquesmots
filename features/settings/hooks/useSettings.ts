@@ -17,6 +17,24 @@ export function useSettings() {
   const router = useRouter();
   const qc = useQueryClient();
 
+  /** Invalide tous les caches client qui affichent l'identité de l'auteur (feed, commentaires, notifications, annuaire, recherche, thèmes, tags). */
+  const invalidatePublicAuthorCaches = (): void => {
+    for (const key of [
+      "feed",
+      "comments",
+      "notifications",
+      "interactions",
+      "library",
+      "authors",
+      "search",
+      "suggest",
+      "themes",
+      "tags",
+    ]) {
+      void qc.invalidateQueries({ queryKey: [key] });
+    }
+  };
+
   const saveProfile = async (values: ProfileFormValues): Promise<boolean> => {
     const parsed = profileSchema.safeParse(values);
     if (!parsed.success) {
@@ -29,6 +47,8 @@ export function useSettings() {
       toast.error(err instanceof Error ? err.message : "Impossible de mettre à jour le profil.");
       return false;
     }
+    // Le profil se propage aux publications, commentaires, annuaire, recherche…
+    invalidatePublicAuthorCaches();
     toast.success("Profil mis à jour");
     return true;
   };
@@ -36,10 +56,7 @@ export function useSettings() {
   const changeAvatar = async (avatarUrl: string): Promise<void> => {
     try {
       await updateUser({ avatarUrl });
-      // Invalide les caches qui affichent l'avatar de l'auteur (mur, commentaires, notifications).
-      for (const key of ["feed", "comments", "notifications", "interactions", "library"]) {
-        void qc.invalidateQueries({ queryKey: [key] });
-      }
+      invalidatePublicAuthorCaches();
       toast.success("Photo de profil mise à jour");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Impossible de changer la photo.");

@@ -104,6 +104,58 @@ const postColumns = {
 
 type PostRow = typeof posts.$inferSelect;
 
+/** Profil courant d'un auteur (résolu à la lecture, jamais la copie figée en base). */
+interface AuthorProfileSnapshot {
+  username: string;
+  firstName: string;
+  lastName: string;
+  avatarUrl: string;
+}
+
+/** Charge, en une requête, les profils actuels des auteurs concernés. */
+async function loadAuthorProfiles(authorIds: string[]): Promise<Map<string, AuthorProfileSnapshot>> {
+  const unique = [...new Set(authorIds.filter((id): id is string => Boolean(id)))];
+  if (unique.length === 0) return new Map();
+  const db = getDatabase();
+  const rows = await db
+    .select({
+      userId: authorProfiles.userId,
+      username: authorProfiles.username,
+      firstName: authorProfiles.firstName,
+      lastName: authorProfiles.lastName,
+      avatarUrl: authorProfiles.avatarUrl,
+    })
+    .from(authorProfiles)
+    .where(inArray(authorProfiles.userId, unique));
+  return new Map(rows.map((r) => [r.userId, {
+    username: r.username,
+    firstName: r.firstName,
+    lastName: r.lastName,
+    avatarUrl: r.avatarUrl,
+  }]));
+}
+
+/**
+ * Remplace la copie figée du profil enregistrée en base par l'identité courante,
+ * selon la signature « publishAs » de la publication.
+ * ANONYMOUS → reste Anonyme. Auteur supprimé (ou profil manquant) → repli sur la copie figée.
+ */
+function resolveAuthorSnapshot<T extends Pick<PostRecord, "authorId" | "publishAs" | "authorUsername" | "authorFirstName" | "authorLastName" | "authorAvatarUrl">>(
+  record: T,
+  profiles: Map<string, AuthorProfileSnapshot>,
+): T {
+  if (record.publishAs === "ANONYMOUS") return record;
+  const profile = record.authorId ? profiles.get(record.authorId) : undefined;
+  if (!profile) return record;
+  return {
+    ...record,
+    authorUsername: profile.username,
+    authorFirstName: profile.firstName || undefined,
+    authorLastName: profile.lastName || undefined,
+    authorAvatarUrl: profile.avatarUrl,
+  };
+}
+
 function mapPostRow(row: PostRow & { themeIds?: string[]; tagIds?: string[]; tagLabels?: string[] }): PostRecord {
   return {
     id: row.id,
@@ -176,8 +228,13 @@ async function loadPostsThemesTags(postIds: string[]): Promise<Map<string, { the
 async function mapPostRowIds(rows: PostRow[]): Promise<PostRecord[]> {
   if (rows.length === 0) return [];
   const ids = rows.map((r) => r.id);
-  const linked = await loadPostsThemesTags(ids);
-  return rows.map((row) => mapPostRow({ ...row, ...linked.get(row.id) }));
+  const [linked, profiles] = await Promise.all([
+    loadPostsThemesTags(ids),
+    loadAuthorProfiles(rows.map((r) => r.authorId).filter((id): id is string => Boolean(id))),
+  ]);
+  return rows.map((row) =>
+    resolveAuthorSnapshot(mapPostRow({ ...row, ...linked.get(row.id) }), profiles),
+  );
 }
 
 async function mapSummaries(rows: PostRow[]): Promise<PostSummary[]> {
@@ -941,21 +998,25 @@ export async function listComments(postId: string, viewerId?: string | null): Pr
   ]);
   const likeCounts = new Map(likeRows.map((r) => [r.commentId, r.count]));
   const likedSet = new Set(likedRows.map((r) => r.commentId));
-  return rows.map((c) => ({
-    id: c.id,
-    postId: c.postId,
-    authorId: c.authorId ?? "",
-    authorUsername: c.authorUsername,
-    authorAvatarUrl: c.authorAvatarUrl,
-    parentId: c.parentId ?? null,
+  const profiles = await loadAuthorProfiles(rows.map((r) => r.authorId).filter((id): id is string => Boolean(id)));
+  return rows.map((c) => {
+    const profile = c.authorId ? profiles.get(c.authorId) : undefined;
+    return {
+      id: c.id,
+      postId: c.postId,
+      authorId: c.authorId ?? "",
+      authorUsername: profile?.username ?? c.authorUsername,
+      authorAvatarUrl: profile?.avatarUrl ?? c.authorAvatarUrl,
+      parentId: c.parentId ?? null,
     body: c.body,
     status: c.status as CommentStatus,
     createdAt: c.createdAt.toISOString(),
     likeCount: likeCounts.get(c.id) ?? 0,
     likedByMe: likedSet.has(c.id),
-  }));
+    };
+  }
+  );
 }
-
 export type AddCommentResult =
   | { kind: "created"; comment: CommentItemData }
   | { kind: "disabled" }

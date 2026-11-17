@@ -14,7 +14,7 @@ async function fetchPost(request: APIRequestContext, postId: string) {
   const res = await request.get(`/api/posts/by-id/${postId}`);
   expect(res.ok()).toBe(true);
   const body = (await res.json()) as {
-    post: { likeCount: number; dislikeCount: number; bookmarkCount: number; commentCount: number } | null;
+    post: { likeCount: number; dislikeCount: number; bookmarkCount: number; commentCount: number; viewCount: number } | null;
   };
   expect(body.post, "texte publié introuvable").toBeTruthy();
   return body.post!;
@@ -85,15 +85,18 @@ test("like → contraire dislike → retour (transaction) ; favoris ; commentair
   expect(readerItems.some((item) => item.type === "REPLY")).toBe(true);
 
   // --- Vues : dédoublonnage 90 s sur la même clé ---
+  const viewsBefore = (await fetchPost(request, postId)).viewCount;
   const view1 = await request.post(`/api/posts/${postId}/view`, {
     headers: { "user-agent": "Mozilla/5.0 (e2e)" },
   });
   expect(view1.ok()).toBe(true);
   expect(((await view1.json()) as { counted: boolean }).counted).toBe(true);
+  expect((await fetchPost(request, postId)).viewCount).toBe(viewsBefore + 1);
   const view2 = await request.post(`/api/posts/${postId}/view`, {
     headers: { "user-agent": "Mozilla/5.0 (e2e)" },
   });
   expect(((await view2.json()) as { counted: boolean }).counted).toBe(false);
+  expect((await fetchPost(request, postId)).viewCount).toBe(viewsBefore + 1);
 
   // --- Masquage par l'auteur du commentaire : le compteur décrémente ---
   const hide = await request.post(`/api/comments/${commentId}/hide`, { headers: { cookie: reader.sessionCookie } });

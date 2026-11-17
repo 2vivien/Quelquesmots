@@ -39,8 +39,9 @@ export async function rateLimit(
   key: string,
   limit: number,
   windowMs: number,
+  critical = false,
 ): Promise<NextResponse | null> {
-  return (await checkRateLimit(key, limit, windowMs))
+  return (await checkRateLimit(key, limit, windowMs, critical))
     ? null
     : jsonError(429, "RATE_LIMITED", "Trop de requêtes. Réessayez dans un instant.");
 }

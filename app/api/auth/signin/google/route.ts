@@ -10,7 +10,7 @@ const STATE_COOKIE = "qm_oauth_state";
  * `popup=1` fait transiter le drapeau popup jusqu'au callback.
  */
 export async function GET(req: NextRequest) {
-  const limited = await rateLimit(`signin:${clientIp(req)}`, 10, 60_000);
+  const limited = await rateLimit(`signin:${clientIp(req)}`, 10, 60_000, true);
   if (limited) return limited;
 
   const clientId = process.env.GOOGLE_CLIENT_ID;

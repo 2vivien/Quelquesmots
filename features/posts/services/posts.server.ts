@@ -6,7 +6,7 @@
  * Ne jamais importer depuis un composant client.
  */
 import {
-  getPostById,
+  getPostByIdFresh,
   getPostsByIds,
   listFeed,
   listRelated,
@@ -20,9 +20,10 @@ export const serverPostsService = {
     return listFeed(query);
   },
 
-  /** Fiche d'un texte, ou `null` si introuvable / non visible pour ce lecteur. */
+  /** Fiche d'un texte, ou `null` si introuvable / non visible pour ce lecteur.
+   * Lecture directe (non cachée) : le compteur de vues affiché est toujours exact à l'ouverture. */
   async getById(id: string, viewerId: string | null): Promise<PostRecord | null> {
-    const post = await getPostById(id);
+    const post = await getPostByIdFresh(id);
     return post && canViewPost(post, viewerId) ? post : null;
   },
 

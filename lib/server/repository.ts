@@ -1929,6 +1929,11 @@ function safeCached<TArgs extends readonly unknown[], TResult>(
 
 export const listFeed = safeCached(listFeedUncached, ["listFeed"], 30, FEED_TAG);
 export const getPostById = safeCached(getPostByIdUncached, ["getPostById"], 60, CACHE_TAG);
+/**
+ * Lecture non mise en cache pour la page de lecture : le compteur de vues doit être
+ * exact à l'ouverture. La page est déjà `force-dynamic`, donc aucun coût de cache additionnel.
+ */
+export const getPostByIdFresh = getPostByIdUncached;
 export const getPostsByIds = safeCached(getPostsByIdsUncached, ["getPostsByIds"], 60, CACHE_TAG);
 export const listRelated = safeCached(listRelatedUncached, ["listRelated"], 120, CACHE_TAG);
 export const search = safeCached(searchUncached, ["search"], 30, CACHE_TAG);
